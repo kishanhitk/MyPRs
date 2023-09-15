@@ -3,6 +3,8 @@ import { json } from "@remix-run/cloudflare";
 import { Button } from "~/components/ui/button";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { Env } from "~/types/shared";
+import { useLoaderData, useOutletContext } from "@remix-run/react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const meta: V2_MetaFunction = () => {
   return [
@@ -23,8 +25,10 @@ export const loader = async ({ request, context }: LoaderArgs) => {
 
   const { data } = await supabaseClient.from("test").select("*");
   console.log(data);
+
+  const user = await supabaseClient.auth.getUser();
   return json(
-    { data },
+    { data, user },
     {
       headers: response.headers,
     }
@@ -32,6 +36,22 @@ export const loader = async ({ request, context }: LoaderArgs) => {
 };
 
 export default function Index() {
+  const { user } = useLoaderData<typeof loader>();
+  const { supabase } = useOutletContext() as { supabase: SupabaseClient };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const handleGitHubLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: "http://localhost:8788/auth/callback",
+      },
+    });
+  };
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
       <h1>Welcome to Remix</h1>
@@ -60,9 +80,11 @@ export default function Index() {
           </a>
         </li>
       </ul>
-      <Button className="m-4" variant="outline">
-        Click Me
+      <Button onClick={handleGitHubLogin} className="m-4" variant="outline">
+        Login with GitHub
       </Button>
+      {user.data?.user?.email && <p>Logged in as {user.data.user.email}</p>}
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 }
