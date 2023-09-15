@@ -1,11 +1,34 @@
-import type { V2_MetaFunction } from "@remix-run/cloudflare";
+import type { LoaderArgs, V2_MetaFunction } from "@remix-run/cloudflare";
+import { json } from "@remix-run/cloudflare";
 import { Button } from "~/components/ui/button";
+import { createServerClient } from "@supabase/auth-helpers-remix";
+import type { Env } from "~/types/shared";
 
 export const meta: V2_MetaFunction = () => {
   return [
     { title: "New Remix App" },
     { name: "description", content: "Welcome to Remix!" },
   ];
+};
+
+export const loader = async ({ request, context }: LoaderArgs) => {
+  const response = new Response();
+  const env = context.env as Env;
+  console.log(context.env);
+  const supabaseClient = createServerClient(
+    env.SUPABASE_URL!,
+    env.SUPABASE_ANON_KEY!,
+    { request, response }
+  );
+
+  const { data } = await supabaseClient.from("test").select("*");
+  console.log(data);
+  return json(
+    { data },
+    {
+      headers: response.headers,
+    }
+  );
 };
 
 export default function Index() {
