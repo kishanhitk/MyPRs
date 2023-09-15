@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { Env } from "~/types/shared";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { useEffect } from "react";
 
 export const meta: V2_MetaFunction = () => {
   return [
@@ -23,12 +24,25 @@ export const loader = async ({ request, context }: LoaderArgs) => {
     { request, response }
   );
 
-  const { data } = await supabaseClient.from("test").select("*");
-  console.log(data);
-
   const user = await supabaseClient.auth.getUser();
+
+  // var d = "2018-09-30T10%3A00%3A00%2B00%3A00"; // start date
+  // var f = "2018-11-01T12%3A00%3A00%2B00%3A00"; // end date
+  const currentDate = new Date();
+  const currentDateForTheApi = currentDate.toISOString();
+  const OneYearAgoDateForTheAPi = new Date(
+    currentDate.setFullYear(currentDate.getFullYear() - 1)
+  ).toISOString();
+
+  var t = "kishanhitk";
+
+  var url = `https://api.github.com/search/issues?q=-label:invalid+created:${OneYearAgoDateForTheAPi}..${currentDateForTheApi}+type:pr+is:public+author:${t}&per_page=30`;
+  // console.log(url);
+  const resp = await fetch(url);
+  const ghData = await resp.json();
+  console.log(ghData);
   return json(
-    { data, user },
+    { user, url, ghData },
     {
       headers: response.headers,
     }
@@ -36,12 +50,22 @@ export const loader = async ({ request, context }: LoaderArgs) => {
 };
 
 export default function Index() {
-  const { user } = useLoaderData<typeof loader>();
+  const { user, url, ghData } = useLoaderData<typeof loader>();
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const resp = await fetch(url);
+      console.log(resp);
+      const data1 = await resp.json();
+      console.log(data1);
+    };
+    fetchData();
+  }, []);
 
   const handleGitHubLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -85,6 +109,8 @@ export default function Index() {
       </Button>
       {user.data?.user?.email && <p>Logged in as {user.data.user.email}</p>}
       <button onClick={handleLogout}>Logout</button>
+
+      {JSON.stringify(ghData)}
     </div>
   );
 }
