@@ -1,4 +1,5 @@
 import type { V2_MetaFunction } from "@remix-run/cloudflare";
+import { Button } from "~/components/ui/button";
 
 export const meta: V2_MetaFunction = () => {
   return [
@@ -36,6 +37,9 @@ export default function Index() {
           </a>
         </li>
       </ul>
+      <Button className="m-4" variant="outline">
+        Click Me
+      </Button>
     </div>
   );
 }
