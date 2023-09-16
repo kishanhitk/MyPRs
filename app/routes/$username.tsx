@@ -1,4 +1,4 @@
-import type { LoaderArgs } from "@remix-run/cloudflare";
+import type { ActionArgs, LoaderArgs } from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/auth-helpers-remix";
@@ -6,27 +6,48 @@ import { createServerClient } from "@supabase/auth-helpers-remix";
 import { Button } from "~/components/ui/button";
 import { getPRsFromGithubAPI } from "~/lib/github";
 import type { Env } from "~/types/shared";
+import PRFilter from "~/components/custom/PRFilter";
+import { DemoGithub } from "~/components/custom/GithubCard";
 
 export const loader = async ({ request, context, params }: LoaderArgs) => {
   const response = new Response();
   const env = context.env as Env;
+  const username = params.username!;
   const supabaseClient = createServerClient(
     env.SUPABASE_URL!,
     env.SUPABASE_ANON_KEY!,
     { request, response }
   );
 
+  const { data: userDataOfUsername, error: userDataOfUsernameError } =
+    await supabaseClient
+      .from("users")
+      .select("*")
+      .eq("github_username", username);
+  if (userDataOfUsernameError) console.error(userDataOfUsernameError);
+  let excludedGitHubRepos = [];
+  if (
+    userDataOfUsername?.length &&
+    userDataOfUsername[0]?.excluded_github_repos
+  ) {
+    excludedGitHubRepos = userDataOfUsername?.[0]?.excluded_github_repos;
+  }
   const {
     data: { user },
   } = await supabaseClient.auth.getUser();
   const { data: ghData, error } = await getPRsFromGithubAPI({
-    author: params.username!,
+    author: username,
+    excludedRepos: excludedGitHubRepos,
+    limit: 200,
   });
+  let isOwner = false;
 
-  console.log("ghData", ghData);
+  if (user) {
+    isOwner = user.id === userDataOfUsername?.[0]?.id;
+  }
 
   return json(
-    { user, ghData, error },
+    { user, ghData, error, excludedGitHubRepos, isOwner },
     {
       headers: response.headers,
     }
@@ -34,14 +55,16 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
 };
 
 const Index = () => {
-  const { user, ghData } = useLoaderData<typeof loader>();
+  const { user, ghData, excludedGitHubRepos, isOwner } =
+    useLoaderData<typeof loader>();
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
-
+  const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
+  const uniqueRepoNames = [...new Set(repoNames)];
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
   return (
-    <div>
+    <div className="max-w-2xl mx-auto flex flex-col font-light">
       {user ? (
         <>
           <Button variant="outline" onClick={handleLogout}>
@@ -55,16 +78,23 @@ const Index = () => {
           <img
             src={ghData.items[0].user.avatar_url}
             alt={ghData.items[0].user.login}
+            className="h-20 w-20 rounded-full self-center"
           ></img>
-          {ghData.items[0].user.login}
+          <p className="self-center font-thin text-3xl mb-3">
+            {ghData.items[0].user.login}
+          </p>
+          <img
+            src={`https://ghchart.rshah.org/${ghData.items[0].user.login}`}
+            alt="2016rshah's Github chart"
+          />
+          {isOwner ? (
+            <PRFilter
+              repoNames={uniqueRepoNames}
+              excludedRepoNames={excludedGitHubRepos}
+            />
+          ) : null}
           {ghData.items.map((item) => (
-            <a
-              href={item.html_url}
-              className="border p-4 m-2 rounded-md block"
-              key={item.id}
-            >
-              {item.title}
-            </a>
+            <DemoGithub key={item.id} item={item} />
           ))}
         </>
       ) : (
@@ -75,3 +105,30 @@ const Index = () => {
 };
 
 export default Index;
+
+export async function action({ request, context }: ActionArgs) {
+  const response = new Response();
+  const env = context.env as Env;
+  const supabaseClient = createServerClient(
+    env.SUPABASE_URL!,
+    env.SUPABASE_ANON_KEY!,
+    { request, response }
+  );
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+  if (!user) {
+    return json({ error: "You must be logged in to do that" }, { status: 401 });
+  }
+  const body = await request.formData();
+  const repos_to_exclude = body.get("repos_to_exclude") as string;
+  const { data, error } = await supabaseClient
+    .from("users")
+    .update({
+      excluded_github_repos: repos_to_exclude.split(","),
+    })
+    .eq("id", user.id);
+  if (error) console.error(error);
+
+  return json({ data, error });
+}

@@ -17,7 +17,7 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   // Set default values for startDate and endDate
   const currentDate = new Date();
   const threeYearsAgo = new Date();
-  threeYearsAgo.setFullYear(currentDate.getFullYear() - 3);
+  threeYearsAgo.setFullYear(currentDate.getFullYear() - 2);
 
   const startDate = filter.startDate || threeYearsAgo;
   const endDate = filter.endDate || currentDate;
@@ -35,6 +35,7 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     const excludedReposParam = filter.excludedRepos
       .map((repo) => `-repo:${repo}`)
       .join("+");
+    console.log("exludedRepos", excludedReposParam);
     queryParts.push(excludedReposParam);
   }
 

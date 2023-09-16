@@ -4,7 +4,8 @@ create table public.users (
     updated_at timestamp with time zone not null default now(),
     full_name text,
     avatar_url text,
-    github_username text
+    github_username text,
+    excluded_github_repos text[]
 ) tablespace pg_default;
 
 create function public.handle_new_user() returns trigger language plpgsql security definer
