@@ -3,11 +3,11 @@ import { json } from "@remix-run/cloudflare";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/auth-helpers-remix";
 import { createServerClient } from "@supabase/auth-helpers-remix";
+import { DemoGithub } from "~/components/custom/GithubCard";
+import PRFilter from "~/components/custom/PRFilter";
 import { Button } from "~/components/ui/button";
 import { getPRsFromGithubAPI } from "~/lib/github";
 import type { Env } from "~/types/shared";
-import PRFilter from "~/components/custom/PRFilter";
-import { DemoGithub } from "~/components/custom/GithubCard";
 
 export const loader = async ({ request, context, params }: LoaderArgs) => {
   const response = new Response();
