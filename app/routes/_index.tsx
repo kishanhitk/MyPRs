@@ -42,10 +42,11 @@ export default function Index() {
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
 
   const handleGitHubLogin = async () => {
+    const baseUrl = new URL(window.location.origin);
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: "http://localhost:8788/auth/callback",
+        redirectTo: baseUrl + "/auth/callback",
       },
     });
   };
