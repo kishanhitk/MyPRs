@@ -46,7 +46,7 @@ export default function Index() {
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: baseUrl + "/auth/callback",
+        redirectTo: baseUrl + "auth/callback",
       },
     });
   };
