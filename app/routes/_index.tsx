@@ -1,10 +1,18 @@
-import type { LoaderArgs, V2_MetaFunction } from "@remix-run/cloudflare";
+import type {
+  HeadersFunction,
+  LoaderArgs,
+  V2_MetaFunction,
+} from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
 import { useOutletContext } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "~/components/ui/button";
 import type { Env } from "~/types/shared";
+
+export const headers: HeadersFunction = () => ({
+  "Cache-Control": "public, max-age=300, s-maxage=3600",
+});
 
 export const meta: V2_MetaFunction = () => {
   return [

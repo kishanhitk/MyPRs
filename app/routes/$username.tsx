@@ -1,4 +1,8 @@
-import type { ActionArgs, LoaderArgs } from "@remix-run/cloudflare";
+import type {
+  ActionArgs,
+  HeadersFunction,
+  LoaderArgs,
+} from "@remix-run/cloudflare";
 import { json } from "@remix-run/cloudflare";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/auth-helpers-remix";
@@ -8,6 +12,10 @@ import PRFilter from "~/components/custom/PRFilter";
 import { Button } from "~/components/ui/button";
 import { getPRsFromGithubAPI } from "~/lib/github";
 import type { Env } from "~/types/shared";
+
+export const headers: HeadersFunction = () => ({
+  "Cache-Control": "public, max-age=300, s-maxage=3600",
+});
 
 export const loader = async ({ request, context, params }: LoaderArgs) => {
   const response = new Response();
@@ -49,6 +57,9 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
     limit: 200,
   });
 
+  const fakeDelay = new Promise((resolve) => setTimeout(resolve, 2000));
+  await fakeDelay;
+
   const featuredPRs = ghData?.items.filter((item) =>
     featuredGithubPRIds.includes(item.id.toString())
   );
@@ -61,7 +72,13 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
   if (user) {
     isOwner = user.id === userDataOfUsername?.[0]?.id;
   }
-
+  console.log("GETTING DATA");
+  const headers = {
+    "Cache-Control": isOwner
+      ? "public, maxage=300"
+      : "public, s-maxage=300 maxage-300",
+    ...response.headers,
+  };
   return json(
     {
       user,
@@ -74,7 +91,7 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
       isOwner,
     },
     {
-      headers: response.headers,
+      headers: headers,
     }
   );
 };
@@ -125,20 +142,20 @@ const Index = () => {
             />
           ) : null}
           {featuredPRs?.length ? (
-            <>
-              Featured
+            <div className="m">
+              <p className="font-semibold">Featured</p>
               {featuredPRs.map((item) => (
                 <DemoGithub key={item.id} item={item} isFeatured />
               ))}
-            </>
+            </div>
           ) : null}
-          {nonFeaturedPRs ? (
-            <>
-              ALL PRs
+          {nonFeaturedPRs?.length ? (
+            <div className="mt-5 space-y-4">
+              <p className="font-semibold"> All My PRs</p>
               {nonFeaturedPRs.map((item) => (
                 <DemoGithub key={item.id} item={item} />
               ))}
-            </>
+            </div>
           ) : null}
         </>
       ) : (

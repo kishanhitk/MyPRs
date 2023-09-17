@@ -60,6 +60,7 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
 
   queryParts.push("type:pr");
   queryParts.push("is:public");
+  queryParts.push("is:merged");
 
   const url = `https://api.github.com/search/issues?q=${queryParts.join(
     "+"

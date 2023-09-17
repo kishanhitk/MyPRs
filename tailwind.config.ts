@@ -46,6 +46,7 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        github_merged: "rgb(130, 86, 208)",
       },
       borderRadius: {
         lg: "var(--radius)",
