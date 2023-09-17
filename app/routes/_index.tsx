@@ -4,7 +4,7 @@ import type {
   V2_MetaFunction,
 } from "@remix-run/cloudflare";
 import { json, redirect } from "@remix-run/cloudflare";
-import { useOutletContext } from "@remix-run/react";
+import { useLoaderData, useOutletContext } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "~/components/ui/button";
@@ -40,15 +40,21 @@ export const loader = async ({ request, context }: LoaderArgs) => {
       headers: response.headers,
     });
   }
-
-  return json({
-    headers: response.headers,
-  });
+  const time = new Date().getTime();
+  return json(
+    { time },
+    {
+      headers: {
+        "Cache-Control": "public, max-age=300, s-maxage=3600",
+        ...response.headers,
+      },
+    }
+  );
 };
 
 export default function Index() {
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
-
+  const { time } = useLoaderData<typeof loader>();
   const handleGitHubLogin = async () => {
     const baseUrl = new URL(window.location.origin);
     await supabase.auth.signInWithOAuth({
@@ -64,6 +70,7 @@ export default function Index() {
       <Button onClick={handleGitHubLogin} className="m-4" variant="default">
         Login with GitHub
       </Button>
+      {time && <p>Time: {time}</p>}
     </div>
   );
 }
