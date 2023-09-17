@@ -1,4 +1,4 @@
-import { StarIcon, ChevronDownIcon, PlusIcon, CircleIcon } from "lucide-react";
+import { StarIcon, CircleIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -7,23 +7,27 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { Separator } from "../ui/separator";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+
 import type { GitHubIssue } from "~/types/shared";
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import type { loader } from "~/routes/$username";
 
 interface IGithubCardProps {
   item: GitHubIssue;
+  isFeatured?: boolean;
 }
 
-export function DemoGithub({ item }: IGithubCardProps) {
+export function DemoGithub({ item, isFeatured = false }: IGithubCardProps) {
+  const { featured_github_prs } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher();
+
+  const toggleFeatured = async (prId: number) => {
+    fetcher.submit(
+      { prId, featured_github_prs, isFeatured },
+      { method: "post", action: "/actions/toggle-featured" }
+    );
+  };
+
   return (
     <Card className="my-2">
       <CardHeader className="grid grid-cols-[1fr_110px] items-start gap-4 space-y-0">
@@ -31,9 +35,22 @@ export function DemoGithub({ item }: IGithubCardProps) {
           <CardTitle className="text-xl">
             {item.repository_url.slice(29)}
           </CardTitle>
-          <CardDescription className="">{item.title}</CardDescription>
+          <CardDescription className="text-lg">{item.title}</CardDescription>
         </div>
-        <div className="flex items-center space-x-1 rounded-md bg-secondary text-secondary-foreground">
+        <Button
+          disabled={
+            fetcher.state === "submitting" || fetcher.state === "loading"
+          }
+          className="flex"
+          onClick={async () => {
+            toggleFeatured(item.id);
+          }}
+          variant={isFeatured ? "outline" : "default"}
+        >
+          <StarIcon className="mr-2 h-4 w-4" />
+          Feature
+        </Button>
+        {/* <div className="flex items-center space-x-1 rounded-md bg-secondary text-secondary-foreground">
           <Button variant="secondary" className="px-3 shadow-none">
             <StarIcon className="mr-2 h-4 w-4" />
             Star
@@ -51,20 +68,13 @@ export function DemoGithub({ item }: IGithubCardProps) {
               className="w-[200px]"
               forceMount
             >
-              <DropdownMenuLabel>Suggested Lists</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem checked>
-                Future Ideas
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>My Stack</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>Inspiration</DropdownMenuCheckboxItem>
-              <DropdownMenuSeparator />
+\
               <DropdownMenuItem>
-                <PlusIcon className="mr-2 h-4 w-4" /> Create List
+                <PlusIcon className="mr-2 h-4 w-4" /> Add to Featured
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </div> */}
       </CardHeader>
       <CardContent>
         <div className="flex space-x-4 text-sm text-muted-foreground">

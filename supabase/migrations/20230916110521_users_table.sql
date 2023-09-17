@@ -5,7 +5,8 @@ create table public.users (
     full_name text,
     avatar_url text,
     github_username text,
-    excluded_github_repos text[]
+    excluded_github_repos text[],
+    featured_github_prs text[]
 ) tablespace pg_default;
 
 create function public.handle_new_user() returns trigger language plpgsql security definer

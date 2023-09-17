@@ -26,12 +26,20 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
       .eq("github_username", username);
   if (userDataOfUsernameError) console.error(userDataOfUsernameError);
   let excludedGitHubRepos = [];
+  let featuredGithubPRIds: string[] = [];
   if (
     userDataOfUsername?.length &&
     userDataOfUsername[0]?.excluded_github_repos
   ) {
     excludedGitHubRepos = userDataOfUsername?.[0]?.excluded_github_repos;
   }
+  if (
+    userDataOfUsername?.length &&
+    userDataOfUsername[0]?.featured_github_prs
+  ) {
+    featuredGithubPRIds = userDataOfUsername[0].featured_github_prs;
+  }
+
   const {
     data: { user },
   } = await supabaseClient.auth.getUser();
@@ -40,6 +48,14 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
     excludedRepos: excludedGitHubRepos,
     limit: 200,
   });
+
+  const featuredPRs = ghData?.items.filter((item) =>
+    featuredGithubPRIds.includes(item.id.toString())
+  );
+
+  const nonFeaturedPRs = ghData?.items.filter(
+    (item) => !featuredGithubPRIds.includes(item.id.toString())
+  );
   let isOwner = false;
 
   if (user) {
@@ -47,7 +63,16 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
   }
 
   return json(
-    { user, ghData, error, excludedGitHubRepos, isOwner },
+    {
+      user,
+      ghData,
+      error,
+      excludedGitHubRepos,
+      featured_github_prs: featuredGithubPRIds,
+      featuredPRs,
+      nonFeaturedPRs,
+      isOwner,
+    },
     {
       headers: response.headers,
     }
@@ -55,8 +80,14 @@ export const loader = async ({ request, context, params }: LoaderArgs) => {
 };
 
 const Index = () => {
-  const { user, ghData, excludedGitHubRepos, isOwner } =
-    useLoaderData<typeof loader>();
+  const {
+    user,
+    ghData,
+    excludedGitHubRepos,
+    isOwner,
+    featuredPRs,
+    nonFeaturedPRs,
+  } = useLoaderData<typeof loader>();
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
@@ -93,9 +124,22 @@ const Index = () => {
               excludedRepoNames={excludedGitHubRepos}
             />
           ) : null}
-          {ghData.items.map((item) => (
-            <DemoGithub key={item.id} item={item} />
-          ))}
+          {featuredPRs?.length ? (
+            <>
+              Featured
+              {featuredPRs.map((item) => (
+                <DemoGithub key={item.id} item={item} isFeatured />
+              ))}
+            </>
+          ) : null}
+          {nonFeaturedPRs ? (
+            <>
+              ALL PRs
+              {nonFeaturedPRs.map((item) => (
+                <DemoGithub key={item.id} item={item} />
+              ))}
+            </>
+          ) : null}
         </>
       ) : (
         <p>The username is not valid</p>

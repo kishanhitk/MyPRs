@@ -35,7 +35,6 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     const excludedReposParam = filter.excludedRepos
       .map((repo) => `-repo:${repo}`)
       .join("+");
-    console.log("exludedRepos", excludedReposParam);
     queryParts.push(excludedReposParam);
   }
 
