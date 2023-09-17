@@ -21,40 +21,40 @@ export const meta: V2_MetaFunction = () => {
   ];
 };
 
-export const loader = async ({ request, context }: LoaderArgs) => {
-  const response = new Response();
-  const env = context.env as Env;
-  const supabaseClient = createServerClient(
-    env.SUPABASE_URL!,
-    env.SUPABASE_ANON_KEY!,
-    { request, response }
-  );
+// export const loader = async ({ request, context }: LoaderArgs) => {
+//   const response = new Response();
+//   const env = context.env as Env;
+//   const supabaseClient = createServerClient(
+//     env.SUPABASE_URL!,
+//     env.SUPABASE_ANON_KEY!,
+//     { request, response }
+//   );
 
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
+//   const {
+//     data: { user },
+//   } = await supabaseClient.auth.getUser();
 
-  if (user) {
-    const gitHubUserName = user.user_metadata.user_name;
-    return redirect(`/${gitHubUserName}`, {
-      headers: response.headers,
-    });
-  }
-  const time = new Date().getTime();
-  return json(
-    { time },
-    {
-      headers: {
-        "Cache-Control": "public, max-age=300, s-maxage=3600",
-        ...response.headers,
-      },
-    }
-  );
-};
+//   if (user) {
+//     const gitHubUserName = user.user_metadata.user_name;
+//     return redirect(`/${gitHubUserName}`, {
+//       headers: response.headers,
+//     });
+//   }
+//   const time = new Date().getTime();
+//   return json(
+//     { time },
+//     {
+//       headers: {
+//         "Cache-Control": "public, max-age=300, s-maxage=3600",
+//         ...response.headers,
+//       },
+//     }
+//   );
+// };
 
 export default function Index() {
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
-  const { time } = useLoaderData<typeof loader>();
+  // const { time } = useLoaderData<typeof loader>();
   const handleGitHubLogin = async () => {
     const baseUrl = new URL(window.location.origin);
     await supabase.auth.signInWithOAuth({
@@ -70,7 +70,7 @@ export default function Index() {
       <Button onClick={handleGitHubLogin} className="m-4" variant="default">
         Login with GitHub
       </Button>
-      {time && <p>Time: {time}</p>}
+      {<p>Time: {new Date().getTime()}</p>}
     </div>
   );
 }
