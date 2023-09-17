@@ -13,8 +13,8 @@ import { Button } from "~/components/ui/button";
 import { getPRsFromGithubAPI } from "~/lib/github";
 import type { Env } from "~/types/shared";
 
-export const headers: HeadersFunction = () => ({
-  "Cache-Control": "public, max-age=300, s-maxage=3600",
+export const headers: HeadersFunction = ({ loaderHeaders }) => ({
+  "Cache-Control": loaderHeaders.get("Cache-Control") ?? "public, max-age=60",
 });
 
 export const loader = async ({ request, context, params }: LoaderArgs) => {
