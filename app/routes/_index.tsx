@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import type { Env } from "~/types/shared";
 
 export const headers: HeadersFunction = () => ({
-  "Cache-Control": "public, max-age=300, s-maxage=3600",
+  "Cache-Control": "public, max-age=10, s-maxage=20",
 });
 
 export const meta: V2_MetaFunction = () => {
