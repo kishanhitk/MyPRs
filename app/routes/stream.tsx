@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Await, useLoaderData } from "@remix-run/react";
 import { defer } from "@vercel/remix";
 
-export async function loader({ request }) {
+export async function loader() {
   const version = process.versions.node;
 
   return defer({
@@ -10,7 +10,7 @@ export async function loader({ request }) {
   });
 }
 
-function sleep(val, ms) {
+function sleep(val: string, ms: number) {
   return new Promise((resolve) => setTimeout(() => resolve(val), ms));
 }
 
