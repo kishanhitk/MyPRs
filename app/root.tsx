@@ -1,5 +1,3 @@
-import type { LinksFunction, LoaderArgs } from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
 import {
   Links,
   LiveReload,
@@ -16,20 +14,26 @@ import {
   createBrowserClient,
   createServerClient,
 } from "@supabase/auth-helpers-remix";
+import { Analytics } from "@vercel/analytics/react";
+import {
+  json,
+  type LinksFunction,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
-export const loader = async ({ request, context }: LoaderArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const env = {
-    SUPABASE_URL: context.env.SUPABASE_URL,
-    SUPABASE_ANON_KEY: context.env.SUPABASE_ANON_KEY,
+    SUPABASE_URL: process.env.SUPABASE_URL!,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
   };
 
   const response = new Response();
 
   const supabase = createServerClient(
-    context.env.SUPABASE_URL,
-    context.env.SUPABASE_ANON_KEY,
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
     {
       request,
       response,
@@ -87,6 +91,7 @@ export default function App() {
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
+        <Analytics />
       </body>
     </html>
   );

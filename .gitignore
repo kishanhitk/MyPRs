@@ -7,3 +7,9 @@ node_modules
 /public/build
 .dev.vars
 .env
+
+node_modules
+
+/.cache
+/build
+.vercel

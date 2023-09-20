@@ -1,12 +1,12 @@
-import type { ActionArgs } from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { Env } from "~/types/shared";
 import { z } from "zod";
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
-export async function action({ request, context }: ActionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   const response = new Response();
-  const env = context.env as Env;
+  const env = process.env as Env;
   const supabaseClient = createServerClient(
     env.SUPABASE_URL!,
     env.SUPABASE_ANON_KEY!,

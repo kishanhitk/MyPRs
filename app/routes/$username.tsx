@@ -1,9 +1,9 @@
 import type {
-  ActionArgs,
+  ActionFunctionArgs,
   HeadersFunction,
-  LoaderArgs,
-} from "@remix-run/cloudflare";
-import { json } from "@remix-run/cloudflare";
+  LoaderFunctionArgs,
+} from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/auth-helpers-remix";
 import { createServerClient } from "@supabase/auth-helpers-remix";
@@ -17,9 +17,13 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => ({
   "Cache-Control": loaderHeaders.get("Cache-Control") ?? "public, max-age=60",
 });
 
-export const loader = async ({ request, context, params }: LoaderArgs) => {
+export const loader = async ({
+  request,
+  context,
+  params,
+}: LoaderFunctionArgs) => {
   const response = new Response();
-  const env = context.env as Env;
+  const env = process.env as Env;
   const username = params.username!;
   const supabaseClient = createServerClient(
     env.SUPABASE_URL!,
@@ -167,9 +171,9 @@ const Index = () => {
 
 export default Index;
 
-export async function action({ request, context }: ActionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   const response = new Response();
-  const env = context.env as Env;
+  const env = process.env as Env;
   const supabaseClient = createServerClient(
     env.SUPABASE_URL!,
     env.SUPABASE_ANON_KEY!,
