@@ -10,9 +10,9 @@ import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "~/components/ui/button";
 
-export const headers: HeadersFunction = () => ({
-  "Cache-Control": "public, max-age=10, s-maxage=20",
-});
+// export const headers: HeadersFunction = () => ({
+//   "Cache-Control": "public, max-age=10, s-maxage=20",
+// });
 
 export const meta: MetaFunction = () => {
   return [
@@ -43,7 +43,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     {},
     {
       headers: {
-        "Cache-Control": "public, max-age=300, s-maxage=3600",
+        // "Cache-Control": "public, max-age=300, s-maxage=3600",
         ...response.headers,
       },
     }

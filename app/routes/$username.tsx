@@ -13,9 +13,9 @@ import { Button } from "~/components/ui/button";
 import { getPRsFromGithubAPI } from "~/lib/github";
 import type { Env } from "~/types/shared";
 
-export const headers: HeadersFunction = ({ loaderHeaders }) => ({
-  "Cache-Control": loaderHeaders.get("Cache-Control") ?? "public, max-age=60",
-});
+// export const headers: HeadersFunction = ({ loaderHeaders }) => ({
+//   "Cache-Control": loaderHeaders.get("Cache-Control") ?? "public, max-age=60",
+// });
 
 export const loader = async ({
   request,
@@ -78,9 +78,9 @@ export const loader = async ({
   }
   console.log("GETTING DATA");
   const headers = {
-    "Cache-Control": isOwner
-      ? "public, maxage=300"
-      : "public, s-maxage=300 maxage-300",
+    // "Cache-Control": isOwner
+    //   ? "public, maxage=300"
+    //   : "public, s-maxage=300 maxage-300",
     ...response.headers,
   };
   return json(
