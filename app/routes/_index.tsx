@@ -39,9 +39,8 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       headers: response.headers,
     });
   }
-  const time = new Date().getTime();
   return json(
-    { time },
+    {},
     {
       headers: {
         "Cache-Control": "public, max-age=300, s-maxage=3600",
@@ -53,7 +52,6 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
-  // const { time } = useLoaderData<typeof loader>();
   const handleGitHubLogin = async () => {
     const baseUrl = new URL(window.location.origin);
     await supabase.auth.signInWithOAuth({
@@ -69,7 +67,6 @@ export default function Index() {
       <Button onClick={handleGitHubLogin} className="m-4" variant="default">
         Login with GitHub
       </Button>
-      {<p>Time: {new Date().getTime()}</p>}
     </div>
   );
 }
