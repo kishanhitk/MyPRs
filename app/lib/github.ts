@@ -1,4 +1,4 @@
-import type { GitHubIssuesResponse } from "~/types/shared";
+import type { GitHubIssuesResponse, GitHubUser } from "~/types/shared";
 
 export interface PRFilter {
   startDate?: Date;
@@ -17,11 +17,10 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   // Set default values for startDate and endDate
   const currentDate = new Date();
   const threeYearsAgo = new Date();
-  threeYearsAgo.setFullYear(currentDate.getFullYear() - 2);
+  threeYearsAgo.setFullYear(currentDate.getFullYear() - 3);
 
   const startDate = filter.startDate || threeYearsAgo;
   const endDate = filter.endDate || currentDate;
-
   const limit = filter.limit || 30;
 
   if (filter.includedRepos && filter.includedRepos.length > 0) {
@@ -65,7 +64,6 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   const url = `https://api.github.com/search/issues?q=${queryParts.join(
     "+"
   )}&per_page=${limit}}`;
-
   const init = {
     headers: {
       "content-type": "application/json;charset=UTF-8",
@@ -78,6 +76,27 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     const data = await response.json();
     if (data.message) throw new Error(data.message);
     return { data, error: null } as { data: GitHubIssuesResponse; error: null };
+  } catch (error) {
+    console.error(error);
+    return { data: null, error };
+  }
+};
+
+export const getGitHubUserData = async (username: string) => {
+  const url = `https://api.github.com/users/${username}`;
+
+  const init = {
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "User-Agent": "request",
+    },
+  };
+
+  try {
+    const response = await fetch(url, init);
+    const data = await response.json();
+    if (data.message) throw new Error(data.message);
+    return { data, error: null } as { data: GitHubUser; error: null };
   } catch (error) {
     console.error(error);
     return { data: null, error };

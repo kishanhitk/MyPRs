@@ -8,11 +8,7 @@ import PRFilter from "~/components/custom/PRFilter";
 import { Button } from "~/components/ui/button";
 import type { Env, GitHubIssuesResponse } from "~/types/shared";
 
-export const loader = async ({
-  request,
-  context,
-  params,
-}: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const response = new Response();
   const env = process.env as Env;
   const username = params.username!;
@@ -22,7 +18,6 @@ export const loader = async ({
     { request, response }
   );
   const domain = new URL(request.url).origin;
-  console.log(new URL(request.url));
   const dateBeforeGettingUser = new Date();
   const {
     data: { user },
@@ -90,13 +85,6 @@ export const loader = async ({
   if (user) {
     isOwner = user.id === userDataOfUsername?.[0]?.id;
   }
-
-  const headers = {
-    // "Cache-Control": isOwner
-    //   ? "public, maxage=300"
-    //   : "public, s-maxage=300 maxage-300",
-    ...response.headers,
-  };
   return json(
     {
       timeTaken: {
@@ -112,9 +100,10 @@ export const loader = async ({
       featuredPRs,
       nonFeaturedPRs,
       isOwner,
+      username,
     },
     {
-      headers: headers,
+      headers: response.headers,
     }
   );
 };
@@ -128,6 +117,7 @@ const Index = () => {
     featuredPRs,
     nonFeaturedPRs,
     timeTaken,
+    username,
   } = useLoaderData<typeof loader>();
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
@@ -152,40 +142,53 @@ const Index = () => {
       ) : null}
       {ghData ? (
         <>
-          <img
-            src={ghData.items[0].user.avatar_url}
-            alt={ghData.items[0].user.login}
-            className="h-20 w-20 rounded-full self-center"
-          ></img>
-          <p className="self-center font-thin text-3xl mb-3">
-            {ghData.items[0].user.login}
-          </p>
-          <img
-            src={`https://ghchart.rshah.org/${ghData.items[0].user.login}`}
-            alt="2016rshah's Github chart"
-          />
-          {isOwner ? (
-            <PRFilter
-              repoNames={uniqueRepoNames}
-              excludedRepoNames={excludedGitHubRepos}
-            />
-          ) : null}
-          {featuredPRs?.length ? (
-            <div className="m">
-              <p className="font-semibold">Featured</p>
-              {featuredPRs.map((item) => (
-                <DemoGithub key={item.id} item={item} isFeatured />
-              ))}
-            </div>
-          ) : null}
-          {nonFeaturedPRs?.length ? (
-            <div className="mt-5 space-y-4">
-              <p className="font-semibold"> All My PRs</p>
-              {nonFeaturedPRs.map((item) => (
-                <DemoGithub key={item.id} item={item} />
-              ))}
-            </div>
-          ) : null}
+          {ghData.items.length ? (
+            <>
+              <img
+                src={ghData.items[0].user.avatar_url}
+                alt={ghData.items[0].user.login}
+                className="h-20 w-20 rounded-full self-center"
+              ></img>
+              <p className="self-center font-thin text-3xl mb-3">
+                {ghData.items[0].user.login}
+              </p>
+              <img
+                src={`https://ghchart.rshah.org/${ghData.items[0].user.login}`}
+                alt="2016rshah's Github chart"
+              />
+              {isOwner ? (
+                <PRFilter
+                  repoNames={uniqueRepoNames}
+                  excludedRepoNames={excludedGitHubRepos}
+                />
+              ) : null}
+              {featuredPRs?.length ? (
+                <div className="m">
+                  <p className="font-semibold">Featured</p>
+                  {featuredPRs.map((item) => (
+                    <DemoGithub key={item.id} item={item} isFeatured />
+                  ))}
+                </div>
+              ) : null}
+              {nonFeaturedPRs?.length ? (
+                <div className="mt-5 space-y-4">
+                  <p className="font-semibold">
+                    {" "}
+                    All My PRs {nonFeaturedPRs.length}
+                  </p>
+                  {nonFeaturedPRs.map((item) => (
+                    <DemoGithub key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p>
+              Looks like {username} has not created any public PR for quite a
+              while.
+              {isOwner ? <>Go make some PRs!🚀</> : null}
+            </p>
+          )}
         </>
       ) : (
         <p>The username is not valid</p>
