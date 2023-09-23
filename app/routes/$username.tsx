@@ -26,7 +26,7 @@ export const loader = async ({
     env.SUPABASE_ANON_KEY!,
     { request, response }
   );
-
+  const domain = new URL(request.url).hostname;
   const dateBeforeGettingUser = new Date();
   const {
     data: { user },
@@ -68,9 +68,17 @@ export const loader = async ({
     limit: 200,
   });
   const dateAfterGettingPRs = new Date();
+
   const timeTakenToGetPRs =
     dateAfterGettingPRs.getTime() - dateBeforeGettingPRs.getTime();
 
+  const dateBeforeGettingPRsFromAPI = new Date();
+  const respFromAPI = await fetch(`${domain}/api/${username}`);
+  const dataFromAPI = await respFromAPI.json();
+  const dateAfterGettingPRsFromAPI = new Date();
+  const timeTakenToGetPRsFromAPI =
+    dateAfterGettingPRsFromAPI.getTime() -
+    dateBeforeGettingPRsFromAPI.getTime();
   const featuredPRs = ghData?.items.filter((item) =>
     featuredGithubPRIds.includes(item.id.toString())
   );
@@ -96,6 +104,7 @@ export const loader = async ({
         timeTakenToGetUser,
         timeTakenToGetUserData,
         timeTakenToGetPRs,
+        timeTakenToGetPRsFromAPI,
       },
       user,
       ghData,
@@ -134,6 +143,9 @@ const Index = () => {
       <p>Time taken to get user: {timeTaken.timeTakenToGetUser}ms</p>
       <p>Time taken to get user data: {timeTaken.timeTakenToGetUserData}ms</p>
       <p>Time taken to get PRs: {timeTaken.timeTakenToGetPRs}ms</p>
+      <p>
+        Time taken to get PRs from API: {timeTaken.timeTakenToGetPRsFromAPI}ms
+      </p>
       {user ? (
         <>
           <Button variant="outline" onClick={handleLogout}>
