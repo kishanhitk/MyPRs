@@ -1,8 +1,4 @@
-import type {
-  ActionFunctionArgs,
-  HeadersFunction,
-  LoaderFunctionArgs,
-} from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/auth-helpers-remix";
@@ -31,11 +27,24 @@ export const loader = async ({
     { request, response }
   );
 
+  const dateBeforeGettingUser = new Date();
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+  const dateAfterGettingUser = new Date();
+  const timeTakenToGetUser =
+    dateAfterGettingUser.getTime() - dateBeforeGettingUser.getTime();
+
+  const dateBeforeGettingUserData = new Date();
   const { data: userDataOfUsername, error: userDataOfUsernameError } =
     await supabaseClient
       .from("users")
       .select("*")
       .eq("github_username", username);
+  const dateAfterGettingUserData = new Date();
+
+  const timeTakenToGetUserData =
+    dateAfterGettingUserData.getTime() - dateBeforeGettingUserData.getTime();
   if (userDataOfUsernameError) console.error(userDataOfUsernameError);
   let excludedGitHubRepos = [];
   let featuredGithubPRIds: string[] = [];
@@ -52,17 +61,15 @@ export const loader = async ({
     featuredGithubPRIds = userDataOfUsername[0].featured_github_prs;
   }
 
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
+  const dateBeforeGettingPRs = new Date();
   const { data: ghData, error } = await getPRsFromGithubAPI({
     author: username,
     excludedRepos: excludedGitHubRepos,
     limit: 200,
   });
-
-  const fakeDelay = new Promise((resolve) => setTimeout(resolve, 2000));
-  await fakeDelay;
+  const dateAfterGettingPRs = new Date();
+  const timeTakenToGetPRs =
+    dateAfterGettingPRs.getTime() - dateBeforeGettingPRs.getTime();
 
   const featuredPRs = ghData?.items.filter((item) =>
     featuredGithubPRIds.includes(item.id.toString())
@@ -85,6 +92,11 @@ export const loader = async ({
   };
   return json(
     {
+      timeTaken: {
+        timeTakenToGetUser,
+        timeTakenToGetUserData,
+        timeTakenToGetPRs,
+      },
       user,
       ghData,
       error,
@@ -108,6 +120,7 @@ const Index = () => {
     isOwner,
     featuredPRs,
     nonFeaturedPRs,
+    timeTaken,
   } = useLoaderData<typeof loader>();
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
@@ -117,6 +130,10 @@ const Index = () => {
   };
   return (
     <div className="max-w-2xl mx-auto flex flex-col font-light">
+      Time Taken:
+      <p>Time taken to get user: {timeTaken.timeTakenToGetUser}ms</p>
+      <p>Time taken to get user data: {timeTaken.timeTakenToGetUserData}ms</p>
+      <p>Time taken to get PRs: {timeTaken.timeTakenToGetPRs}ms</p>
       {user ? (
         <>
           <Button variant="outline" onClick={handleLogout}>
@@ -124,7 +141,6 @@ const Index = () => {
           </Button>
         </>
       ) : null}
-
       {ghData ? (
         <>
           <img
