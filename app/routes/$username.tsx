@@ -78,11 +78,11 @@ export const loader = async ({
     dateAfterGettingPRsFromAPI.getTime() -
     dateBeforeGettingPRsFromAPI.getTime();
   const featuredPRs = ghData?.items.filter((item) =>
-    featuredGithubPRIds.includes(item.id)
+    featuredGithubPRIds.includes(item.id.toString())
   );
 
   const nonFeaturedPRs = ghData?.items.filter(
-    (item) => !featuredGithubPRIds.includes(item.id)
+    (item) => !featuredGithubPRIds.includes(item.id.toString())
   );
 
   let isOwner = false;

@@ -51,7 +51,7 @@ export interface GitHubIssue {
   comments_url: string;
   events_url: string;
   html_url: string;
-  id: string;
+  id: number;
   node_id: string;
   number: number;
   title: string;
