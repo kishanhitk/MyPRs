@@ -26,7 +26,8 @@ export const loader = async ({
     env.SUPABASE_ANON_KEY!,
     { request, response }
   );
-  const domain = new URL(request.url).hostname;
+  const domain = new URL(request.url).origin;
+  console.log(new URL(request.url));
   const dateBeforeGettingUser = new Date();
   const {
     data: { user },
@@ -73,6 +74,7 @@ export const loader = async ({
     dateAfterGettingPRs.getTime() - dateBeforeGettingPRs.getTime();
 
   const dateBeforeGettingPRsFromAPI = new Date();
+
   const respFromAPI = await fetch(`${domain}/api/${username}`);
   const dataFromAPI = await respFromAPI.json();
   const dateAfterGettingPRsFromAPI = new Date();
