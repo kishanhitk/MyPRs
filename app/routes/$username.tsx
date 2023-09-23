@@ -6,12 +6,7 @@ import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import { Button } from "~/components/ui/button";
-import { getPRsFromGithubAPI } from "~/lib/github";
-import type { Env } from "~/types/shared";
-
-// export const headers: HeadersFunction = ({ loaderHeaders }) => ({
-//   "Cache-Control": loaderHeaders.get("Cache-Control") ?? "public, max-age=60",
-// });
+import type { Env, GitHubIssuesResponse } from "~/types/shared";
 
 export const loader = async ({
   request,
@@ -47,7 +42,7 @@ export const loader = async ({
   const timeTakenToGetUserData =
     dateAfterGettingUserData.getTime() - dateBeforeGettingUserData.getTime();
   if (userDataOfUsernameError) console.error(userDataOfUsernameError);
-  let excludedGitHubRepos = [];
+  let excludedGitHubRepos: string[] = [];
   let featuredGithubPRIds: string[] = [];
   if (
     userDataOfUsername?.length &&
@@ -62,38 +57,40 @@ export const loader = async ({
     featuredGithubPRIds = userDataOfUsername[0].featured_github_prs;
   }
 
-  const dateBeforeGettingPRs = new Date();
-  const { data: ghData, error } = await getPRsFromGithubAPI({
-    author: username,
-    excludedRepos: excludedGitHubRepos,
-    limit: 200,
-  });
-  const dateAfterGettingPRs = new Date();
-
-  const timeTakenToGetPRs =
-    dateAfterGettingPRs.getTime() - dateBeforeGettingPRs.getTime();
-
   const dateBeforeGettingPRsFromAPI = new Date();
 
   const respFromAPI = await fetch(`${domain}/api/${username}`);
   const dataFromAPI = await respFromAPI.json();
+  const {
+    ghData,
+    error,
+  }: {
+    ghData: GitHubIssuesResponse;
+    error: any;
+  } = dataFromAPI;
+
+  ghData.items = ghData.items.filter(
+    (item) => !excludedGitHubRepos.includes(item.repository_url.slice(29))
+  );
+
   const dateAfterGettingPRsFromAPI = new Date();
   const timeTakenToGetPRsFromAPI =
     dateAfterGettingPRsFromAPI.getTime() -
     dateBeforeGettingPRsFromAPI.getTime();
   const featuredPRs = ghData?.items.filter((item) =>
-    featuredGithubPRIds.includes(item.id.toString())
+    featuredGithubPRIds.includes(item.id)
   );
 
   const nonFeaturedPRs = ghData?.items.filter(
-    (item) => !featuredGithubPRIds.includes(item.id.toString())
+    (item) => !featuredGithubPRIds.includes(item.id)
   );
+
   let isOwner = false;
 
   if (user) {
     isOwner = user.id === userDataOfUsername?.[0]?.id;
   }
-  console.log("GETTING DATA");
+
   const headers = {
     // "Cache-Control": isOwner
     //   ? "public, maxage=300"
@@ -105,7 +102,6 @@ export const loader = async ({
       timeTaken: {
         timeTakenToGetUser,
         timeTakenToGetUserData,
-        timeTakenToGetPRs,
         timeTakenToGetPRsFromAPI,
       },
       user,
@@ -144,7 +140,6 @@ const Index = () => {
       Time Taken:
       <p>Time taken to get user: {timeTaken.timeTakenToGetUser}ms</p>
       <p>Time taken to get user data: {timeTaken.timeTakenToGetUserData}ms</p>
-      <p>Time taken to get PRs: {timeTaken.timeTakenToGetPRs}ms</p>
       <p>
         Time taken to get PRs from API: {timeTaken.timeTakenToGetPRsFromAPI}ms
       </p>
