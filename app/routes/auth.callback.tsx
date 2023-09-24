@@ -13,7 +13,8 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       process.env.SUPABASE_ANON_KEY!,
       { request, response }
     );
-    await supabaseClient.auth.exchangeCodeForSession(code);
+    const resp = await supabaseClient.auth.exchangeCodeForSession(code);
+    console.log("AUTH RESPO", resp);
   }
 
   return redirect("/", {

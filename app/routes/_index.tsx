@@ -1,19 +1,11 @@
-import {
-  redirect,
-  type HeadersFunction,
-  type LoaderFunctionArgs,
-  json,
-} from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import type { MetaFunction } from "@remix-run/react";
-import { useOutletContext } from "@remix-run/react";
-import { createServerClient } from "@supabase/auth-helpers-remix";
+import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ExternalLinkIcon, GithubIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "~/components/ui/button";
-
-// export const headers: HeadersFunction = () => ({
-//   "Cache-Control": "public, max-age=10, s-maxage=20",
-// });
-
+import type { loader as rootLoader } from "~/root";
 export const meta: MetaFunction = () => {
   return [
     { title: "New Remix App" },
@@ -21,52 +13,63 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const loader = async ({ request, context }: LoaderFunctionArgs) => {
-  const response = new Response();
-  const supabaseClient = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
-    { request, response }
-  );
-
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
-
-  if (user) {
-    const gitHubUserName = user.user_metadata.user_name;
-    return redirect(`/${gitHubUserName}`, {
-      headers: response.headers,
-    });
-  }
-  return json(
-    {},
-    {
-      headers: {
-        // "Cache-Control": "public, max-age=300, s-maxage=3600",
-        ...response.headers,
-      },
-    }
-  );
-};
-
 export default function Index() {
+  const data = useRouteLoaderData<typeof rootLoader>("root");
+  const [isLoading, setIsLoading] = useState(false);
+  const session = data?.session;
+  const userName = session?.user?.user_metadata?.user_name;
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
+
   const handleGitHubLogin = async () => {
+    setIsLoading(true);
     const baseUrl = new URL(window.location.origin);
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: baseUrl + "auth/callback",
+        redirectTo: baseUrl + "auth/callback/",
       },
     });
+    setIsLoading(false);
   };
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <Button onClick={handleGitHubLogin} className="m-4" variant="default">
-        Login with GitHub
-      </Button>
+    <div>
+      <div className="px-10 mt-48">
+        <div className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline">
+          Souce Code on GitHub
+          <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
+        </div>
+        <h1 className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
+          Showcase <br /> Your PRs
+          <br />
+          that matter
+        </h1>
+        <h2 className="mb-3">
+          Highlight your coolest
+          <br />
+          GitHub PRs and make your <br />
+          developer profile sparkle <br />
+          with MyPRs!
+        </h2>
+        {userName ? (
+          <Button asChild>
+            <Link to={`/${userName}`} prefetch="render">
+              Continue as {userName} -{">"}
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            size="default"
+            onClick={handleGitHubLogin}
+            disabled={isLoading}
+          >
+            Continue with GitHub -{">"}
+          </Button>
+        )}
+        <p className="text-xs mt-2 text-slate-500">
+          *GitLab support coming soon.
+        </p>
+      </div>
     </div>
   );
 }

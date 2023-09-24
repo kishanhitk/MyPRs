@@ -20,8 +20,16 @@ import {
   type LinksFunction,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
+import { Header } from "./components/custom/Header";
+import FontStyles from "@fontsource/inter/index.css";
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: styles },
+  {
+    rel: "stylesheet",
+    href: FontStyles,
+  },
+];
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const env = {
@@ -48,6 +56,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     {
       env,
       session,
+      user: session?.user,
     },
     {
       headers: response.headers,
@@ -86,7 +95,8 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="max-w-2xl mx-auto">
+        <Header supabase={supabase} />
         <Outlet context={{ supabase }} />
         <ScrollRestoration />
         <Scripts />
