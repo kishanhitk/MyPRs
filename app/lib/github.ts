@@ -63,7 +63,7 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
 
   const url = `https://api.github.com/search/issues?q=${queryParts.join(
     "+"
-  )}&per_page=${limit}}`;
+  )}&per_page=${limit}`;
   const init = {
     headers: {
       "content-type": "application/json;charset=UTF-8",
