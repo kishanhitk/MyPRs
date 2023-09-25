@@ -1,6 +1,7 @@
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button } from "../ui/button";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { GitPullRequest } from "lucide-react";
 
 interface HeaderProps {
   supabase: SupabaseClient;
@@ -25,8 +26,13 @@ export const Header = ({ supabase }: HeaderProps) => {
   return (
     <>
       <div className="py-2 px-4 flex justify-between items-center">
-        <Link to="/" className="font-semibold text-lg" prefetch="intent">
+        <Link
+          to="/"
+          className="font-semibold text-lg flex items-center "
+          prefetch="intent"
+        >
           MyPRs
+          <GitPullRequest className="h-5 w-5 mb-1" />
         </Link>
 
         {user ? (
