@@ -1,7 +1,6 @@
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { createServerClient } from "@supabase/auth-helpers-remix";
-export const config = { runtime: "edge" };
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const response = new Response();
