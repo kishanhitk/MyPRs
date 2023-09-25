@@ -14,7 +14,6 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       { request, response }
     );
     const resp = await supabaseClient.auth.exchangeCodeForSession(code);
-    console.log("AUTH RESPO", resp);
   }
 
   return redirect("/", {

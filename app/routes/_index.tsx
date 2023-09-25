@@ -1,11 +1,11 @@
-import { redirect } from "@remix-run/node";
 import type { MetaFunction } from "@remix-run/react";
 import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ExternalLinkIcon, GithubIcon } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
+export const config = { runtime: "edge" };
 export const meta: MetaFunction = () => {
   return [
     { title: "New Remix App" },

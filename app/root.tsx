@@ -22,7 +22,7 @@ import {
 } from "@remix-run/node";
 import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
-
+export const config = { runtime: "edge" };
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
   {
