@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/auth-helpers-remix";
 import { createServerClient } from "@supabase/auth-helpers-remix";

@@ -1,4 +1,5 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+
 export const config = { runtime: "edge" };
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {

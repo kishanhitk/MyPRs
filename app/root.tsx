@@ -15,13 +15,10 @@ import {
   createServerClient,
 } from "@supabase/auth-helpers-remix";
 import { Analytics } from "@vercel/analytics/react";
-import {
-  json,
-  type LinksFunction,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type LinksFunction, type LoaderFunctionArgs } from "@vercel/remix";
 import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
+import { json } from "@vercel/remix";
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
   {

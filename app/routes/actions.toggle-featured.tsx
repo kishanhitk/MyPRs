@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import type { Env } from "~/types/shared";
 import { z } from "zod";
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const response = new Response();
