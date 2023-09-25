@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 
+export const config = { runtime: "edge" };
+
 export const meta: MetaFunction = () => {
   return [
     { title: "MyPRs - Showcase your PRs that matter" },
