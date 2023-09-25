@@ -18,6 +18,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const session = data?.session;
   const userName = session?.user?.user_metadata?.user_name;
+  const avatarUrl = session?.user?.user_metadata?.avatar_url;
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
 
   const handleGitHubLogin = async () => {
@@ -54,7 +55,9 @@ export default function Index() {
         {userName ? (
           <Button asChild>
             <Link to={`/${userName}`} prefetch="render">
-              Continue as {userName} -{">"}
+              Continue as {userName}
+              <img src={avatarUrl} className="h-6 w-6 mx-1" alt={userName} />-
+              {">"}
             </Link>
           </Button>
         ) : (
@@ -66,7 +69,7 @@ export default function Index() {
             Continue with GitHub -{">"}
           </Button>
         )}
-        <p className="text-xs mt-2 text-slate-500">
+        <p className="text-xs mt-1 text-slate-500">
           *GitLab support coming soon.
         </p>
       </div>
