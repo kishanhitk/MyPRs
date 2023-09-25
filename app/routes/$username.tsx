@@ -8,8 +8,6 @@ import PRFilter from "~/components/custom/PRFilter";
 import { Button } from "~/components/ui/button";
 import type { Env, GitHubIssuesResponse } from "~/types/shared";
 
-export const config = { runtime: "edge" };
-
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const response = new Response();
   const env = process.env as Env;
