@@ -2,7 +2,6 @@ import type { MetaFunction } from "@remix-run/react";
 import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ExternalLinkIcon } from "lucide-react";
-import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 
@@ -17,14 +16,14 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const data = useRouteLoaderData<typeof rootLoader>("root");
-  const [isLoading, setIsLoading] = useState(false);
   const session = data?.session;
+  // @ts-ignore
   const userName = session?.user?.user_metadata?.user_name;
+  // @ts-ignore
   const avatarUrl = session?.user?.user_metadata?.avatar_url;
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
 
   const handleGitHubLogin = async () => {
-    setIsLoading(true);
     const baseUrl = new URL(window.location.origin);
     await supabase.auth.signInWithOAuth({
       provider: "github",
@@ -32,7 +31,6 @@ export default function Index() {
         redirectTo: baseUrl + "auth/callback/",
       },
     });
-    setIsLoading(false);
   };
 
   return (
@@ -57,17 +55,12 @@ export default function Index() {
         {userName ? (
           <Button asChild>
             <Link to={`/${userName}`} prefetch="render">
-              Continue as {userName}
-              <img src={avatarUrl} className="h-6 w-6 mx-1" alt={userName} />-
-              {">"}
+              <img src={avatarUrl} className="h-6 w-6 mr-2" alt={userName} />
+              Continue as {userName} -{">"}
             </Link>
           </Button>
         ) : (
-          <Button
-            size="default"
-            onClick={handleGitHubLogin}
-            disabled={isLoading}
-          >
+          <Button size="default" onClick={handleGitHubLogin}>
             Continue with GitHub -{">"}
           </Button>
         )}
