@@ -37,7 +37,7 @@ export default function Index() {
     <div>
       <div className="px-10 mt-48">
         <div className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline">
-          Souce Code on GitHub
+          Source Code on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
         </div>
         <h1 className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
