@@ -16,9 +16,14 @@ import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
 interface IGithubCardProps {
   item: GitHubIssue;
   isFeatured?: boolean;
+  isOwner?: boolean;
 }
 
-export function DemoGithub({ item, isFeatured = false }: IGithubCardProps) {
+export function DemoGithub({
+  item,
+  isFeatured = false,
+  isOwner = false,
+}: IGithubCardProps) {
   const { featured_github_prs } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
@@ -48,20 +53,22 @@ export function DemoGithub({ item, isFeatured = false }: IGithubCardProps) {
               Visit
             </Button>
           </a>
-          <Button
-            disabled={
-              fetcher.state === "submitting" || fetcher.state === "loading"
-            }
-            className="flex"
-            onClick={async () => {
-              toggleFeatured(item.id);
-            }}
-            variant={isFeatured ? "outline" : "secondary"}
-          >
-            <StarIcon className="mr-2 h-4 w-4 shrink-0" />
+          {isOwner ? (
+            <Button
+              disabled={
+                fetcher.state === "submitting" || fetcher.state === "loading"
+              }
+              className="flex"
+              onClick={async () => {
+                toggleFeatured(item.id);
+              }}
+              variant={isFeatured ? "outline" : "secondary"}
+            >
+              <StarIcon className="mr-2 h-4 w-4 shrink-0" />
 
-            {isFeatured ? "Unfeature" : "Feature"}
-          </Button>
+              {isFeatured ? "Unfeature" : "Feature"}
+            </Button>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent>
