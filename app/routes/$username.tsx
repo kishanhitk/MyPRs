@@ -50,8 +50,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     featuredGithubPRIds = userDataOfUsername[0].featured_github_prs;
   }
 
-  const dateBeforeGettingPRsFromAPI = new Date();
-
   const respFromAPI = await fetch(`${domain}/api/${username}`);
   const dataFromAPI = await respFromAPI.json();
   const {
@@ -63,23 +61,21 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     userData: GithubUser;
     error: any;
   } = dataFromAPI;
+  let featuredPRs: GitHubIssuesResponse["items"] = [];
+  let nonFeaturedPRs: GitHubIssuesResponse["items"] = [];
+  if (ghData?.items?.length) {
+    ghData.items = ghData.items.filter(
+      (item) => !excludedGitHubRepos.includes(item.repository_url.slice(29))
+    );
 
-  ghData.items = ghData.items.filter(
-    (item) => !excludedGitHubRepos.includes(item.repository_url.slice(29))
-  );
+    featuredPRs = ghData?.items.filter((item) =>
+      featuredGithubPRIds.includes(item.id.toString())
+    );
 
-  const dateAfterGettingPRsFromAPI = new Date();
-  const timeTakenToGetPRsFromAPI =
-    dateAfterGettingPRsFromAPI.getTime() -
-    dateBeforeGettingPRsFromAPI.getTime();
-  const featuredPRs = ghData?.items.filter((item) =>
-    featuredGithubPRIds.includes(item.id.toString())
-  );
-
-  const nonFeaturedPRs = ghData?.items.filter(
-    (item) => !featuredGithubPRIds.includes(item.id.toString())
-  );
-
+    nonFeaturedPRs = ghData?.items.filter(
+      (item) => !featuredGithubPRIds.includes(item.id.toString())
+    );
+  }
   let isOwner = false;
 
   if (user) {
@@ -90,7 +86,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       timeTaken: {
         timeTakenToGetUser,
         timeTakenToGetUserData,
-        timeTakenToGetPRsFromAPI,
       },
       userData,
       ghData,
@@ -130,7 +125,7 @@ const Index = () => {
               <img
                 src={userData.avatar_url}
                 alt={userData.login}
-                className="h-52 w-52  rounded-full self-center"
+                className="h-52 w-52 mt-5 rounded-full self-center"
               ></img>
               <p className="self-center text-3xl mt-1">{userData.name}</p>
               <p className="self-center text-slate-600 mb-3">
@@ -179,7 +174,7 @@ const Index = () => {
           )}
         </>
       ) : (
-        <p>The username is not valid</p>
+        <p className="self-center mt-10">The username is not valid</p>
       )}
     </div>
   );
