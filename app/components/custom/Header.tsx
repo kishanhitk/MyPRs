@@ -2,6 +2,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { Button } from "../ui/button";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GitPullRequest } from "lucide-react";
+import posthog from "posthog-js";
 
 interface HeaderProps {
   supabase: SupabaseClient;
@@ -22,6 +23,7 @@ export const Header = ({ supabase }: HeaderProps) => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    posthog.reset();
   };
 
   return (

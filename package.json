@@ -27,6 +27,7 @@
     "clsx": "^2.0.0",
     "isbot": "^3.6.8",
     "lucide-react": "^0.277.0",
+    "posthog-js": "^1.81.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^1.14.0",
