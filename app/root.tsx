@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useLocation,
   useRevalidator,
 } from "@remix-run/react";
 import styles from "./tailwind.css";
@@ -72,6 +73,7 @@ export default function App() {
     createBrowserClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
   );
   const [posthogLoaded, setPosthogLoaded] = useState(false);
+  const location = useLocation();
 
   const serverAccessToken = session?.access_token;
 
