@@ -1,11 +1,9 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { useLoaderData, useOutletContext } from "@remix-run/react";
-import type { SupabaseClient } from "@supabase/auth-helpers-remix";
+import { useLoaderData } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
-import { Button } from "~/components/ui/button";
 import type { Env, GitHubIssuesResponse } from "~/types/shared";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -161,7 +159,7 @@ const Index = () => {
               ) : null}
               {featuredPRs?.length ? (
                 <div className="mt-5">
-                  <p className="font-semibold">Featured PRs</p>
+                  <p className="font-semibold">Featured PRs ✨</p>
                   {featuredPRs.map((item) => (
                     <DemoGithub
                       key={item.id}

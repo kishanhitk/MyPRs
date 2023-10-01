@@ -6,6 +6,8 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const response = new Response();
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const redirectTo = url.searchParams.get("redirectTo");
+  let redirectUrl = redirectTo ? redirectTo : "/";
 
   if (code) {
     const supabaseClient = createServerClient(
@@ -13,10 +15,14 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       process.env.SUPABASE_ANON_KEY!,
       { request, response }
     );
-    await supabaseClient.auth.exchangeCodeForSession(code);
+    const { data } = await supabaseClient.auth.exchangeCodeForSession(code);
+    const githubUsername = data.user?.user_metadata.user_name;
+    if (githubUsername) {
+      redirectUrl = `/${githubUsername}`;
+    }
   }
 
-  return redirect("/", {
+  return redirect(redirectUrl, {
     headers: response.headers,
   });
 };
