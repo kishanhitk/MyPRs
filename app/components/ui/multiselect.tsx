@@ -1,5 +1,5 @@
 import { Listbox, Transition } from "@headlessui/react";
-import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
+import { CheckIcon } from "@radix-ui/react-icons";
 import React from "react";
 export interface IMultiSelectProps {
   options: string[];
@@ -18,7 +18,6 @@ export default function MultiSelect({
           <span className="block truncate">
             {selected.map((option) => option).join(", ")}
           </span>
-          <CaretSortIcon className="h-4 w-4 opacity-50" />
         </Listbox.Button>
         <Transition
           as={React.Fragment}

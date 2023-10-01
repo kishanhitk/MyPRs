@@ -4,7 +4,7 @@ import { useLoaderData } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
-import type { Env, GitHubIssuesResponse } from "~/types/shared";
+import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const response = new Response();
@@ -56,9 +56,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const dataFromAPI = await respFromAPI.json();
   const {
     ghData,
+    userData,
     error,
   }: {
     ghData: GitHubIssuesResponse;
+    userData: GithubUser;
     error: any;
   } = dataFromAPI;
 
@@ -90,7 +92,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         timeTakenToGetUserData,
         timeTakenToGetPRsFromAPI,
       },
-      user,
+      userData,
       ghData,
       error,
       excludedGitHubRepos,
@@ -114,41 +116,30 @@ const Index = () => {
     featuredPRs,
     nonFeaturedPRs,
     username,
+    userData,
   } = useLoaderData<typeof loader>();
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col font-light">
-      {/* Time Taken:
-      <p>Time taken to get user: {timeTaken.timeTakenToGetUser}ms</p>
-      <p>Time taken to get user data: {timeTaken.timeTakenToGetUserData}ms</p>
-      <p>
-        Time taken to get PRs from API: {timeTaken.timeTakenToGetPRsFromAPI}ms
-      </p>
-      {user ? (
-        <>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
-        </>
-      ) : null} */}
       {ghData ? (
         <>
           {ghData.items.length ? (
             <>
               <img
-                src={ghData.items[0].user.avatar_url}
-                alt={ghData.items[0].user.login}
-                className="h-40 w-40 rounded-full self-center"
+                src={userData.avatar_url}
+                alt={userData.login}
+                className="h-52 w-52  rounded-full self-center"
               ></img>
-              <p className="self-center  text-3xl mb-3 mt-1">
-                {ghData.items[0].user.login}
+              <p className="self-center text-3xl mt-1">{userData.name}</p>
+              <p className="self-center text-slate-600 mb-3">
+                {userData.login}
               </p>
 
               <img
-                src={`https://ghchart.rshah.org/${ghData.items[0].user.login}`}
-                alt={`${ghData.items[0].user.login}'s Github chart`}
+                src={`https://ghchart.rshah.org/${userData.login}`}
+                alt={`${userData.login}'s Github chart`}
                 className="my-2"
               />
               {isOwner ? (
