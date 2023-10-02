@@ -21,7 +21,6 @@ import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
 import { json } from "@vercel/remix";
 import posthog from "posthog-js";
-import { Toaster } from "react-hot-toast";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
@@ -130,11 +129,6 @@ export default function App() {
       </head>
       <body className="max-w-2xl mx-auto">
         <Header supabase={supabase} />
-        <Toaster
-          toastOptions={{
-            position: "bottom-center",
-          }}
-        />
         <Outlet context={{ supabase }} />
         <ScrollRestoration />
         <Scripts />
