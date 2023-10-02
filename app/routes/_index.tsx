@@ -39,8 +39,8 @@ export default function Index() {
   };
 
   return (
-    <div>
-      <div className="px-10 mt-48">
+    <div className="px-10 mt-48 flex justify-between flex-wrap">
+      <div>
         <div className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline">
           Source Code on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
@@ -73,6 +73,11 @@ export default function Index() {
           *GitLab support coming soon.
         </p>
       </div>
+      <img
+        src="/assets/hero-screenshot.png"
+        alt="MyPRs"
+        className="h-[600px] sm:-mt-24 mt-10"
+      />
     </div>
   );
 }
