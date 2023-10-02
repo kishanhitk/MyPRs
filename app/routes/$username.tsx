@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { useLoaderData } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
-import { DemoGithub } from "~/components/custom/GithubCard";
+import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 
@@ -117,7 +117,7 @@ const Index = () => {
   const uniqueRepoNames = [...new Set(repoNames)];
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col font-light">
+    <div className="mx-5 flex flex-col ">
       {ghData ? (
         <>
           {ghData.items.length ? (
@@ -145,7 +145,7 @@ const Index = () => {
               ) : null}
               {featuredPRs?.length ? (
                 <div className="mt-5">
-                  <p className="font-semibold">Featured PRs ✨</p>
+                  <p className="font-medium">Featured PRs ✨</p>
                   {featuredPRs.map((item) => (
                     <DemoGithub
                       key={item.id}
@@ -158,7 +158,7 @@ const Index = () => {
               ) : null}
               {nonFeaturedPRs?.length ? (
                 <div className="mt-5">
-                  <p className="font-semibold"> All My PRs</p>
+                  <p className="font-medium"> All My PRs</p>
                   {nonFeaturedPRs.map((item) => (
                     <DemoGithub key={item.id} item={item} isOwner={isOwner} />
                   ))}
