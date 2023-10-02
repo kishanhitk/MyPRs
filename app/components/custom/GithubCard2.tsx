@@ -6,6 +6,7 @@ import type { loader } from "~/routes/$username";
 import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface IGithubCardProps {
   item: GitHubIssue;
@@ -42,7 +43,12 @@ export function DemoGithub({
   }, [fetcher.data, fetcherState]);
 
   return (
-    <div className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50">
+    <motion.div
+      initial={{ y: -300, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 300, opacity: 0 }}
+      className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50"
+    >
       <div className="space-y-3">
         <div className="flex">
           <h3 className="text-sm text-slate-700 mr-auto">
@@ -94,6 +100,6 @@ export function DemoGithub({
           {new Date(item.pull_request.merged_at).toDateString().slice(4)}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
