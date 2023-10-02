@@ -10,7 +10,11 @@ export const config = { runtime: "edge" };
 export const meta: MetaFunction = () => {
   return [
     { title: "MyPRs - Showcase your PRs that matter" },
-    { name: "description", content: "Welcome to Remix!" },
+    {
+      name: "description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
   ];
 };
 

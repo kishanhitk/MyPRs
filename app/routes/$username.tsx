@@ -1,4 +1,8 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { useLoaderData } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
@@ -6,6 +10,20 @@ import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  return [
+    { title: `PRs by ${data?.userData.login} | MyPRs` },
+    {
+      property: "og:title",
+      content: `PRs by ${data?.userData.login}`,
+    },
+    {
+      name: "description",
+      content: `Best of the Pull Requests created by ${data?.userData.login} | MyPRs`,
+    },
+  ];
+};
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const response = new Response();
