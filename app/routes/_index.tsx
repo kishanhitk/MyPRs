@@ -7,7 +7,7 @@ import type { loader as rootLoader } from "~/root";
 
 export const config = { runtime: "edge" };
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ location, params }) => {
   return [
     { title: "MyPRs - Showcase your PRs that matter" },
     {
@@ -17,7 +17,7 @@ export const meta: MetaFunction = () => {
     },
     {
       property: "og:image",
-      content: "/assets/og-banner.png",
+      content: "https://www.myprs.xyz/assets/og-banner.png",
     },
     {
       property: "og:title",
@@ -38,7 +38,7 @@ export const meta: MetaFunction = () => {
     },
     {
       property: "twitter:image",
-      content: "/assets/og-banner.png",
+      content: "https://www.myprs.xyz/assets/og-banner.png",
     },
     {
       property: "twitter:title",

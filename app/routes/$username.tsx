@@ -20,7 +20,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     },
     {
       property: "og:image",
-      content: "/assets/og-banner.png",
+      content: "https://www.myprs.xyz/assets/og-banner.png",
     },
     {
       name: "description",
@@ -41,7 +41,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     },
     {
       property: "twitter:image",
-      content: "/assets/og-banner.png",
+      content: "https://www.myprs.xyz/assets/og-banner.png",
     },
     {
       property: "twitter:title",
