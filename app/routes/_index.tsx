@@ -15,6 +15,44 @@ export const meta: MetaFunction = () => {
       content:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
     },
+    {
+      property: "og:image",
+      content: "/assets/og-banner.png",
+    },
+    {
+      property: "og:title",
+      content: "MyPRs - Showcase your PRs that matter",
+    },
+    {
+      property: "og:description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "og:url",
+      content: "https://myprs.xyz/",
+    },
+    {
+      property: "twitter:card",
+      content: "summary_large_image",
+    },
+    {
+      property: "twitter:image",
+      content: "/assets/og-banner.png",
+    },
+    {
+      property: "twitter:title",
+      content: "MyPRs - Showcase your PRs that matter",
+    },
+    {
+      property: "twitter:description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "twitter:url",
+      content: "https://myprs.xyz/",
+    },
   ];
 };
 

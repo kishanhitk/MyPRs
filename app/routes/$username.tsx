@@ -19,8 +19,42 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       content: `PRs by ${data?.userData.login}`,
     },
     {
+      property: "og:image",
+      content: "/assets/og-banner.png",
+    },
+    {
       name: "description",
       content: `Best of the Pull Requests created by ${data?.userData.login} | MyPRs`,
+    },
+    {
+      property: "og:description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "og:url",
+      content: "https://myprs.xyz/",
+    },
+    {
+      property: "twitter:card",
+      content: "summary_large_image",
+    },
+    {
+      property: "twitter:image",
+      content: "/assets/og-banner.png",
+    },
+    {
+      property: "twitter:title",
+      content: "MyPRs - Showcase your PRs that matter",
+    },
+    {
+      property: "twitter:description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "twitter:url",
+      content: "https://myprs.xyz/",
     },
   ];
 };
