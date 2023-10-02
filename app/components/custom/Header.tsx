@@ -1,8 +1,8 @@
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button } from "../ui/button";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GitPullRequest } from "lucide-react";
 import posthog from "posthog-js";
+import PullRequestIcon from "./PullRequestIcon";
 
 interface HeaderProps {
   supabase: SupabaseClient;
@@ -35,7 +35,7 @@ export const Header = ({ supabase }: HeaderProps) => {
           prefetch="intent"
         >
           MyPRs
-          <GitPullRequest className="h-5 w-5 mb-1" />
+          <PullRequestIcon className="h-4 w-4 ml-1 mb-1"></PullRequestIcon>
         </Link>
 
         {user ? (

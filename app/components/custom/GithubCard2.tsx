@@ -1,10 +1,11 @@
-import { StarIcon, GitPullRequest, SmileIcon } from "lucide-react";
+import { StarIcon, SmileIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import type { GitHubIssue } from "~/types/shared";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import type { loader } from "~/routes/$username";
 import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";
+import PullRequestIcon from "./PullRequestIcon";
 
 interface IGithubCardProps {
   item: GitHubIssue;
@@ -71,7 +72,7 @@ export function DemoGithub({
           </a>
         </div>
         <div className="flex">
-          <GitPullRequest className="text-github_merged inline mr-2" />
+          <PullRequestIcon className="fill-github_merged h-5 w-5" />
           <a
             href={item.html_url}
             className="ml-2"
