@@ -74,7 +74,7 @@ export default function Index() {
         </p>
       </div>
       <img
-        src="/assets/hero-screenshot.png"
+        src="/assets/hero-screenshot.webp"
         alt="MyPRs"
         className="h-[600px] sm:-mt-24 mt-10"
       />
