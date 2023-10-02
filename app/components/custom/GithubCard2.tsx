@@ -61,13 +61,25 @@ export function DemoGithub({
               />
             </Button>
           ) : null}
-          <a href={item.html_url} className="ml-2">
+          <a
+            href={item.html_url}
+            className="ml-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <OpenInNewWindowIcon className="h-5 w-5" />
           </a>
         </div>
         <div className="flex">
           <GitPullRequest className="text-github_merged inline mr-2" />
-          <p className="font-medium">{item.title}</p>
+          <a
+            href={item.html_url}
+            className="ml-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <p className="font-medium">{item.title}</p>
+          </a>
         </div>
       </div>
 
