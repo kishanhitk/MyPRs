@@ -144,10 +144,10 @@ const Index = () => {
                   excludedRepoNames={excludedGitHubRepos}
                 />
               ) : null}
-              {featuredPRs?.length ? (
-                <div className="mt-5">
-                  <p className="font-medium">Featured PRs ✨</p>
-                  <AnimatePresence>
+              <AnimatePresence>
+                {featuredPRs?.length ? (
+                  <div className="mt-5">
+                    <p className="font-medium">Featured PRs ✨</p>
                     {featuredPRs.map((item) => (
                       <DemoGithub
                         key={item.id}
@@ -156,17 +156,17 @@ const Index = () => {
                         isOwner={isOwner}
                       />
                     ))}
-                  </AnimatePresence>
-                </div>
-              ) : null}
-              {nonFeaturedPRs?.length ? (
-                <div className="mt-5">
-                  <p className="font-medium"> All My PRs</p>
-                  {nonFeaturedPRs.map((item) => (
-                    <DemoGithub key={item.id} item={item} isOwner={isOwner} />
-                  ))}
-                </div>
-              ) : null}
+                  </div>
+                ) : null}
+                {nonFeaturedPRs?.length ? (
+                  <div className="mt-5">
+                    <p className="font-medium"> All My PRs</p>
+                    {nonFeaturedPRs.map((item) => (
+                      <DemoGithub key={item.id} item={item} isOwner={isOwner} />
+                    ))}
+                  </div>
+                ) : null}
+              </AnimatePresence>
             </>
           ) : (
             <p>
