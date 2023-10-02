@@ -4,6 +4,8 @@ import type { GitHubIssue } from "~/types/shared";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import type { loader } from "~/routes/$username";
 import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 interface IGithubCardProps {
   item: GitHubIssue;
@@ -18,6 +20,7 @@ export function DemoGithub({
 }: IGithubCardProps) {
   const { featured_github_prs } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const fetcherState = fetcher.state;
 
   const toggleFeatured = async (prId: number) => {
     fetcher.submit(
@@ -25,6 +28,18 @@ export function DemoGithub({
       { method: "post", action: "/actions/toggle-featured" }
     );
   };
+
+  useEffect(() => {
+    // let toastId;
+    if (fetcherState === "submitting") {
+      // toastId = toast.loading("Updating...");
+    } else {
+      if (fetcherState !== "idle" && fetcher.data) {
+        // toast.dismiss(toastId);
+        toast.success("Submitted!");
+      }
+    }
+  }, [fetcher.data, fetcherState]);
 
   return (
     <div className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50">
