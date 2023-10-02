@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
+import { AnimatePresence } from "framer-motion";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const response = new Response();
@@ -146,14 +147,16 @@ const Index = () => {
               {featuredPRs?.length ? (
                 <div className="mt-5">
                   <p className="font-medium">Featured PRs ✨</p>
-                  {featuredPRs.map((item) => (
-                    <DemoGithub
-                      key={item.id}
-                      item={item}
-                      isFeatured
-                      isOwner={isOwner}
-                    />
-                  ))}
+                  <AnimatePresence>
+                    {featuredPRs.map((item) => (
+                      <DemoGithub
+                        key={item.id}
+                        item={item}
+                        isFeatured
+                        isOwner={isOwner}
+                      />
+                    ))}
+                  </AnimatePresence>
                 </div>
               ) : null}
               {nonFeaturedPRs?.length ? (

@@ -25,6 +25,7 @@
     "@vercel/remix": "^2.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "framer-motion": "^10.16.4",
     "isbot": "^3.6.8",
     "lucide-react": "^0.277.0",
     "posthog-js": "^1.81.2",
