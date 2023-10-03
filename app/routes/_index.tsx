@@ -67,11 +67,10 @@ export default function Index() {
 
   const handleGitHubLogin = async () => {
     const baseUrl = new URL(window.location.origin);
-    const pathName = window.location.pathname;
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: baseUrl + `auth/callback?redirectTo=${pathName}&`,
+        redirectTo: baseUrl + `auth/callback?redirectTo=false&`,
       },
     });
   };
@@ -117,12 +116,14 @@ export default function Index() {
           *GitLab support coming soon.
         </p>
       </div>
-      <img
-        src="/assets/hero-screenshot.webp"
-        alt="MyPRs"
-        height="600px"
-        className="h-[650px] "
-      />
+      <Link to="/kishanhitk" prefetch="render">
+        <img
+          src="/assets/hero-screenshot.webp"
+          alt="MyPRs"
+          height="600px"
+          className="h-[650px]"
+        />
+      </Link>
     </div>
   );
 }
