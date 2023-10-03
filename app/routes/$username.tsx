@@ -11,6 +11,7 @@ import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
+import { Globe, TwitterIcon } from "lucide-react";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
@@ -169,7 +170,7 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
-
+  console.log(userData);
   return (
     <div className="mx-5 flex flex-col ">
       {ghData ? (
@@ -182,9 +183,16 @@ const Index = () => {
                 className="h-52 w-52 mt-5 rounded-full self-center"
               ></img>
               <p className="self-center text-3xl mt-1">{userData.name}</p>
-              <p className="self-center text-slate-600 mb-3">
-                {userData.login}
+              <p className="self-center text-slate-600 flex text-lg">
+                {userData.login}{" "}
               </p>
+              <div className="flex items-center self-center mb-3 text-slate-600">
+                {userData.twitter_username ? (
+                  <a href={`https://x.com/${userData.twitter_username}`}>
+                    <TwitterIcon className="h-5 w-5 mr-2" />
+                  </a>
+                ) : null}
+              </div>
 
               <img
                 src={`https://ghchart.rshah.org/${userData.login}`}
