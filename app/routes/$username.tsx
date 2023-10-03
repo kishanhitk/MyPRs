@@ -172,7 +172,7 @@ const Index = () => {
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
   return (
-    <div className="mx-5 flex  flex-col relative">
+    <div className="mx-5 flex  flex-col">
       {ghData ? (
         <>
           {ghData.items.length ? (
@@ -194,7 +194,7 @@ const Index = () => {
                 ) : null}
               </div>
               {isOwner ? (
-                <Button className="self-center absolute top-5 right-0" asChild>
+                <Button className="self-center mb-3" asChild>
                   <a
                     href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.xyz/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
                   >
