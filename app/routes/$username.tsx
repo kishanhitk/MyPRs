@@ -11,7 +11,7 @@ import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
-import { Globe, Share, Share2, TwitterIcon } from "lucide-react";
+import { Share2, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
