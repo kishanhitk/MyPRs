@@ -11,7 +11,8 @@ import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
-import { Globe, TwitterIcon } from "lucide-react";
+import { Globe, Share, Share2, TwitterIcon } from "lucide-react";
+import { Button } from "~/components/ui/button";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
@@ -170,9 +171,8 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
-  console.log(userData);
   return (
-    <div className="mx-5 flex flex-col ">
+    <div className="mx-5 flex  flex-col relative">
       {ghData ? (
         <>
           {ghData.items.length ? (
@@ -189,11 +189,20 @@ const Index = () => {
               <div className="flex items-center self-center mb-3 text-slate-600">
                 {userData.twitter_username ? (
                   <a href={`https://x.com/${userData.twitter_username}`}>
-                    <TwitterIcon className="h-5 w-5 mr-2" />
+                    <TwitterIcon className="h-5 w-5" />
                   </a>
                 ) : null}
               </div>
-
+              {isOwner ? (
+                <Button className="self-center absolute top-5 right-0" asChild>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.xyz/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
+                  >
+                    Share
+                    <Share2 className="h-5 w-5 ml-2" />
+                  </a>
+                </Button>
+              ) : null}
               <img
                 src={`https://ghchart.rshah.org/${userData.login}`}
                 alt={`${userData.login}'s Github chart`}
