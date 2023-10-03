@@ -89,15 +89,15 @@ export default function Index() {
           One link to highlight your Open-Source Contributions.
         </h1>
         <h2 className="mb-3 text-slate-800">
-          {/* Highlight your coolest GitHub PRs and make your developer profile
-          sparkle with MyPRs! <br />
-          MyPRs is link-in-bio for your GitHub PRs. */}
           The 'link-in-bio' for your Open-Source PRs. Curate a selection of your
           proudest GitHub PRs, showcase your expertise, and set yourself apart
           in the crowd.
         </h2>
         {userName ? (
-          <Button asChild>
+          <Button
+            asChild
+            className="hover:scale-105 hover:shadow-md transition-all duration-500"
+          >
             <Link to={`/${userName}`} prefetch="render">
               <img
                 src={avatarUrl}
@@ -108,7 +108,10 @@ export default function Index() {
             </Link>
           </Button>
         ) : (
-          <Button onClick={handleGitHubLogin}>
+          <Button
+            onClick={handleGitHubLogin}
+            className="hover:scale-105 hover:shadow-md transition-all duration-500"
+          >
             Continue with GitHub -{">"}
           </Button>
         )}
@@ -121,7 +124,7 @@ export default function Index() {
           src="/assets/hero-screenshot.webp"
           alt="MyPRs"
           height="600px"
-          className="h-[650px]"
+          className="h-[650px] rounded-3xl  border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
         />
       </Link>
     </div>
