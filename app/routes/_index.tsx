@@ -100,7 +100,11 @@ export default function Index() {
         {userName ? (
           <Button asChild>
             <Link to={`/${userName}`} prefetch="render">
-              <img src={avatarUrl} className="h-6 w-6 mr-2" alt={userName} />
+              <img
+                src={avatarUrl}
+                className="h-6 w-6 mr-2 rounded-full"
+                alt={userName}
+              />
               Continue as {userName} -{">"}
             </Link>
           </Button>

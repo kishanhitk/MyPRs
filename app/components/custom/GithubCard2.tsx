@@ -33,7 +33,7 @@ export function DemoGithub({
       initial={{ y: -300, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 300, opacity: 0 }}
-      className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50"
+      className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50"
     >
       <div className="space-y-3">
         <div className="flex">
