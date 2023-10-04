@@ -1,7 +1,7 @@
 import type { MetaFunction } from "@remix-run/react";
 import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ExternalLinkIcon, Star } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 

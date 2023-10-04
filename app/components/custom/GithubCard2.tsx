@@ -30,9 +30,9 @@ export function DemoGithub({
 
   return (
     <motion.div
-      initial={{ y: -300, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 300, opacity: 0 }}
+      initial={{ y: 300, opacity: 0, scale: 0.3 }}
+      animate={{ y: 0, opacity: 1, scale: 1 }}
+      exit={{ y: -300, opacity: 0, scale: 0.3 }}
       className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50"
     >
       <div className="space-y-3">
@@ -58,7 +58,7 @@ export function DemoGithub({
                   toggleFeatured(item.id);
                 }}
                 fill={isFeatured ? "currentColor" : "none"}
-                className="h-5 w-5"
+                className="h-5 w-5 cursor-pointer"
               />
             </Button>
           ) : null}
