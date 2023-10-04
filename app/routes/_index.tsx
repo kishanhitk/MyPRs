@@ -9,7 +9,7 @@ export const config = { runtime: "edge" };
 
 export const meta: MetaFunction = ({ location, params }) => {
   return [
-    { title: "MyPRs - Showcase your PRs that matter" },
+    { title: "MyPRs - One link to highlight your Open-Source Contributions" },
     {
       name: "description",
       content:
@@ -21,7 +21,7 @@ export const meta: MetaFunction = ({ location, params }) => {
     },
     {
       property: "og:title",
-      content: "MyPRs - Showcase your PRs that matter",
+      content: "MyPRs - One link to highlight your Open-Source Contributions",
     },
     {
       property: "og:description",
@@ -42,7 +42,7 @@ export const meta: MetaFunction = ({ location, params }) => {
     },
     {
       property: "twitter:title",
-      content: "MyPRs - Showcase your PRs that matter",
+      content: "MyPRs - One link to highlight your Open-Source Contributions",
     },
     {
       property: "twitter:description",
@@ -86,7 +86,13 @@ export default function Index() {
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
         </a>
         <h1 className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
-          One link to highlight your Open-Source Contributions.
+          One link to
+          {/* <span> */}
+          <span className="underline underline-offset-4  decoration-github_merged/5 hover:decoration-github_merged/70 transition-all duration-700  ">
+            {" "}
+            highlight
+          </span>{" "}
+          your Open-Source Contributions.
         </h1>
         <h2 className="mb-3 text-slate-600">
           The 'link-in-bio' for your Open-Source PRs. Curate a selection of your

@@ -48,7 +48,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     },
     {
       property: "twitter:title",
-      content: "MyPRs - Showcase your PRs that matter",
+      content: "MyPRs - One link to highlight your Open-Source Contributions",
     },
     {
       property: "twitter:description",
