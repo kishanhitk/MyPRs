@@ -1,7 +1,7 @@
 import type { MetaFunction } from "@remix-run/react";
 import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon, Star } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 
@@ -80,15 +80,15 @@ export default function Index() {
       <div className="sm:w-1/2">
         <a
           href="https://github.com/kishanhitk/MyPRs"
-          className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline"
+          className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline underline-offset-4"
         >
-          Source Code on GitHub
+          Star the repo on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
         </a>
         <h1 className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
           One link to highlight your Open-Source Contributions.
         </h1>
-        <h2 className="mb-3 text-slate-800">
+        <h2 className="mb-3 text-slate-600">
           The 'link-in-bio' for your Open-Source PRs. Curate a selection of your
           proudest GitHub PRs, showcase your expertise, and set yourself apart
           in the crowd.
@@ -101,7 +101,7 @@ export default function Index() {
             <Link to={`/${userName}`} prefetch="render">
               <img
                 src={avatarUrl}
-                className="h-6 w-6 mr-2 rounded-full"
+                className="h-6 w-6 mr-2 rounded-full "
                 alt={userName}
               />
               Continue as {userName} -{">"}

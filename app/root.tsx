@@ -127,7 +127,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="max-w-4xl mx-auto">
+      <body className="max-w-4xl mx-auto bg-[#f7f3ef]">
         <Header supabase={supabase} />
         <Outlet context={{ supabase }} />
         <ScrollRestoration />

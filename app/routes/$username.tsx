@@ -183,10 +183,10 @@ const Index = () => {
                 className="h-52 w-52 mt-5 rounded-full self-center"
               ></img>
               <p className="self-center text-3xl mt-1">{userData.name}</p>
-              <p className="self-center text-slate-600 flex text-lg">
+              <p className="self-center text-slate-700 flex text-lg">
                 {userData.login}{" "}
               </p>
-              <div className="flex items-center self-center mb-3 text-slate-600">
+              <div className="flex items-center self-center mb-3 text-slate-500">
                 {userData.twitter_username ? (
                   <a href={`https://x.com/${userData.twitter_username}`}>
                     <TwitterIcon className="h-5 w-5" />
