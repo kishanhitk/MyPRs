@@ -1,8 +1,8 @@
 import { ImageResponse } from "@vercel/og";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { fileURLToPath } from "url";
-import path from "path";
-import fs from "fs";
+
+export const config = { runtime: "edge" };
+
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const username = params.username!;
   const url = new URL(request.url);
@@ -10,14 +10,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const avatar = url.searchParams.get("avatar");
   const featuredPRsCount = url.searchParams.get("featuredPRsCount");
 
-  const font = fs.promises.readFile(
-    path.join(
-      fileURLToPath(import.meta.url),
-      "../../public/assets/inter-regular.ttf"
-    )
-  );
+  const fontData = await fetch(
+    new URL("../public/assets/inter-regular.ttf", import.meta.url)
+  ).then((res) => res.arrayBuffer());
+  console.log(fontData);
 
-  console.log(font);
   const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
     (res) => res.arrayBuffer()
   );
