@@ -11,7 +11,7 @@ import { DemoGithub } from "~/components/custom/GithubCard2";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
-import { Share2, TwitterIcon } from "lucide-react";
+import { Share2, Star, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -227,10 +227,20 @@ const Index = () => {
                       />
                     ))}
                   </div>
+                ) : isOwner ? (
+                  <div className="mt-5">
+                    <p className="font-medium text-lg mb-2">Featured PRs ✨</p>
+                    <p className=" text-slate-600 text-md">
+                      You don't have any featured PR yet. Add a PR to featured
+                      by clicking on the star
+                      <Star className="h-4 w-4 inline mx-1 mb-1" />
+                      icon.
+                    </p>
+                  </div>
                 ) : null}
                 {nonFeaturedPRs?.length ? (
                   <div className="mt-5">
-                    <p className="font-medium"> All My PRs</p>
+                    <p className="font-medium text-lg"> All My PRs</p>
                     {nonFeaturedPRs.map((item) => (
                       <DemoGithub key={item.id} item={item} isOwner={isOwner} />
                     ))}
