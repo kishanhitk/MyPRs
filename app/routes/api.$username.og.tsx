@@ -10,17 +10,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const avatar = url.searchParams.get("avatar");
   const featuredPRsCount = url.searchParams.get("featuredPRsCount");
 
-  const fontData = await fetch(
-    new URL("../public/assets/inter-regular.ttf", import.meta.url)
-  ).then((res) => res.arrayBuffer());
-  console.log(fontData);
+  // const fontData = await fetch(
+  //   new URL("../public/assets/inter-regular.ttf", import.meta.url)
+  // ).then((res) => res.arrayBuffer());
+  // console.log(fontData);
 
   const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
     (res) => res.arrayBuffer()
   );
-  // const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
-  //   (res) => res.arrayBuffer()
-  // );
+  const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
+    (res) => res.arrayBuffer()
+  );
 
   return new ImageResponse(
     (
@@ -134,11 +134,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           data: interSemiBold,
           weight: 600,
         },
-        // {
-        //   name: "Inter",
-        //   data: interRegular,
-        //   weight: 400,
-        // },
+        {
+          name: "Inter",
+          data: interRegular,
+          weight: 400,
+        },
       ],
     }
   );
