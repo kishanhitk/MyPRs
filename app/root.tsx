@@ -83,7 +83,7 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.access_token !== serverAccessToken) {
         // server and client are out of sync.
-        if (session?.user?.id && session?.user?.email) {
+        if (session?.user?.id && session?.user?.email && posthogLoaded) {
           try {
             posthog.identify(
               session?.user?.id, // Replace 'distinct_id' with your user's unique identifier
@@ -99,7 +99,7 @@ export default function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [serverAccessToken, supabase, revalidate]);
+  }, [serverAccessToken, revalidate, posthogLoaded]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !posthogLoaded) {
