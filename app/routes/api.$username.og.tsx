@@ -3,7 +3,6 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { fileURLToPath } from "url";
 import path from "path";
 import fs from "fs";
-// export const config = { runtime: "edge" };
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const username = params.username!;
   const url = new URL(request.url);
