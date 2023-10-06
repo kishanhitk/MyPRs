@@ -14,7 +14,10 @@ import { AnimatePresence } from "framer-motion";
 import { Share2, Star, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
+  const domain = data?.domain;
+  const userAvatar = data?.userData.avatar_url;
+  const featuredPRsCount = data?.featuredPRs?.length;
   return [
     { title: `PRs by ${data?.userData.login} | MyPRs` },
     {
@@ -23,7 +26,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     },
     {
       property: "og:image",
-      content: "https://www.myprs.xyz/assets/og-banner.png",
+      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
     },
     {
       name: "description",
@@ -44,7 +47,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     },
     {
       property: "twitter:image",
-      content: "https://www.myprs.xyz/assets/og-banner.png",
+      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
     },
     {
       property: "twitter:title",
@@ -152,6 +155,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       nonFeaturedPRs,
       isOwner,
       username,
+      domain,
     },
     {
       headers: response.headers,

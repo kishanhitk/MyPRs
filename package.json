@@ -22,6 +22,7 @@
     "@supabase/auth-helpers-remix": "^0.2.1",
     "@supabase/supabase-js": "^2.33.2",
     "@vercel/analytics": "^1.0.2",
+    "@vercel/og": "^0.5.17",
     "@vercel/remix": "^2.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
