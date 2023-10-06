@@ -5,10 +5,16 @@ export const config = { runtime: "edge" };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const username = params.username!;
+  const url = new URL(request.url);
+  const domain = url.origin;
+  const avatar = url.searchParams.get("avatar");
 
-  const interSemiBold = await fetch(
-    new URL("/public/assets/inter-semibold.ttf", import.meta.url)
-  ).then((res) => res.arrayBuffer());
+  const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
+    (res) => res.arrayBuffer()
+  );
+  const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
+    (res) => res.arrayBuffer()
+  );
 
   return new ImageResponse(
     (
@@ -46,6 +52,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
                 fontWeight: "600",
                 textAlign: "left",
                 marginBottom: "-20px",
+                lineHeight: "1.1",
               }}
             >
               One link to highlight your Open-Source Contributions.
@@ -55,6 +62,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
                 fontSize: "27px",
                 textAlign: "left",
                 color: "rgb(71, 85, 105)",
+                fontWeight: "400",
               }}
             >
               The 'link-in-bio' for your Open-Source PRs. Curate a selection of
@@ -79,7 +87,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
                 width: "400px",
               }}
               alt="User"
-              src="https://avatars.githubusercontent.com/u/41117038?v=4"
+              src={
+                avatar ?? "https://avatars.githubusercontent.com/u/41117038?v=4"
+              }
             />
             <p
               style={{
@@ -101,6 +111,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           name: "Inter",
           data: interSemiBold,
           weight: 600,
+        },
+        {
+          name: "Inter",
+          data: interRegular,
+          weight: 400,
         },
       ],
     }
