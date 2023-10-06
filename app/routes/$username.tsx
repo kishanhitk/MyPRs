@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
   const domain = data?.domain;
   const userAvatar = data?.userData.avatar_url;
+  const featuredPRsCount = data?.featuredPRs?.length;
   return [
     { title: `PRs by ${data?.userData.login} | MyPRs` },
     {
@@ -25,7 +26,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
     },
     {
       property: "og:image",
-      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}`,
+      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
     },
     {
       name: "description",
@@ -46,7 +47,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
     },
     {
       property: "twitter:image",
-      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}`,
+      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
     },
     {
       property: "twitter:title",

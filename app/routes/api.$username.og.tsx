@@ -8,6 +8,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const domain = url.origin;
   const avatar = url.searchParams.get("avatar");
+  const featuredPRsCount = url.searchParams.get("featuredPRsCount");
 
   const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
     (res) => res.arrayBuffer()
@@ -35,6 +36,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         <div
           style={{
             display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
           }}
         >
           <div
@@ -76,15 +79,15 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
-              marginRight: "50px",
-              width: "500px",
+              width: "400px",
+              marginLeft: "100px",
             }}
           >
             <img
               style={{
                 borderRadius: "100%",
-                height: "400px",
-                width: "400px",
+                height: "420px",
+                width: "420px",
               }}
               alt="User"
               src={
@@ -95,10 +98,24 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
               style={{
                 fontSize: "50px",
                 fontWeight: "600",
+                textAlign: "center",
+                margin: "15px auto",
               }}
             >
               {username}
             </p>
+            {featuredPRsCount ? (
+              <p
+                style={{
+                  fontSize: "30px",
+                  fontWeight: "400",
+                  textAlign: "center",
+                  margin: "1px auto",
+                }}
+              >
+                {featuredPRsCount} Featured PRs
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
