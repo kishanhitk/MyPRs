@@ -101,17 +101,19 @@ export default function App() {
     };
   }, [serverAccessToken, supabase, revalidate]);
 
-  if (typeof window !== "undefined" && !posthogLoaded) {
-    posthog.init(env.POSTHOG_KEY, {
-      api_host: env.POSTHOG_HOST || "https://app.posthog.com",
-      // Enable debug mode in development
-      loaded: (posthog) => {
-        if (env.NODE_ENV === "development") posthog.debug();
-        setPosthogLoaded(true);
-      },
-      capture_pageview: false, // Disable automatic pageview capture, as we capture manually
-    });
-  }
+  useEffect(() => {
+    if (typeof window !== "undefined" && !posthogLoaded) {
+      posthog.init(env.POSTHOG_KEY, {
+        api_host: env.POSTHOG_HOST || "https://app.posthog.com",
+        // Enable debug mode in development
+        loaded: (posthog) => {
+          if (env.NODE_ENV === "development") posthog.debug();
+          setPosthogLoaded(true);
+        },
+        capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (posthogLoaded) {
