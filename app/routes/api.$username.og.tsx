@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import { ImageResponse } from "@vercel/og";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import fs from "fs";
 import path from "path";
 export const config = { runtime: "edge" };
