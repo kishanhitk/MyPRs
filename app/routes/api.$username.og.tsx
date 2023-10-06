@@ -1,7 +1,5 @@
 import { ImageResponse } from "@vercel/og";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import fs from "fs";
-import path from "path";
 export const config = { runtime: "edge" };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -10,38 +8,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const domain = url.origin;
   const avatar = url.searchParams.get("avatar");
   const featuredPRsCount = url.searchParams.get("featuredPRsCount");
-  const __dirname = path.resolve();
 
-  // let interSemiBold;
-  // let interRegular;
-  // fs.readFile(
-  //   path.join(`${__dirname}/public/assets/inter-semibold.ttf`),
-  //   (err, data) => {
-  //     if (err) {
-  //       console.log(err);
-  //     }
-  //     interSemiBold = data.buffer;
-  //     return data.buffer;
-  //   }
-  // );
-
-  // fs.readFile(
-  //   path.join(`${__dirname}/public/assets/inter-regular.ttf`),
-  //   (err, data) => {
-  //     if (err) {
-  //       console.log(err);
-  //     }
-  //     interRegular = data.buffer;
-  //     return data.buffer;
-  //   }
-  // );
-
-  const interSemiBold = await fetch(
-    new URL(`${__dirname}/public/assets/inter-semibold.ttf`, import.meta.url)
-  ).then((res) => res.arrayBuffer());
-  // const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
-  //   (res) => res.arrayBuffer()
-  // );
+  const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
+    (res) => res.arrayBuffer()
+  );
+  const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
+    (res) => res.arrayBuffer()
+  );
 
   return new ImageResponse(
     (
@@ -155,11 +128,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           data: interSemiBold,
           weight: 600,
         },
-        // {
-        //   name: "Inter",
-        //   data: interRegular,
-        //   weight: 400,
-        // },
+        {
+          name: "Inter",
+          data: interRegular,
+          weight: 400,
+        },
       ],
     }
   );
