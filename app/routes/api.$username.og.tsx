@@ -1,8 +1,14 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { ImageResponse } from "@vercel/og";
 
+export const config = { runtime: "edge" };
+
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const username = params.username!;
+
+  const interSemiBold = await fetch(
+    new URL("/public/assets/inter-semibold.ttf", import.meta.url)
+  ).then((res) => res.arrayBuffer());
 
   return new ImageResponse(
     (
@@ -37,7 +43,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             <p
               style={{
                 fontSize: "55px",
-                fontWeight: "900",
+                fontWeight: "600",
                 textAlign: "left",
                 marginBottom: "-20px",
               }}
@@ -90,6 +96,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     {
       width: 1200,
       height: 630,
+      fonts: [
+        {
+          name: "Inter",
+          data: interSemiBold,
+          weight: 600,
+        },
+      ],
     }
   );
 };
