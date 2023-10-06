@@ -11,7 +11,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const featuredPRsCount = url.searchParams.get("featuredPRsCount");
 
   const interRegular = await fetch(
-    new URL("..public/assets/inter-regular.ttf", import.meta.url)
+    new URL("../public/assets/inter-regular.ttf", import.meta.url)
   ).then((res) => res.arrayBuffer());
   // console.log(fontData);
 
