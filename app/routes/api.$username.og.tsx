@@ -18,9 +18,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
     (res) => res.arrayBuffer()
   );
-  const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
-    (res) => res.arrayBuffer()
-  );
+  // const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
+  //   (res) => res.arrayBuffer()
+  // );
 
   return new ImageResponse(
     (
@@ -134,11 +134,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           data: interSemiBold,
           weight: 600,
         },
-        {
-          name: "Inter",
-          data: interRegular,
-          weight: 400,
-        },
+        // {
+        //   name: "Inter",
+        //   data: interRegular,
+        //   weight: 400,
+        // },
       ],
     }
   );
