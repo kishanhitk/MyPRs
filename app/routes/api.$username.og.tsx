@@ -11,12 +11,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const featuredPRsCount = url.searchParams.get("featuredPRsCount");
 
   const interRegular = await fetch(
-    new URL("../public/assets/inter-regular.ttf", import.meta.url)
+    new URL("../assets/inter-regular.ttf", import.meta.url)
   ).then((res) => res.arrayBuffer());
   // console.log(fontData);
 
   const interSemiBold = await fetch(
-    new URL("../public/assets/inter-semibold.ttf", import.meta.url)
+    new URL("../assets/inter-semibold.ttf", import.meta.url)
   ).then((res) => res.arrayBuffer());
   // const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
   //   (res) => res.arrayBuffer()
