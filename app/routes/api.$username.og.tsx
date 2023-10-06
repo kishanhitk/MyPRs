@@ -104,7 +104,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             >
               {username}
             </p>
-            {featuredPRsCount ? (
+            {featuredPRsCount !== "0" ? (
               <p
                 style={{
                   fontSize: "30px",
