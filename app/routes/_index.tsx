@@ -1,7 +1,6 @@
 import type { MetaFunction } from "@remix-run/react";
 import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { motion } from "framer-motion";
 import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
@@ -78,28 +77,15 @@ export default function Index() {
 
   return (
     <div className="px-10 mt-28 flex md:justify-between items-center justify-center flex-wrap space-y-10">
-      <motion.div
-        className="sm:w-1/2"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, type: "spring" }}
-      >
-        <motion.a
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, type: "spring", delay: 0.1 }}
+      <div className="sm:w-1/2">
+        <a
           href="https://github.com/kishanhitk/MyPRs"
           className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline underline-offset-4"
         >
           Star the repo on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
-        </motion.a>
-        <motion.h1
-          className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, type: "spring", delay: 0.2 }}
-        >
+        </a>
+        <h1 className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
           One link to
           {/* <span> */}
           <span className="underline underline-offset-4  decoration-github_merged/5 hover:decoration-github_merged/70 transition-all duration-700  ">
@@ -107,17 +93,12 @@ export default function Index() {
             highlight
           </span>{" "}
           your Open-Source Contributions.
-        </motion.h1>
-        <motion.h2
-          className="mb-3 text-slate-600"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, type: "spring", delay: 0.3 }}
-        >
+        </h1>
+        <h2 className="mb-3 text-slate-600">
           The 'link-in-bio' for your Open-Source PRs. Curate a selection of your
           proudest GitHub PRs, showcase your expertise, and set yourself apart
           in the crowd.
-        </motion.h2>
+        </h2>
         {userName ? (
           <Button
             asChild
@@ -126,7 +107,7 @@ export default function Index() {
             <Link to={`/${userName}`} prefetch="render">
               <img
                 src={avatarUrl}
-                className="h-6 w-6 mr-2 rounded-full"
+                className="h-6 w-6 mr-2 rounded-full "
                 alt={userName}
               />
               Continue as {userName} -{">"}
@@ -143,7 +124,7 @@ export default function Index() {
         <p className="text-xs mt-1 text-slate-500">
           *GitLab support coming soon.
         </p>
-      </motion.div>
+      </div>
       <Link to="/kishanhitk" prefetch="render">
         <img
           src="/assets/hero-screenshot.webp"
