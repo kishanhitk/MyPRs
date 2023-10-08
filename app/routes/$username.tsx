@@ -7,7 +7,7 @@ import type {
 import { json } from "@vercel/remix";
 import { useLoaderData } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
-import { DemoGithub } from "~/components/custom/GithubCard2";
+import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
@@ -187,10 +187,10 @@ const Index = () => {
                 className="h-52 w-52 mt-5 rounded-full self-center"
               ></img>
               <p className="self-center text-3xl mt-1">{userData.name}</p>
-              <p className="self-center text-slate-700 flex text-lg">
+              <p className="self-center text-slate-700 flex text-lg dark:text-slate-300">
                 {userData.login}{" "}
               </p>
-              <div className="flex items-center self-center mb-3 text-slate-500">
+              <div className="flex items-center self-center mb-3 text-slate-500 ">
                 {userData.twitter_username ? (
                   <a href={`https://x.com/${userData.twitter_username}`}>
                     <TwitterIcon className="h-5 w-5" />
@@ -210,7 +210,7 @@ const Index = () => {
               <img
                 src={`https://ghchart.rshah.org/${userData.login}`}
                 alt={`${userData.login}'s Github chart`}
-                className="my-2"
+                className="my-2 dark:brightness-75"
               />
               {isOwner ? (
                 <PRFilter
@@ -234,7 +234,7 @@ const Index = () => {
                 ) : isOwner ? (
                   <div className="mt-5">
                     <p className="font-medium text-lg mb-2">Featured PRs ✨</p>
-                    <p className=" text-slate-600 text-md">
+                    <p className=" text-slate-600 text-md dark:text-slate-400">
                       You don't have any featured PR yet. Add a PR to featured
                       by clicking on the star
                       <Star className="h-4 w-4 inline mx-1 mb-1" />
