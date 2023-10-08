@@ -27,7 +27,7 @@ import {
   useTheme,
 } from "~/utils/theme-provider";
 import { getThemeSession } from "./utils/theme.server";
-import { useNonce } from "./utils/ noonce-provider";
+import { useNonce } from "./utils/noonce-provider";
 import clsx from "clsx";
 
 export const links: LinksFunction = () => [
