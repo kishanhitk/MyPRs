@@ -1,3 +1,5 @@
+// Inspired by: https://github.com/kentcdodds/kentcdodds.com
+
 import { useFetcher } from "@remix-run/react";
 import * as React from "react";
 
