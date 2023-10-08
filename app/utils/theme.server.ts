@@ -3,7 +3,7 @@ import { Theme, isTheme } from "./theme-provider";
 
 const themeStorage = createCookieSessionStorage({
   cookie: {
-    name: "KCD_theme",
+    name: "myprs_theme",
     secure: true,
     secrets: [process.env.SESSION_SECRET!],
     sameSite: "lax",
