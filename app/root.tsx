@@ -21,6 +21,14 @@ import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
 import { json } from "@vercel/remix";
 import posthog from "posthog-js";
+import {
+  NonFlashOfWrongThemeEls,
+  ThemeProvider,
+  useTheme,
+} from "~/utils/theme-provider";
+import { getThemeSession } from "./utils/theme.server";
+import { useNonce } from "./utils/noonce-provider";
+import clsx from "clsx";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
@@ -53,12 +61,18 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+  const themeSession = await getThemeSession(request);
 
   return json(
     {
       env,
       session,
       user: session?.user,
+      requestInfo: {
+        session: {
+          theme: themeSession.getTheme(),
+        },
+      },
     },
     {
       headers: response.headers,
@@ -66,7 +80,19 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   );
 };
 
-export default function App() {
+export default function AppWithProviders() {
+  const data = useLoaderData<typeof loader>();
+  return (
+    <ThemeProvider specifiedTheme={data.requestInfo.session.theme}>
+      <App />
+    </ThemeProvider>
+  );
+}
+
+export function App() {
+  const data = useLoaderData<typeof loader>();
+  const nonce = useNonce();
+  const [theme] = useTheme();
   const { env, session } = useLoaderData<typeof loader>();
   const { revalidate } = useRevalidator();
   const [supabase] = useState(() =>
@@ -122,14 +148,19 @@ export default function App() {
   }, [posthogLoaded, location.pathname]);
 
   return (
-    <html lang="en">
+    <html lang="en" className={clsx(theme)}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <Meta />
         <Links />
+        <NonFlashOfWrongThemeEls
+          nonce={nonce}
+          ssrTheme={Boolean(data.requestInfo.session.theme)}
+        />
       </head>
-      <body className="max-w-4xl mx-auto bg-[#fdfafa]">
+      <body className="max-w-4xl mx-auto bg-[#fdfafa] dark:bg-[#191919]">
+        {/* @ts-ignore */}
         <Header supabase={supabase} />
         <Outlet context={{ supabase }} />
         <ScrollRestoration />

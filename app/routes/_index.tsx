@@ -80,7 +80,7 @@ export default function Index() {
       <div className="sm:w-1/2">
         <a
           href="https://github.com/kishanhitk/MyPRs"
-          className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline underline-offset-4"
+          className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline underline-offset-4 dark:text-slate-400"
         >
           Star the repo on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
@@ -94,7 +94,7 @@ export default function Index() {
           </span>{" "}
           your Open-Source Contributions.
         </h1>
-        <h2 className="mb-3 text-slate-600">
+        <h2 className="mb-3 text-slate-600 dark:text-slate-300">
           The 'link-in-bio' for your Open-Source PRs. Curate a selection of your
           proudest GitHub PRs, showcase your expertise, and set yourself apart
           in the crowd.
