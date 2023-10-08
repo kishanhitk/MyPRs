@@ -17,7 +17,7 @@ export default function DarkModeToggle({
         );
       }}
       className={clsx(
-        "ml-2 border-secondary hover:border-primary focus:border-primary inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 p-1 transition focus:outline-none"
+        "mr-2 border-secondary hover:border-primary focus:border-primary inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border p-1 transition focus:outline-none"
       )}
     >
       {/* note that the duration is longer then the one on body, controlling the bg-color */}
