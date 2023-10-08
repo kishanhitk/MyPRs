@@ -99,18 +99,25 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
                 fontSize: "50px",
                 fontWeight: "600",
                 textAlign: "center",
-                margin: "15px auto",
+                margin: "1px auto 0px",
               }}
             >
               {username}
             </p>
-            {featuredPRsCount ? (
+            <img
+              src={`https://ghchart.rshah.org/${username}`}
+              alt={`${username}'s Github chart`}
+              style={{
+                marginTop: "-10px",
+              }}
+            />
+            {featuredPRsCount && featuredPRsCount !== "0" ? (
               <p
                 style={{
                   fontSize: "30px",
                   fontWeight: "400",
                   textAlign: "center",
-                  margin: "1px auto",
+                  margin: "5px auto 0px",
                 }}
               >
                 {featuredPRsCount} Featured PRs

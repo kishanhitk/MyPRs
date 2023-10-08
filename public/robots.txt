@@ -1,4 +1,3 @@
 User-agent: *
 Disallow: /actions/
-Disallow: /api/
 Disallow: /auth/
