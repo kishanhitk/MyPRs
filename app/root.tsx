@@ -16,7 +16,11 @@ import {
   createServerClient,
 } from "@supabase/auth-helpers-remix";
 import { Analytics } from "@vercel/analytics/react";
-import { type LinksFunction, type LoaderFunctionArgs } from "@vercel/remix";
+import {
+  MetaFunction,
+  type LinksFunction,
+  type LoaderFunctionArgs,
+} from "@vercel/remix";
 import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
 import { json } from "@vercel/remix";
@@ -37,7 +41,61 @@ export const links: LinksFunction = () => [
     href: FontStyles,
   },
 ];
+export const meta: MetaFunction = ({ data }) => {
+  const theme = data.requestInfo.session.theme;
+  console.log(theme);
+  const ogImageUrl =
+    theme === "dark"
+      ? "https://www.myprs.xyz/assets/og-banner-dark.png"
+      : "https://www.myprs.xyz/assets/og-banner.png";
+  return [
+    { title: "MyPRs - One link to highlight your Open-Source Contributions" },
+    {
+      name: "description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "og:image",
+      content: ogImageUrl,
+    },
+    {
+      property: "og:title",
+      content: "MyPRs - One link to highlight your Open-Source Contributions",
+    },
+    {
+      property: "og:description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "og:url",
+      content: "https://myprs.xyz/",
+    },
+    {
+      property: "twitter:card",
+      content: "summary_large_image",
+    },
+    {
+      property: "twitter:image",
+      content: ogImageUrl,
+    },
 
+    {
+      property: "twitter:title",
+      content: "MyPRs - One link to highlight your Open-Source Contributions",
+    },
+    {
+      property: "twitter:description",
+      content:
+        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+    },
+    {
+      property: "twitter:url",
+      content: "https://myprs.xyz/",
+    },
+  ];
+};
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const env = {
     SUPABASE_URL: process.env.SUPABASE_URL!,

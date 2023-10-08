@@ -1,4 +1,3 @@
-import type { MetaFunction } from "@remix-run/react";
 import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ExternalLinkIcon } from "lucide-react";
@@ -6,55 +5,6 @@ import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 
 export const config = { runtime: "edge" };
-
-export const meta: MetaFunction = ({ location, params }) => {
-  return [
-    { title: "MyPRs - One link to highlight your Open-Source Contributions" },
-    {
-      name: "description",
-      content:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    },
-    {
-      property: "og:image",
-      content: "https://www.myprs.xyz/assets/og-banner.png",
-    },
-    {
-      property: "og:title",
-      content: "MyPRs - One link to highlight your Open-Source Contributions",
-    },
-    {
-      property: "og:description",
-      content:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    },
-    {
-      property: "og:url",
-      content: "https://myprs.xyz/",
-    },
-    {
-      property: "twitter:card",
-      content: "summary_large_image",
-    },
-    {
-      property: "twitter:image",
-      content: "https://www.myprs.xyz/assets/og-banner.png",
-    },
-    {
-      property: "twitter:title",
-      content: "MyPRs - One link to highlight your Open-Source Contributions",
-    },
-    {
-      property: "twitter:description",
-      content:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    },
-    {
-      property: "twitter:url",
-      content: "https://myprs.xyz/",
-    },
-  ];
-};
 
 export default function Index() {
   const data = useRouteLoaderData<typeof rootLoader>("root");
