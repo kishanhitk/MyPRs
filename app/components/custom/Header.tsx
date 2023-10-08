@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import posthog from "posthog-js";
 import PullRequestIcon from "./PullRequestIcon";
+import DarkModeToggle from "./CustomToggle";
 
 interface HeaderProps {
   supabase: SupabaseClient;
@@ -38,17 +39,20 @@ export const Header = ({ supabase }: HeaderProps) => {
           <PullRequestIcon className="h-4 w-4 ml-1 mb-1"></PullRequestIcon>
         </Link>
 
-        {user ? (
-          <div className="flex items-center">
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
+        <div className="flex">
+          {user ? (
+            <div className="flex items-center">
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" onClick={handleGitHubLogin}>
+              Login
             </Button>
-          </div>
-        ) : (
-          <Button size="sm" onClick={handleGitHubLogin}>
-            Login
-          </Button>
-        )}
+          )}
+          <DarkModeToggle />
+        </div>
       </div>
       <div className="h-[1px] w-full bg-slate-200"></div>
     </>

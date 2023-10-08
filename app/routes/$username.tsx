@@ -7,7 +7,7 @@ import type {
 import { json } from "@vercel/remix";
 import { useLoaderData } from "@remix-run/react";
 import { createServerClient } from "@supabase/auth-helpers-remix";
-import { DemoGithub } from "~/components/custom/GithubCard2";
+import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
