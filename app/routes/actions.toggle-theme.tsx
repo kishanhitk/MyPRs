@@ -1,4 +1,4 @@
-import { json, redirect, type ActionFunction } from "@remix-run/node";
+import { json, redirect, type ActionFunction } from "@vercel/remix";
 import { isTheme } from "~/utils/theme-provider";
 import { getThemeSession } from "~/utils/theme.server";
 
