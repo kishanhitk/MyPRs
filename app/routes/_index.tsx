@@ -125,7 +125,7 @@ export default function Index() {
           *GitLab support coming soon.
         </p>
       </div>
-      <Link to="/kishanhitk" prefetch="render">
+      <Link to="/kishanhitk" prefetch="intent">
         <img
           src="/assets/hero-screenshot.webp"
           alt="MyPRs"
