@@ -127,9 +127,9 @@ export default function Index() {
         <img
           src="/assets/hero-screenshot.webp"
           alt="MyPRs"
-          height="650px"
+          height="645.078px"
           width="300px"
-          className="h-[650px] rounded-3xl  border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
+          className="rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
         />
       </Link>
     </div>
