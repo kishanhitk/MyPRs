@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import clsx from "clsx";
 import { MoonIcon, SunIcon, LaptopIcon } from "lucide-react";
+import { THEME_FETCHER } from "~/utils/constants";
 import { useRequestInfo } from "~/utils/request-info";
 import { useOptimisticThemeMode } from "~/utils/theme";
 
@@ -11,7 +12,7 @@ export default function DarkModeToggle({
   variant?: "icon" | "labelled";
 }) {
   const requestInfo = useRequestInfo();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher({ key: THEME_FETCHER });
 
   const optimisticMode = useOptimisticThemeMode();
   const mode = optimisticMode ?? requestInfo.userPrefs.theme ?? "system";

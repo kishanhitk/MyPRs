@@ -1,10 +1,11 @@
-import { useFetchers } from "@remix-run/react";
+import { useFetcher, useFetchers } from "@remix-run/react";
 import { parse } from "@conform-to/zod";
 
 import * as React from "react";
 import { z } from "zod";
 import { useHints } from "./client-hints";
 import { useRequestInfo } from "./request-info";
+import { THEME_FETCHER } from "./constants";
 
 enum Theme {
   DARK = "dark",
@@ -34,11 +35,9 @@ function useTheme() {
  * value it's being changed to.
  */
 function useOptimisticThemeMode() {
-  const fetchers = useFetchers();
-  const themeFetcher = fetchers.find(
-    (f) => f.formAction === "/actions/toggle-theme"
-  );
-  if (themeFetcher?.formData) {
+  const themeFetcher = useFetcher({ key: THEME_FETCHER });
+
+  if (themeFetcher.formData) {
     const submission = parse(themeFetcher.formData, {
       schema: ThemeFormSchema,
     });
