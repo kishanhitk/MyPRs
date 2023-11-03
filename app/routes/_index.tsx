@@ -5,8 +5,6 @@ import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 
-export const config = { runtime: "edge" };
-
 export const meta: MetaFunction = ({ location, params }) => {
   return [
     { title: "MyPRs - One link to highlight your Open-Source Contributions" },
