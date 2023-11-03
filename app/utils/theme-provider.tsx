@@ -19,9 +19,9 @@ const ThemeContext = React.createContext<ThemeContextType | undefined>(
 );
 ThemeContext.displayName = "ThemeContext";
 
-const prefersLightMQ = "(prefers-color-scheme: light)";
+const prefersDarkMQ = "(prefers-color-scheme: dark)";
 const getPreferredTheme = () =>
-  window.matchMedia(prefersLightMQ).matches ? Theme.LIGHT : Theme.DARK;
+  window.matchMedia(prefersDarkMQ).matches ? Theme.DARK : Theme.LIGHT;
 
 function ThemeProvider({
   children,
@@ -55,9 +55,9 @@ function ThemeProvider({
   }, [persistTheme]);
 
   React.useEffect(() => {
-    const mediaQuery = window.matchMedia(prefersLightMQ);
+    const mediaQuery = window.matchMedia(prefersDarkMQ);
     const handleChange = () => {
-      setThemeState(mediaQuery.matches ? Theme.LIGHT : Theme.DARK);
+      setThemeState(mediaQuery.matches ? Theme.DARK : Theme.LIGHT);
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
@@ -90,9 +90,9 @@ const clientThemeCode = `
 // a theme, then I'll know what you want in the future and you'll not see this
 // script anymore.
 ;(() => {
-  const theme = window.matchMedia(${JSON.stringify(prefersLightMQ)}).matches
-    ? 'light'
-    : 'dark';
+  const theme = window.matchMedia(${JSON.stringify(prefersDarkMQ)}).matches
+    ? 'dark'
+    : 'light';
 
   const cl = document.documentElement.classList;
 
@@ -218,7 +218,7 @@ function Themed({
     );
   } else {
     // eslint-disable-next-line react/jsx-no-useless-fragment
-    return <>{themeToReference === "light" ? light : dark}</>;
+    return <>{themeToReference === "dark" ? dark : light}</>;
   }
 }
 

@@ -20,7 +20,6 @@ import { type LinksFunction, type LoaderFunctionArgs } from "@vercel/remix";
 import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
 import { json } from "@vercel/remix";
-import posthog from "posthog-js";
 import {
   NonFlashOfWrongThemeEls,
   ThemeProvider,
@@ -111,10 +110,10 @@ export function App() {
         // server and client are out of sync.
         if (session?.user?.id && session?.user?.email && posthogLoaded) {
           try {
-            posthog.identify(
-              session?.user?.id, // Replace 'distinct_id' with your user's unique identifier
-              { email: session?.user?.email } // optional: set additional user properties
-            );
+            // posthog.identify(
+            //   session?.user?.id, // Replace 'distinct_id' with your user's unique identifier
+            //   { email: session?.user?.email } // optional: set additional user properties
+            // );
           } catch (error) {}
         }
 
@@ -127,25 +126,26 @@ export function App() {
     };
   }, [serverAccessToken, revalidate, posthogLoaded]);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && !posthogLoaded) {
-      posthog.init(env.POSTHOG_KEY, {
-        api_host: env.POSTHOG_HOST || "https://app.posthog.com",
-        // Enable debug mode in development
-        loaded: (posthog) => {
-          if (env.NODE_ENV === "development") posthog.debug();
-          setPosthogLoaded(true);
-        },
-        capture_pageview: false, // Disable automatic pageview capture, as we capture manually
-      });
-    }
-  }, []);
+  // ?Disabled posthog temporarily
+  // useEffect(() => {
+  //   if (typeof window !== "undefined" && !posthogLoaded) {
+  //     posthog.init(env.POSTHOG_KEY, {
+  //       api_host: env.POSTHOG_HOST || "https://app.posthog.com",
+  //       // Enable debug mode in development
+  //       loaded: (posthog) => {
+  //         if (env.NODE_ENV === "development") posthog.debug();
+  //         setPosthogLoaded(true);
+  //       },
+  //       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+  //     });
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    if (posthogLoaded) {
-      posthog.capture("$pageview");
-    }
-  }, [posthogLoaded, location.pathname]);
+  // useEffect(() => {
+  //   if (posthogLoaded) {
+  //     posthog.capture("$pageview");
+  //   }
+  // }, [posthogLoaded, location.pathname]);
 
   return (
     <html lang="en" className={clsx(theme)}>

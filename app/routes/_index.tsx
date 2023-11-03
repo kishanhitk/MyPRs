@@ -59,9 +59,7 @@ export const meta: MetaFunction = ({ location, params }) => {
 export default function Index() {
   const data = useRouteLoaderData<typeof rootLoader>("root");
   const session = data?.session;
-  // @ts-ignore
   const userName = session?.user?.user_metadata?.user_name;
-  // @ts-ignore
   const avatarUrl = session?.user?.user_metadata?.avatar_url;
   const { supabase } = useOutletContext() as { supabase: SupabaseClient };
 
@@ -121,16 +119,17 @@ export default function Index() {
             Continue with GitHub -{">"}
           </Button>
         )}
-        <p className="text-xs mt-1 text-slate-500">
+        <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">
           *GitLab support coming soon.
         </p>
       </div>
-      <Link to="/kishanhitk" prefetch="render">
+      <Link to="/kishanhitk" prefetch="intent">
         <img
           src="/assets/hero-screenshot.webp"
           alt="MyPRs"
-          height="600px"
-          className="h-[650px] rounded-3xl  border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
+          height="645.078px"
+          width="300px"
+          className="rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
         />
       </Link>
     </div>
