@@ -20,14 +20,12 @@ import { type LinksFunction, type LoaderFunctionArgs } from "@vercel/remix";
 import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css";
 import { json } from "@vercel/remix";
-import {
-  NonFlashOfWrongThemeEls,
-  ThemeProvider,
-  useTheme,
-} from "~/utils/theme-provider";
-import { getThemeSession } from "./utils/theme.server";
 import { useNonce } from "./utils/noonce-provider";
 import clsx from "clsx";
+import { useTheme } from "./utils/theme";
+import posthog from "posthog-js";
+import { ClientHintCheck, getHints } from "./utils/client-hints";
+import { getTheme } from "./utils/theme.server";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
@@ -60,7 +58,6 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const themeSession = await getThemeSession(request);
 
   return json(
     {
@@ -68,8 +65,9 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       session,
       user: session?.user,
       requestInfo: {
-        session: {
-          theme: themeSession.getTheme(),
+        hints: getHints(request),
+        userPrefs: {
+          theme: getTheme(request),
         },
       },
     },
@@ -79,19 +77,9 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   );
 };
 
-export default function AppWithProviders() {
-  const data = useLoaderData<typeof loader>();
-  return (
-    <ThemeProvider specifiedTheme={data.requestInfo.session.theme}>
-      <App />
-    </ThemeProvider>
-  );
-}
-
-export function App() {
-  const data = useLoaderData<typeof loader>();
+export default function App() {
   const nonce = useNonce();
-  const [theme] = useTheme();
+  const theme = useTheme();
   const { env, session } = useLoaderData<typeof loader>();
   const { revalidate } = useRevalidator();
   const [supabase] = useState(() =>
@@ -110,10 +98,10 @@ export function App() {
         // server and client are out of sync.
         if (session?.user?.id && session?.user?.email && posthogLoaded) {
           try {
-            // posthog.identify(
-            //   session?.user?.id, // Replace 'distinct_id' with your user's unique identifier
-            //   { email: session?.user?.email } // optional: set additional user properties
-            // );
+            posthog.identify(
+              session?.user?.id, // Replace 'distinct_id' with your user's unique identifier
+              { email: session?.user?.email } // optional: set additional user properties
+            );
           } catch (error) {}
         }
 
@@ -126,38 +114,35 @@ export function App() {
     };
   }, [serverAccessToken, revalidate, posthogLoaded]);
 
-  // ?Disabled posthog temporarily
-  // useEffect(() => {
-  //   if (typeof window !== "undefined" && !posthogLoaded) {
-  //     posthog.init(env.POSTHOG_KEY, {
-  //       api_host: env.POSTHOG_HOST || "https://app.posthog.com",
-  //       // Enable debug mode in development
-  //       loaded: (posthog) => {
-  //         if (env.NODE_ENV === "development") posthog.debug();
-  //         setPosthogLoaded(true);
-  //       },
-  //       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
-  //     });
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined" && !posthogLoaded) {
+      posthog.init(env.POSTHOG_KEY, {
+        api_host: env.POSTHOG_HOST || "https://app.posthog.com",
+        // Enable debug mode in development
+        loaded: (posthog) => {
+          if (env.NODE_ENV === "development") posthog.debug();
+          setPosthogLoaded(true);
+        },
+        capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+      });
+    }
+  }, []);
 
-  // useEffect(() => {
-  //   if (posthogLoaded) {
-  //     posthog.capture("$pageview");
-  //   }
-  // }, [posthogLoaded, location.pathname]);
+  useEffect(() => {
+    if (posthogLoaded) {
+      posthog.capture("$pageview");
+    }
+  }, [posthogLoaded, location.pathname]);
 
   return (
     <html lang="en" className={clsx(theme)}>
       <head>
+        {/* @ts-ignore */}
+        <ClientHintCheck nonce={nonce} />
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <Meta />
         <Links />
-        <NonFlashOfWrongThemeEls
-          nonce={nonce}
-          ssrTheme={Boolean(data.requestInfo.session.theme)}
-        />
       </head>
       <body className="max-w-4xl mx-auto bg-[#fdfafa] dark:bg-[#191919]">
         {/* @ts-ignore */}
