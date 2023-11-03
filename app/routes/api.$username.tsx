@@ -1,7 +1,6 @@
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { getGitHubUserData, getPRsFromGithubAPI } from "~/lib/github";
-export const config = { runtime: "edge" };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const username = params.username!;
