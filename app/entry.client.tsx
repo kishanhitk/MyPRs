@@ -1,12 +1,9 @@
 import { RemixBrowser } from "@remix-run/react";
 import * as React from "react";
 import { hydrateRoot } from "react-dom/client";
-import "./bootstrap.client.tsx";
-import { handleDarkAndLightModeEls } from "~/utils/theme-provider";
 
 // fixup stuff before hydration
 function hydrate() {
-  handleDarkAndLightModeEls();
   React.startTransition(() => {
     hydrateRoot(document, <RemixBrowser />);
   });

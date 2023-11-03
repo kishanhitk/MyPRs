@@ -1,8 +1,6 @@
 import { ImageResponse } from "@vercel/og";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
-export const config = { runtime: "edge" };
-
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const username = params.username!;
   const url = new URL(request.url);
