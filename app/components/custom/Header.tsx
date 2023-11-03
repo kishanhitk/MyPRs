@@ -1,16 +1,15 @@
-import { Link, useLoaderData, useRouteLoaderData } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "@remix-run/react";
 import { Button } from "../ui/button";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import posthog from "posthog-js";
 import PullRequestIcon from "./PullRequestIcon";
 import DarkModeToggle from "./DarkModeToggle";
-import { loader } from "~/root";
 
 interface HeaderProps {
   supabase: SupabaseClient;
 }
 export const Header = ({ supabase }: HeaderProps) => {
-  const { user } = useRouteLoaderData<typeof loader>("root");
+  const { user } = useRouteLoaderData("root");
 
   const handleGitHubLogin = async () => {
     const baseUrl = new URL(window.location.origin);
