@@ -1,5 +1,10 @@
 import type { MetaFunction } from "@remix-run/react";
-import { Link, useOutletContext, useRouteLoaderData } from "@remix-run/react";
+import {
+  Link,
+  unstable_useViewTransitionState,
+  useOutletContext,
+  useRouteLoaderData,
+} from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -70,6 +75,7 @@ export default function Index() {
       },
     });
   };
+  const isTransitioning = unstable_useViewTransitionState(`/${userName}`);
 
   return (
     <div className="px-10 mt-28 flex md:justify-between items-center justify-center flex-wrap space-y-10">
@@ -100,13 +106,16 @@ export default function Index() {
             asChild
             className="hover:scale-105 hover:shadow-md transition-all duration-500"
           >
-            <Link to={`/${userName}`} prefetch="render">
+            <Link to={`/${userName}`} prefetch="render" unstable_viewTransition>
               <img
                 src={avatarUrl}
                 className="h-6 w-6 mr-2 rounded-full "
                 alt={userName}
+                style={{
+                  viewTransitionName: isTransitioning ? "profile-picture" : "",
+                }}
               />
-              Continue as {userName} -{">"}
+              Continue as {userName}-{">"}
             </Link>
           </Button>
         ) : (
