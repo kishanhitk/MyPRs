@@ -10,13 +10,6 @@ import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { loader as rootLoader } from "~/root";
 
-export const headers = () => {
-  return {
-    "Cache-Control":
-      "public, max-age=60, s-maxage=120, stale-while-revalidate=86400",
-  };
-};
-
 export const meta: MetaFunction = ({ location, params }) => {
   return [
     { title: "MyPRs - One link to highlight your Open-Source Contributions" },
@@ -67,7 +60,6 @@ export const meta: MetaFunction = ({ location, params }) => {
 };
 
 export default function Index() {
-  console.log("rendering index");
   const data = useRouteLoaderData<typeof rootLoader>("root");
   const session = data?.session;
   const userName = session?.user?.user_metadata?.user_name;
