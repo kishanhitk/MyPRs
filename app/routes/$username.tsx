@@ -29,7 +29,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
     },
     {
       property: "og:image",
-      content: `${domain}/api/${params.username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
+      content: `${domain}/api/${params.username}/og?featuredPRsCount=${featuredPRsCount}`,
     },
     {
       name: "description",
