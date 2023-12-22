@@ -87,7 +87,7 @@ export default function Index() {
           Star the repo on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
         </a>
-        <h1 className="font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
+        <h1 className="animate-in font-semibold text-5xl mt-5 mb-3 leading-[1.1]">
           One link to
           {/* <span> */}
           <span className="underline underline-offset-4  decoration-github_merged/5 hover:decoration-github_merged/70 transition-all duration-700  ">
@@ -96,7 +96,7 @@ export default function Index() {
           </span>{" "}
           your Open-Source Contributions.
         </h1>
-        <h2 className="mb-3 text-slate-600 dark:text-slate-300">
+        <h2 className="animate-in mb-3 text-slate-600 dark:text-slate-300">
           The 'link-in-bio' for your Open-Source PRs. Curate a selection of your
           proudest GitHub PRs, showcase your expertise, and set yourself apart
           in the crowd.
@@ -130,13 +130,13 @@ export default function Index() {
           *GitLab support coming soon.
         </p>
       </div>
-      <Link to="/kishanhitk" prefetch="intent">
+      <Link to="/kishanhitk" prefetch="render">
         <img
           src="/assets/hero-screenshot.webp"
           alt="MyPRs"
           height="645.078px"
           width="300px"
-          className="rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
+          className=" rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
         />
       </Link>
     </div>
