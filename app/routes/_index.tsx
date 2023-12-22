@@ -104,7 +104,7 @@ export default function Index() {
         {userName ? (
           <Button
             asChild
-            className="hover:scale-105 hover:shadow-md transition-all duration-500"
+            className="animate-in hover:scale-105 hover:shadow-md transition-all duration-500"
           >
             <Link to={`/${userName}`} prefetch="render" unstable_viewTransition>
               <img
@@ -121,12 +121,12 @@ export default function Index() {
         ) : (
           <Button
             onClick={handleGitHubLogin}
-            className="animte-in hover:scale-105 hover:shadow-md transition-all duration-500"
+            className="animate-in hover:scale-105 hover:shadow-md transition-all duration-500"
           >
             Continue with GitHub -{">"}
           </Button>
         )}
-        <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">
+        <p className="animate-in text-xs mt-1 text-slate-500 dark:text-slate-400">
           *GitLab support coming soon.
         </p>
       </div>
