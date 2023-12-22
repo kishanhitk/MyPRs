@@ -82,7 +82,7 @@ export default function Index() {
       <div className="sm:w-1/2">
         <a
           href="https://github.com/kishanhitk/MyPRs"
-          className="text-sm underline text-slate-500 decoration-wavy flex  items-baseline underline-offset-4 dark:text-slate-400"
+          className="animate-in text-sm underline text-slate-500 decoration-wavy flex  items-baseline underline-offset-4 dark:text-slate-400"
         >
           Star the repo on GitHub
           <ExternalLinkIcon className="ml-[1px] h-3 w-3" />
@@ -121,7 +121,7 @@ export default function Index() {
         ) : (
           <Button
             onClick={handleGitHubLogin}
-            className="hover:scale-105 hover:shadow-md transition-all duration-500"
+            className="animte-in hover:scale-105 hover:shadow-md transition-all duration-500"
           >
             Continue with GitHub -{">"}
           </Button>
@@ -136,7 +136,7 @@ export default function Index() {
           alt="MyPRs"
           height="645.078px"
           width="300px"
-          className=" rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
+          className="animate-in rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
         />
       </Link>
     </div>
