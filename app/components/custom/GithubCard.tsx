@@ -6,17 +6,26 @@ import type { loader } from "~/routes/$username";
 import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";
 import PullRequestIcon from "./PullRequestIcon";
+import { useDrag, useDrop } from "react-dnd";
+import { ItemTypes } from "~/utils/itemTypes";
 
 interface IGithubCardProps {
   item: GitHubIssue;
   isFeatured?: boolean;
   isOwner?: boolean;
+  findCard?: (id: number) => {
+    card: any;
+    index: number;
+  };
+  moveCard?: (id: number, atIndex: number) => {};
 }
 
 export function DemoGithub({
   item,
   isFeatured = false,
   isOwner = false,
+  findCard,
+  moveCard,
 }: IGithubCardProps) {
   const { featured_github_prs } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
@@ -28,17 +37,53 @@ export function DemoGithub({
     );
   };
 
+  const id = item.id;
+
+  const originalIndex = findCard?.(id).index;
+  const [{ isDragging }, drag] = useDrag(
+    () => ({
+      type: ItemTypes.CARD,
+      item: { id, originalIndex },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+      end: (item, monitor) => {
+        const { id: droppedId, originalIndex } = item;
+        const didDrop = monitor.didDrop();
+        if (!didDrop) {
+          moveCard?.(droppedId, originalIndex);
+        }
+      },
+    }),
+    [id, originalIndex, moveCard]
+  );
+  const [, drop] = useDrop(
+    () => ({
+      accept: ItemTypes.CARD,
+      hover({ id: draggedId }) {
+        if (draggedId !== id) {
+          const { index: overIndex } = findCard(id);
+          moveCard(draggedId, overIndex);
+        }
+      },
+    }),
+    [findCard, moveCard]
+  );
+  const opacity = isDragging ? 0 : 1;
+
   return (
     <motion.div
       initial={{ y: 300, opacity: 0, scale: 0.3 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
       exit={{ y: -300, opacity: 0, scale: 0.3 }}
+      ref={(node) => drag(drop(node))}
+      style={{ opacity }}
       className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-700"
     >
       <div className="space-y-3">
         <div className="flex">
           <h3 className="text-sm text-slate-700 mr-auto dark:text-slate-300">
-            {item.repository_url.slice(29)}
+            {item.repository_url.slice(29)} {item.id}
           </h3>
 
           {isOwner ? (

@@ -26,6 +26,8 @@ import { useTheme } from "./utils/theme";
 import posthog from "posthog-js";
 import { ClientHintCheck, getHints } from "./utils/client-hints";
 import { getTheme } from "./utils/theme.server";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
@@ -147,7 +149,9 @@ export default function App() {
       <body className="max-w-4xl mx-auto bg-[#fdfafa] dark:bg-[#191919]">
         {/* @ts-ignore */}
         <Header supabase={supabase} />
-        <Outlet context={{ supabase }} />
+        <DndProvider backend={HTML5Backend}>
+          <Outlet context={{ supabase }} />
+        </DndProvider>
         <ScrollRestoration />
         <Scripts />
         <LiveReload />

@@ -1,4 +1,4 @@
-// TODO: Add a buttton to share the profile
+import update from "immutability-helper";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -16,6 +16,9 @@ import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
 import { Share2, Star, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { useCallback, useState } from "react";
+import { useDrop } from "react-dnd";
+import { ItemTypes } from "~/utils/itemTypes";
 
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
   const domain = data?.domain;
@@ -179,6 +182,47 @@ const Index = () => {
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
   const isTransitioning = unstable_useViewTransitionState(`/${username}`);
+
+  const [cards, setCards] = useState(featuredPRs);
+
+  const findCard = useCallback(
+    (id: number) => {
+      const card = featuredPRs.filter((c) => c.id === id)[0];
+      return {
+        card,
+        index: featuredPRs.indexOf(card),
+      };
+    },
+    [featuredPRs]
+  );
+
+  const moveCard = useCallback(
+    (id, atIndex) => {
+      const { card, index } = findCard(id);
+      console.log(id, atIndex, index);
+
+      setCards((cards) => {
+        // Reoder cards such that the card being dragged is removed from its original position and inserted at the new position `atIndex`
+        const newCards = [...cards];
+        console.log(newCards.splice(index, 1).map((item) => item.id));
+        console.log(newCards.splice(atIndex, 0, card).map((item) => item.id));
+        console.log(newCards.map((item) => item.id));
+        return newCards;
+      });
+
+      // setCards(
+      //   update(cards, {
+      //     $splice: [
+      //       [index, 1],
+      //       [atIndex, 0, card],
+      //     ],
+      //   })
+      // );
+    },
+    [findCard, cards, setCards]
+  );
+  const [, drop] = useDrop(() => ({ accept: ItemTypes.CARD }));
+
   return (
     <div className="mx-5 flex  flex-col">
       {ghData ? (
@@ -226,15 +270,17 @@ const Index = () => {
                 />
               ) : null}
               <AnimatePresence>
-                {featuredPRs?.length ? (
-                  <div className="mt-5">
+                {cards?.length ? (
+                  <div className="mt-5" ref={drop}>
                     <p className="font-medium">Featured PRs ✨</p>
-                    {featuredPRs.map((item) => (
+                    {cards.map((item) => (
                       <DemoGithub
                         key={item.id}
                         item={item}
                         isFeatured
                         isOwner={isOwner}
+                        findCard={findCard}
+                        moveCard={moveCard}
                       />
                     ))}
                   </div>
