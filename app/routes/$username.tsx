@@ -12,13 +12,16 @@ import {
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
-import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
+import type {
+  Env,
+  GitHubIssue,
+  GitHubIssuesResponse,
+  GithubUser,
+} from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
 import { Share2, Star, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useCallback, useState } from "react";
-import { useDrop } from "react-dnd";
-import { ItemTypes } from "~/utils/itemTypes";
 
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
   const domain = data?.domain;
@@ -185,43 +188,56 @@ const Index = () => {
 
   const [cards, setCards] = useState(featuredPRs);
 
-  const findCard = useCallback(
-    (id: number) => {
-      const card = featuredPRs.filter((c) => c.id === id)[0];
-      return {
-        card,
-        index: featuredPRs.indexOf(card),
-      };
-    },
-    [featuredPRs]
-  );
+  // const moveCard = useCallback(
+  //   (id, atIndex) => {
+  //     const { card, index } = findCard(id);
+  //     console.log(id, atIndex, index);
 
-  const moveCard = useCallback(
-    (id, atIndex) => {
-      const { card, index } = findCard(id);
-      console.log(id, atIndex, index);
+  //     setCards((cards) => {
+  //       // Reoder cards such that the card being dragged is removed from its original position and inserted at the new position `atIndex`
+  //       const newCards = [...cards];
+  //       console.log(newCards.splice(index, 1).map((item) => item.id));
+  //       console.log(newCards.splice(atIndex, 0, card).map((item) => item.id));
+  //       console.log(newCards.map((item) => item.id));
+  //       return newCards;
+  //     });
 
-      setCards((cards) => {
-        // Reoder cards such that the card being dragged is removed from its original position and inserted at the new position `atIndex`
-        const newCards = [...cards];
-        console.log(newCards.splice(index, 1).map((item) => item.id));
-        console.log(newCards.splice(atIndex, 0, card).map((item) => item.id));
-        console.log(newCards.map((item) => item.id));
-        return newCards;
-      });
+  //     // setCards(
+  //     //   update(cards, {
+  //     //     $splice: [
+  //     //       [index, 1],
+  //     //       [atIndex, 0, card],
+  //     //     ],
+  //     //   })
+  //     // );
+  //   },
+  //   [findCard, cards, setCards]
+  // );
+  // const [, drop] = useDrop(() => ({ accept: ItemTypes.CARD }));
 
-      // setCards(
-      //   update(cards, {
-      //     $splice: [
-      //       [index, 1],
-      //       [atIndex, 0, card],
-      //     ],
-      //   })
-      // );
-    },
-    [findCard, cards, setCards]
-  );
-  const [, drop] = useDrop(() => ({ accept: ItemTypes.CARD }));
+  const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
+    setCards((prevCards: GitHubIssue[]) =>
+      update(prevCards, {
+        $splice: [
+          [dragIndex, 1],
+          [hoverIndex, 0, prevCards[dragIndex] as GitHubIssue],
+        ],
+      })
+    );
+  }, []);
+
+  const renderCard = useCallback((card: GitHubIssue, index: number) => {
+    return (
+      <DemoGithub
+        key={card.id}
+        item={card}
+        isFeatured
+        isOwner={isOwner}
+        moveCard={moveCard}
+        index={index}
+      />
+    );
+  }, []);
 
   return (
     <div className="mx-5 flex  flex-col">
@@ -271,18 +287,9 @@ const Index = () => {
               ) : null}
               <AnimatePresence>
                 {cards?.length ? (
-                  <div className="mt-5" ref={drop}>
-                    <p className="font-medium">Featured PRs ✨</p>
-                    {cards.map((item) => (
-                      <DemoGithub
-                        key={item.id}
-                        item={item}
-                        isFeatured
-                        isOwner={isOwner}
-                        findCard={findCard}
-                        moveCard={moveCard}
-                      />
-                    ))}
+                  <div className="mt-5">
+                    <p className="font-medium">Featured PRs ✨{cards.length}</p>
+                    {cards.map((item, index) => renderCard(item, index))}
                   </div>
                 ) : isOwner ? (
                   <div className="mt-5">
@@ -298,8 +305,13 @@ const Index = () => {
                 {nonFeaturedPRs?.length ? (
                   <div className="mt-5">
                     <p className="font-medium text-lg"> All My PRs</p>
-                    {nonFeaturedPRs.map((item) => (
-                      <DemoGithub key={item.id} item={item} isOwner={isOwner} />
+                    {nonFeaturedPRs.map((item, index) => (
+                      <DemoGithub
+                        key={item.id}
+                        item={item}
+                        isOwner={isOwner}
+                        index={index}
+                      />
                     ))}
                   </div>
                 ) : null}
