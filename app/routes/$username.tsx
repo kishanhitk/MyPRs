@@ -261,7 +261,7 @@ const Index = () => {
               <AnimatePresence>
                 {cards?.length ? (
                   <div className="mt-5">
-                    <p className="font-medium">Featured PRs ✨{cards.length}</p>
+                    <p className="font-medium">Featured PRs ✨</p>
                     {cards.map((item, index) => renderCard(item, index))}
                   </div>
                 ) : isOwner ? (
