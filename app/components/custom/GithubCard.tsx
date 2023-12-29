@@ -9,6 +9,7 @@ import PullRequestIcon from "./PullRequestIcon";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "~/utils/itemTypes";
 import { useRef } from "react";
+import clsx from "clsx";
 
 interface IGithubCardProps {
   item: GitHubIssue;
@@ -127,10 +128,10 @@ export function DemoGithub({
     <div
       ref={ref}
       style={{ opacity }}
-      // initial={{ y: 300, opacity: 0, scale: 0.3 }}
-      // animate={{ y: 0, opacity: 1, scale: 1 }}
-      // exit={{ y: -300, opacity: 0, scale: 0.3 }}
-      className="animate-in my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-700"
+      className={clsx(
+        "my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-700",
+        !isDragging && "animate-in"
+      )}
       data-handler-id={handlerId}
     >
       <div className="space-y-3">

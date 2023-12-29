@@ -188,33 +188,6 @@ const Index = () => {
 
   const [cards, setCards] = useState(featuredPRs);
 
-  // const moveCard = useCallback(
-  //   (id, atIndex) => {
-  //     const { card, index } = findCard(id);
-  //     console.log(id, atIndex, index);
-
-  //     setCards((cards) => {
-  //       // Reoder cards such that the card being dragged is removed from its original position and inserted at the new position `atIndex`
-  //       const newCards = [...cards];
-  //       console.log(newCards.splice(index, 1).map((item) => item.id));
-  //       console.log(newCards.splice(atIndex, 0, card).map((item) => item.id));
-  //       console.log(newCards.map((item) => item.id));
-  //       return newCards;
-  //     });
-
-  //     // setCards(
-  //     //   update(cards, {
-  //     //     $splice: [
-  //     //       [index, 1],
-  //     //       [atIndex, 0, card],
-  //     //     ],
-  //     //   })
-  //     // );
-  //   },
-  //   [findCard, cards, setCards]
-  // );
-  // const [, drop] = useDrop(() => ({ accept: ItemTypes.CARD }));
-
   const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
     setCards((prevCards: GitHubIssue[]) =>
       update(prevCards, {
