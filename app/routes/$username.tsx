@@ -1,4 +1,3 @@
-import update from "immutability-helper";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -12,16 +11,11 @@ import {
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
-import type {
-  Env,
-  GitHubIssue,
-  GitHubIssuesResponse,
-  GithubUser,
-} from "~/types/shared";
-import { AnimatePresence } from "framer-motion";
+import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { Share2, Star, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useCallback, useState } from "react";
+import { useState } from "react";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
   const domain = data?.domain;
@@ -188,30 +182,20 @@ const Index = () => {
 
   const [cards, setCards] = useState(featuredPRs);
 
-  const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
-    setCards((prevCards: GitHubIssue[]) =>
-      update(prevCards, {
-        $splice: [
-          [dragIndex, 1],
-          [hoverIndex, 0, prevCards[dragIndex] as GitHubIssue],
-        ],
-      })
-    );
-  }, []);
+  const onDragEnd = (result: any) => {
+    const { destination, source } = result;
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    )
+      return;
 
-  const renderCard = useCallback((card: GitHubIssue, index: number) => {
-    return (
-      <DemoGithub
-        key={card.id}
-        item={card}
-        isFeatured
-        isOwner={isOwner}
-        moveCard={moveCard}
-        index={index}
-      />
-    );
-  }, []);
-
+    const newCards = [...cards];
+    const [removed] = newCards.splice(source.index, 1);
+    newCards.splice(destination.index, 0, removed);
+    setCards(newCards);
+  };
   return (
     <div className="mx-5 flex  flex-col">
       {ghData ? (
@@ -258,11 +242,32 @@ const Index = () => {
                   excludedRepoNames={excludedGitHubRepos}
                 />
               ) : null}
-              <AnimatePresence>
+              <>
                 {cards?.length ? (
                   <div className="mt-5">
                     <p className="font-medium">Featured PRs ✨</p>
-                    {cards.map((item, index) => renderCard(item, index))}
+                    <DragDropContext onDragEnd={onDragEnd}>
+                      <Droppable droppableId="featured">
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                          >
+                            {cards.map((item, index) => (
+                              <DemoGithub
+                                isDraggable
+                                key={item.id}
+                                item={item}
+                                isFeatured
+                                isOwner={isOwner}
+                                index={index}
+                              />
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </div>
                 ) : isOwner ? (
                   <div className="mt-5">
@@ -288,7 +293,7 @@ const Index = () => {
                     ))}
                   </div>
                 ) : null}
-              </AnimatePresence>
+              </>
             </>
           ) : (
             <p>
