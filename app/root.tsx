@@ -1,6 +1,5 @@
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -150,7 +149,6 @@ export default function App() {
         <Outlet context={{ supabase }} />
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
         <Analytics />
       </body>
     </html>
