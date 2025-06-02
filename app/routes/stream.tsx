@@ -1,13 +1,12 @@
 import { Suspense } from "react";
 import { Await, useLoaderData } from "react-router";
-import { defer } from "react-router";
 
 export async function loader() {
   const version = process.versions.node;
 
-  return defer({
+  return {
     version: sleep(version, 1000),
-  });
+  };
 }
 
 function sleep(val: string, ms: number) {

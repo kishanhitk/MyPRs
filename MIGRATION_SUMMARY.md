@@ -171,3 +171,87 @@ React Router v7 + Vite + Tailwind v4
 - **Clean dependency tree** with no stale Remix references
 
 The migration is **complete and production-ready**! 🎉
+
+## Build Issues Encountered & Resolved
+
+### 1. Missing Dependencies
+**Issue**: `@react-router/fs-routes` not installed  
+**Fix**: Added missing dependency
+
+### 2. Import Resolution Errors
+**Issue**: Various import path mismatches  
+**Fix**: Updated all import statements across codebase
+
+### 3. View Transition API
+**Issue**: `unstable_useViewTransitionState` not available in React Router v7  
+**Fix**: Temporarily disabled with TODO comments for future implementation
+
+### 4. ESLint Configuration
+**Issue**: `.eslintrc.cjs` still referenced `@remix-run/eslint-config`  
+**Fix**: Updated to standard React/TypeScript ESLint configuration
+
+### 5. Defer Function Deprecation
+**Issue**: `defer` function removed in React Router v7, causing runtime errors in production  
+**Fix**: Removed `defer()` wrapper and returned promises directly from loaders:
+```javascript
+// Before (React Router v6)
+import { defer } from "react-router"
+return defer({ data: promise })
+
+// After (React Router v7)
+return { data: promise }
+```
+
+## Vercel Deployment
+
+### Issues Resolved
+1. **Schema validation error**: Removed invalid `serverlessFunctionRegion` from vercel.json
+2. **Runtime specification**: Removed vercel.json to enable auto-detection  
+3. **Build output**: Added Vercel preset to handle build directory mapping
+
+### Final Configuration
+- **Package**: `@vercel/react-router` installed
+- **Config**: Added `vercelPreset()` to `react-router.config.ts`
+- **Dependencies**: Updated `isbot` to v5 for compatibility
+
+## Architecture Changes
+
+### Before
+- Framework: Remix v2
+- Styling: Tailwind CSS v3 with PostCSS
+- Bundler: Vite with Remix plugin
+- Deployment: Vercel with Remix adapter
+
+### After  
+- Framework: React Router v7 (unified package)
+- Styling: Tailwind CSS v4 (CSS-first)
+- Bundler: Vite with React Router plugin
+- Deployment: Vercel with React Router preset
+
+## Features Maintained
+- ✅ Server-side rendering (SSR)
+- ✅ File-based routing
+- ✅ TypeScript support
+- ✅ Tailwind CSS styling
+- ✅ Authentication (Supabase)
+- ✅ API routes
+- ✅ Actions and loaders
+- ✅ Error boundaries
+
+## Features Temporarily Disabled
+- ⚠️ View transitions (unstable_useViewTransitionState)
+- ⚠️ Some deferred data patterns (migrated to new approach)
+
+## Notes
+- All Remix references removed from codebase
+- Maintained backward compatibility where possible
+- Ready for future React Router v7 features
+- Supabase auth helpers still using deprecated package (future consideration)
+
+## Verification
+- ✅ Local development server starts successfully
+- ✅ Build completes without errors  
+- ✅ Production deployment successful on Vercel
+- ✅ All pages render correctly
+- ✅ SSR functionality working
+- ✅ TypeScript compilation successful
