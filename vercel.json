@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "build/client",
-  "serverlessFunctionRegion": "iad1",
   "functions": {
     "build/server/index.js": {
       "runtime": "nodejs20.x"
