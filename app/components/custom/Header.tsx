@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link, useRouteLoaderData } from "react-router";
 import { Button } from "../ui/button";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import posthog from "posthog-js";

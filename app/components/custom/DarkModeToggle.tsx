@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher } from "react-router";
 import clsx from "clsx";
 import { MoonIcon, SunIcon, LaptopIcon } from "lucide-react";
 import { THEME_FETCHER } from "~/utils/constants";

@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "react-router";
+import { json } from "react-router";
 import { getGitHubUserData, getPRsFromGithubAPI } from "~/lib/github";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {

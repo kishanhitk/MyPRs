@@ -1,6 +1,5 @@
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -8,18 +7,18 @@ import {
   useLoaderData,
   useLocation,
   useRevalidator,
-} from "@remix-run/react";
-import styles from "./tailwind.css";
+} from "react-router";
+import styles from "./tailwind.css?url";
 import { useEffect, useState } from "react";
 import {
   createBrowserClient,
   createServerClient,
 } from "@supabase/auth-helpers-remix";
 import { Analytics } from "@vercel/analytics/react";
-import { type LinksFunction, type LoaderFunctionArgs } from "@vercel/remix";
+import { type LoaderFunctionArgs } from "react-router";
 import { Header } from "./components/custom/Header";
-import FontStyles from "@fontsource/inter/index.css";
-import { json } from "@vercel/remix";
+import FontStyles from "@fontsource/inter/index.css?url";
+import { json } from "react-router";
 import { useNonce } from "./utils/noonce-provider";
 import clsx from "clsx";
 import { useTheme } from "./utils/theme";
@@ -27,7 +26,7 @@ import posthog from "posthog-js";
 import { ClientHintCheck, getHints } from "./utils/client-hints";
 import { getTheme } from "./utils/theme.server";
 
-export const links: LinksFunction = () => [
+export const links = () => [
   { rel: "stylesheet", href: styles },
   {
     rel: "stylesheet",
@@ -150,7 +149,6 @@ export default function App() {
         <Outlet context={{ supabase }} />
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
         <Analytics />
       </body>
     </html>

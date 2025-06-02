@@ -1,6 +1,6 @@
 import React from "react";
 import MultiSelect from "../ui/multiselect";
-import { Form } from "@remix-run/react";
+import { Form } from "react-router";
 import { Button } from "../ui/button";
 
 export interface IPRFilterProps {

@@ -16,3 +16,6 @@ node_modules
 
 
 .DS_Store
+
+# React Router v7 generated types
+.react-router/

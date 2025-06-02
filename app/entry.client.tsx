@@ -1,11 +1,11 @@
-import { RemixBrowser } from "@remix-run/react";
+import { HydratedRouter } from "react-router/dom";
 import * as React from "react";
 import { hydrateRoot } from "react-dom/client";
 
 // fixup stuff before hydration
 function hydrate() {
   React.startTransition(() => {
-    hydrateRoot(document, <RemixBrowser />);
+    hydrateRoot(document, <HydratedRouter />);
   });
 }
 

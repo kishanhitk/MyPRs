@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "react-router";
+import { redirect } from "react-router";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {

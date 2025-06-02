@@ -2,12 +2,11 @@ import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@vercel/remix";
-import { json } from "@vercel/remix";
+} from "react-router";
+import { json } from "react-router";
 import {
-  unstable_useViewTransitionState,
   useLoaderData,
-} from "@remix-run/react";
+} from "react-router";
 import { createServerClient } from "@supabase/auth-helpers-remix";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
@@ -177,7 +176,8 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
-  const isTransitioning = unstable_useViewTransitionState(`/${username}`);
+  // TODO: Re-implement view transitions with React Router v7 API
+  // const isTransitioning = unstable_useViewTransitionState(`/${username}`);
   return (
     <div className="mx-5 flex  flex-col">
       {ghData ? (
@@ -188,9 +188,10 @@ const Index = () => {
                 src={userData.avatar_url}
                 alt={userData.login}
                 className="h-52 w-52 mt-5 rounded-full self-center"
-                style={{
-                  viewTransitionName: isTransitioning ? "profile-picture" : "",
-                }}
+                // TODO: Re-implement view transitions with React Router v7 API
+                // style={{
+                //   viewTransitionName: isTransitioning ? "profile-picture" : "",
+                // }}
               ></img>
               <p className="self-center text-3xl mt-1">{userData.name}</p>
               <p className="self-center text-slate-700 flex text-lg dark:text-slate-300">

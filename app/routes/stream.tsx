@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { Await, useLoaderData } from "@remix-run/react";
-import { defer } from "@vercel/remix";
+import { Await, useLoaderData } from "react-router";
+import { defer } from "react-router";
 
 export async function loader() {
   const version = process.versions.node;
