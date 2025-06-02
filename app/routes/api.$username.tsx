@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
 import { getGitHubUserData, getPRsFromGithubAPI } from "~/lib/github";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
@@ -16,7 +16,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { data: ghData, error } = ghResponse;
   const { data: userData, error: userError } = userResponse;
 
-  return json(
+  return data(
     { ghData, error, userData, userError },
     {
       headers: {

@@ -2,13 +2,13 @@ import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@vercel/remix";
-import { json } from "@vercel/remix";
+} from "react-router";
+import { data } from "react-router";
 import {
-  unstable_useViewTransitionState,
+  useViewTransitionState,
   useLoaderData,
-} from "@remix-run/react";
-import { createServerClient } from "@supabase/auth-helpers-remix";
+} from "react-router";
+import { createClient } from "@supabase/supabase-js";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
@@ -68,13 +68,11 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
 };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const response = new Response();
   const env = process.env as Env;
   const username = params.username!;
-  const supabaseClient = createServerClient(
+  const supabaseClient = createClient(
     env.SUPABASE_URL!,
-    env.SUPABASE_ANON_KEY!,
-    { request, response }
+    env.SUPABASE_ANON_KEY!
   );
   const domain = new URL(request.url).origin;
   const dateBeforeGettingUser = new Date();
@@ -142,7 +140,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (user) {
     isOwner = user.id === userDataOfUsername?.[0]?.id;
   }
-  return json(
+  return data(
     {
       timeTaken: {
         timeTakenToGetUser,
@@ -158,9 +156,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       isOwner,
       username,
       domain,
-    },
-    {
-      headers: response.headers,
     }
   );
 };
@@ -177,7 +172,7 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const repoNames = ghData?.items.map((item) => item.repository_url.slice(29));
   const uniqueRepoNames = [...new Set(repoNames)];
-  const isTransitioning = unstable_useViewTransitionState(`/${username}`);
+  const isTransitioning = useViewTransitionState(`/${username}`);
   return (
     <div className="mx-5 flex  flex-col">
       {ghData ? (
@@ -276,22 +271,20 @@ const Index = () => {
 export default Index;
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const response = new Response();
   const env = process.env as Env;
-  const supabaseClient = createServerClient(
+  const supabaseClient = createClient(
     env.SUPABASE_URL!,
-    env.SUPABASE_ANON_KEY!,
-    { request, response }
+    env.SUPABASE_ANON_KEY!
   );
   const {
     data: { user },
   } = await supabaseClient.auth.getUser();
   if (!user) {
-    return json({ error: "You must be logged in to do that" }, { status: 401 });
+    return data({ error: "You must be logged in to do that" }, { status: 401 });
   }
   const body = await request.formData();
   const repos_to_exclude = body.get("repos_to_exclude") as string;
-  const { data, error } = await supabaseClient
+  const { data: updateData, error } = await supabaseClient
     .from("users")
     .update({
       excluded_github_repos: repos_to_exclude.split(","),
@@ -299,5 +292,5 @@ export async function action({ request, context }: ActionFunctionArgs) {
     .eq("id", user.id);
   if (error) console.error(error);
 
-  return json({ data, error });
+  return data({ data: updateData, error });
 }

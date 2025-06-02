@@ -1,7 +1,7 @@
 import { StarIcon, SmileIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import type { GitHubIssue } from "~/types/shared";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "react-router";
 import type { loader } from "~/routes/$username";
 import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";

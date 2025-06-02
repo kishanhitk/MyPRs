@@ -1,5 +1,5 @@
 import { ImageResponse } from "@vercel/og";
-import type { LoaderFunctionArgs } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "react-router";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const username = params.username!;

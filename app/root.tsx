@@ -1,6 +1,5 @@
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -8,18 +7,15 @@ import {
   useLoaderData,
   useLocation,
   useRevalidator,
-} from "@remix-run/react";
-import styles from "./tailwind.css";
+} from "react-router";
+import "./tailwind.css";
 import { useEffect, useState } from "react";
-import {
-  createBrowserClient,
-  createServerClient,
-} from "@supabase/auth-helpers-remix";
+import { createClient } from "@supabase/supabase-js";
 import { Analytics } from "@vercel/analytics/react";
-import { type LinksFunction, type LoaderFunctionArgs } from "@vercel/remix";
+import { type LinksFunction, type LoaderFunctionArgs } from "react-router";
 import { Header } from "./components/custom/Header";
-import FontStyles from "@fontsource/inter/index.css";
-import { json } from "@vercel/remix";
+import "@fontsource/inter/index.css";
+import { data } from "react-router";
 import { useNonce } from "./utils/noonce-provider";
 import clsx from "clsx";
 import { useTheme } from "./utils/theme";
@@ -27,13 +23,7 @@ import posthog from "posthog-js";
 import { ClientHintCheck, getHints } from "./utils/client-hints";
 import { getTheme } from "./utils/theme.server";
 
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: styles },
-  {
-    rel: "stylesheet",
-    href: FontStyles,
-  },
-];
+export const links: LinksFunction = () => [];
 
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const env = {
@@ -46,20 +36,16 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
 
   const response = new Response();
 
-  const supabase = createServerClient(
+  const supabase = createClient(
     process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
-    {
-      request,
-      response,
-    }
+    process.env.SUPABASE_ANON_KEY!
   );
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  return json(
+  return data(
     {
       env,
       session,
@@ -83,7 +69,7 @@ export default function App() {
   const { env, session } = useLoaderData<typeof loader>();
   const { revalidate } = useRevalidator();
   const [supabase] = useState(() =>
-    createBrowserClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
+    createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
   );
   const [posthogLoaded, setPosthogLoaded] = useState(false);
   const location = useLocation();
@@ -150,7 +136,6 @@ export default function App() {
         <Outlet context={{ supabase }} />
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
         <Analytics />
       </body>
     </html>

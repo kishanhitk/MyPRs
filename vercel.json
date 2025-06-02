@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "app/entry.server.tsx": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/build/client/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app/entry.server.tsx"
+    }
+  ]
+}
