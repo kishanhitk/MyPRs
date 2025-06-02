@@ -17,9 +17,12 @@
     "@radix-ui/react-select": "^1.2.2",
     "@radix-ui/react-separator": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
+    "@react-router/node": "^7.0.2",
+    "@react-router/serve": "^7.0.2",
     "@supabase/supabase-js": "^2.33.2",
     "@vercel/analytics": "^1.0.2",
     "@vercel/og": "^0.5.17",
+    "@vercel/react-router": "^1.1.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "framer-motion": "^10.16.4",
@@ -29,20 +32,18 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router": "^7.0.2",
-    "@react-router/node": "^7.0.2",
-    "@react-router/serve": "^7.0.2",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.2"
   },
   "devDependencies": {
+    "@react-router/dev": "^7.0.2",
     "@types/react": "^18.0.35",
     "@types/react-dom": "^18.0.11",
     "eslint": "^8.38.0",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.4",
-    "vite": "^6.0.0",
-    "@react-router/dev": "^7.0.2"
+    "vite": "^6.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
