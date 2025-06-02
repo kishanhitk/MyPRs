@@ -1,40 +1,27 @@
+import { redirect } from "react-router";
+import { type ActionFunctionArgs } from "react-router";
 import { createServerClient } from "@supabase/auth-helpers-remix";
-import type { Env } from "~/types/shared";
-import { z } from "zod";
-import type { ActionFunctionArgs } from "react-router";
-import { json } from "react-router";
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export const action = async ({ request }: ActionFunctionArgs) => {
   const response = new Response();
-  const env = process.env as Env;
-  const supabaseClient = createServerClient(
-    env.SUPABASE_URL!,
-    env.SUPABASE_ANON_KEY!,
+  const supabase = createServerClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
     { request, response }
   );
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
-  if (!user) {
-    return json({ error: "You must be logged in to do that" }, { status: 401 });
-  }
-  const body = await request.formData();
-  const pr_id = z.string().parse(body.get("prId"));
-  const featuredGithubPRs = z.string().parse(body.get("featured_github_prs"));
-  const isFeatured = body.get("isFeatured");
 
-  const updatedFeaturedGithubPRs =
-    isFeatured === "true"
-      ? featuredGithubPRs.split(",").filter((id) => id !== pr_id)
-      : [...(featuredGithubPRs ? featuredGithubPRs.split(",") : []), pr_id];
+  const formData = await request.formData();
+  const username = formData.get("username") as string;
+  const featured = formData.get("featured") === "true";
 
-  const { data, error } = await supabaseClient
+  const { error } = await supabase
     .from("users")
-    .update({
-      featured_github_prs: updatedFeaturedGithubPRs,
-    })
-    .eq("id", user.id);
-  if (error) console.error(error);
+    .update({ featured: !featured })
+    .eq("username", username);
 
-  return json({ data, error });
-}
+  if (error) {
+    return { error: error.message };
+  }
+
+  return redirect(`/${username}`);
+};

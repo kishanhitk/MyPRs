@@ -1,23 +1,17 @@
-import { parse } from "@conform-to/zod";
-import { type ActionFunctionArgs, json } from "react-router";
-import { ThemeFormSchema } from "~/utils/theme";
-import { setTheme } from "~/utils/theme.server";
+import { type ActionFunctionArgs, redirect } from "react-router";
+import { getTheme, setTheme } from "~/utils/theme.server";
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const requestUrl = new URL(request.url);
   const formData = await request.formData();
-  const submission = parse(formData, {
-    schema: ThemeFormSchema,
-  });
-  if (submission.intent !== "submit") {
-    return json({ status: "idle", submission } as const);
+  
+  const theme = formData.get("theme");
+  
+  if (!theme) {
+    return { success: false };
   }
-  if (!submission.value) {
-    return json({ status: "error", submission } as const, { status: 400 });
-  }
-  const { theme } = submission.value;
 
-  const responseInit = {
-    headers: { "set-cookie": setTheme(theme) },
-  };
-  return json({ success: true, submission }, responseInit);
-}
+  return redirect(requestUrl.pathname, {
+    headers: { "Set-Cookie": setTheme(theme === "light" ? "light" : "dark") },
+  });
+};

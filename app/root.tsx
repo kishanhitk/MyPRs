@@ -18,7 +18,6 @@ import { Analytics } from "@vercel/analytics/react";
 import { type LoaderFunctionArgs } from "react-router";
 import { Header } from "./components/custom/Header";
 import FontStyles from "@fontsource/inter/index.css?url";
-import { json } from "react-router";
 import { useNonce } from "./utils/noonce-provider";
 import clsx from "clsx";
 import { useTheme } from "./utils/theme";
@@ -34,7 +33,7 @@ export const links = () => [
   },
 ];
 
-export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+export async function loader({ request }: LoaderFunctionArgs) {
   const env = {
     SUPABASE_URL: process.env.SUPABASE_URL!,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
@@ -58,23 +57,18 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
     data: { session },
   } = await supabase.auth.getSession();
 
-  return json(
-    {
-      env,
-      session,
-      user: session?.user,
-      requestInfo: {
-        hints: getHints(request),
-        userPrefs: {
-          theme: getTheme(request),
-        },
+  return {
+    env,
+    session,
+    user: session?.user,
+    requestInfo: {
+      hints: getHints(request),
+      userPrefs: {
+        theme: getTheme(request),
       },
     },
-    {
-      headers: response.headers,
-    }
-  );
-};
+  };
+}
 
 export default function App() {
   const nonce = useNonce();

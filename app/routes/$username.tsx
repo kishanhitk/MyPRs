@@ -3,7 +3,6 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "react-router";
-import { json } from "react-router";
 import {
   useLoaderData,
 } from "react-router";
@@ -14,6 +13,7 @@ import type { Env, GitHubIssuesResponse, GithubUser } from "~/types/shared";
 import { AnimatePresence } from "framer-motion";
 import { Share2, Star, TwitterIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { getGitHubUserData, getPRsFromGithubAPI } from "~/lib/github";
 
 export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
   const domain = data?.domain;
@@ -68,25 +68,26 @@ export const meta: MetaFunction<typeof loader> = ({ data, params }) => {
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const response = new Response();
-  const env = process.env as Env;
-  const username = params.username!;
-  const supabaseClient = createServerClient(
-    env.SUPABASE_URL!,
-    env.SUPABASE_ANON_KEY!,
+  const supabase = createServerClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
     { request, response }
   );
+
+  const username = params.username!;
   const domain = new URL(request.url).origin;
+  
   const dateBeforeGettingUser = new Date();
   const {
     data: { user },
-  } = await supabaseClient.auth.getUser();
+  } = await supabase.auth.getUser();
   const dateAfterGettingUser = new Date();
   const timeTakenToGetUser =
     dateAfterGettingUser.getTime() - dateBeforeGettingUser.getTime();
 
   const dateBeforeGettingUserData = new Date();
   const { data: userDataOfUsername, error: userDataOfUsernameError } =
-    await supabaseClient
+    await supabase
       .from("users")
       .select("*")
       .eq("github_username", username);
@@ -95,6 +96,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const timeTakenToGetUserData =
     dateAfterGettingUserData.getTime() - dateBeforeGettingUserData.getTime();
   if (userDataOfUsernameError) console.error(userDataOfUsernameError);
+  
   let excludedGitHubRepos: string[] = [];
   let featuredGithubPRIds: string[] = [];
   if (
@@ -121,6 +123,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     userData: GithubUser;
     error: any;
   } = dataFromAPI;
+  
   let featuredPRs: GitHubIssuesResponse["items"] = [];
   let nonFeaturedPRs: GitHubIssuesResponse["items"] = [];
   if (ghData?.items?.length) {
@@ -141,27 +144,23 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (user) {
     isOwner = user.id === userDataOfUsername?.[0]?.id;
   }
-  return json(
-    {
-      timeTaken: {
-        timeTakenToGetUser,
-        timeTakenToGetUserData,
-      },
-      userData,
-      ghData,
-      error,
-      excludedGitHubRepos,
-      featured_github_prs: featuredGithubPRIds,
-      featuredPRs,
-      nonFeaturedPRs,
-      isOwner,
-      username,
-      domain,
+  
+  return {
+    timeTaken: {
+      timeTakenToGetUser,
+      timeTakenToGetUserData,
     },
-    {
-      headers: response.headers,
-    }
-  );
+    userData,
+    ghData,
+    error,
+    excludedGitHubRepos,
+    featured_github_prs: featuredGithubPRIds,
+    featuredPRs,
+    nonFeaturedPRs,
+    isOwner,
+    username,
+    domain,
+  };
 };
 
 const Index = () => {
@@ -288,7 +287,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     data: { user },
   } = await supabaseClient.auth.getUser();
   if (!user) {
-    return json({ error: "You must be logged in to do that" }, { status: 401 });
+    return { error: "You must be logged in to do that" };
   }
   const body = await request.formData();
   const repos_to_exclude = body.get("repos_to_exclude") as string;
@@ -300,5 +299,5 @@ export async function action({ request, context }: ActionFunctionArgs) {
     .eq("id", user.id);
   if (error) console.error(error);
 
-  return json({ data, error });
+  return { data, error };
 }
