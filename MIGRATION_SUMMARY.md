@@ -40,15 +40,21 @@ Successfully migrated MyPRs from **Remix v2** to **React Router v7** and upgrade
   - Removed dependency on PostCSS configuration
   - Updated asset imports to use `?url` suffix for Vite compatibility
 
-### 3. **Vercel Deployment Configuration**
+### 3. **ESLint Configuration Update**
 
-- **Created `vercel.json`:**
-  - Configured build command for React Router v7
-  - Set up proper routing for SSR
-  - Defined asset caching headers
-  - Specified Node.js 20 runtime
+- **Fixed Vercel deployment issue:**
+  - Replaced `@remix-run/eslint-config` with standard React/TypeScript ESLint configuration
+  - Added necessary ESLint plugins: `@typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks`
+  - Removed all remaining Remix references that were causing build failures
 
-### 4. **TypeScript Configuration**
+### 4. **Vercel Deployment Configuration**
+
+- **Removed problematic `vercel.json`:**
+  - Let Vercel auto-detect React Router v7 build output
+  - Removed invalid schema properties that were causing deployment failures
+  - Simplified deployment process
+
+### 5. **TypeScript Configuration**
 
 - **Updated `tsconfig.json`:**
   - Added `.react-router/types/**/*` to includes for type generation
@@ -67,7 +73,7 @@ Remix v2 + PostCSS + Tailwind v3
 ├── @remix-run/react
 ├── @remix-run/node
 ├── @remix-run/serve
-├── @vercel/remix
+├── @remix-run/eslint-config
 └── Traditional @tailwind directives
 ```
 
@@ -77,6 +83,7 @@ React Router v7 + Vite + Tailwind v4
 ├── react-router (unified package)
 ├── @react-router/node
 ├── @react-router/serve
+├── Standard ESLint config
 ├── @tailwindcss/vite
 └── CSS-first @import configuration
 ```
@@ -107,7 +114,9 @@ React Router v7 + Vite + Tailwind v4
 
 - ✅ Build succeeds without errors
 - ✅ Development server starts successfully
-- ✅ Vercel deployment configuration updated
+- ✅ ESLint configuration updated (no more Remix references)
+- ✅ Package dependencies cleaned (no stale Remix packages)
+- ✅ Vercel auto-detection enabled
 - ✅ SSR functionality maintained
 - ✅ All routes and functionality preserved
 
@@ -118,7 +127,7 @@ React Router v7 + Vite + Tailwind v4
 - `vite.config.ts` - New Vite configuration
 - `react-router.config.ts` - React Router configuration
 - `app/routes.ts` - Route definitions
-- `vercel.json` - Deployment configuration
+- `.eslintrc.cjs` - Updated ESLint configuration
 - `tsconfig.json` - TypeScript configuration
 
 ### Source Files
@@ -136,8 +145,21 @@ React Router v7 + Vite + Tailwind v4
 4. Migrated entry files
 5. Updated all import statements
 6. Converted Tailwind CSS to v4 syntax
-7. Created Vercel deployment configuration
-8. Tested build and development server
+7. **Fixed ESLint configuration** (removed Remix references)
+8. **Cleaned package-lock.json** (removed stale Remix packages)
+9. Tested build and development server
+
+## 🐛 Issues Fixed During Migration
+
+### **Vercel Deployment Error**: `Failed to resolve "@remix-run/dev"`
+- **Root Cause**: ESLint configuration still referenced `@remix-run/eslint-config`
+- **Solution**: Updated `.eslintrc.cjs` to use standard React/TypeScript ESLint configuration
+- **Result**: ✅ Build now succeeds without Remix dependency errors
+
+### **Schema Validation Error**: `serverlessFunctionRegion`
+- **Root Cause**: Invalid Vercel configuration property
+- **Solution**: Removed `vercel.json` to let Vercel auto-detect React Router v7
+- **Result**: ✅ Vercel can now auto-detect and deploy the application
 
 ## ✨ Benefits Achieved
 
@@ -145,6 +167,7 @@ React Router v7 + Vite + Tailwind v4
 - **Improved DX** with faster builds and HMR
 - **Future-ready** architecture aligned with React ecosystem
 - **Maintained compatibility** with existing features
-- **Vercel deployment ready** without breaking changes
+- **Vercel deployment ready** without configuration issues
+- **Clean dependency tree** with no stale Remix references
 
 The migration is **complete and production-ready**! 🎉
