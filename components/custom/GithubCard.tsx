@@ -1,0 +1,106 @@
+"use client";
+
+import * as React from "react";
+import { StarIcon, SmileIcon } from "lucide-react";
+import { Button } from "../ui/button";
+import type { GitHubIssue } from "~/types/shared";
+import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
+import { motion } from "framer-motion";
+import PullRequestIcon from "./PullRequestIcon";
+import { toggleFeaturedAction } from "~/utils/pr-actions";
+
+interface IGithubCardProps {
+  item: GitHubIssue;
+  isFeatured?: boolean;
+  isOwner?: boolean;
+  featuredGithubPRs: string[];
+  username: string;
+}
+
+export function DemoGithub({
+  item,
+  isFeatured = false,
+  isOwner = false,
+  featuredGithubPRs,
+  username,
+}: IGithubCardProps) {
+  const [isPending, startTransition] = React.useTransition();
+
+  const toggleFeatured = () => {
+    startTransition(async () => {
+      await toggleFeaturedAction({
+        prId: item.id.toString(),
+        featuredGithubPRs,
+        isFeatured,
+        username,
+      });
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ y: 300, opacity: 0, scale: 0.3 }}
+      animate={{ y: 0, opacity: 1, scale: 1 }}
+      exit={{ y: -300, opacity: 0, scale: 0.3 }}
+      className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-700"
+    >
+      <div className="space-y-3">
+        <div className="flex">
+          <h3 className="text-sm text-slate-700 mr-auto dark:text-slate-300">
+            {item.repository_url.slice(29)}
+          </h3>
+
+          {isOwner ? (
+            <Button
+              asChild
+              size="icon"
+              disabled={isPending}
+              onClick={toggleFeatured}
+              variant="ghost"
+            >
+              <StarIcon
+                onClick={toggleFeatured}
+                fill={isFeatured ? "currentColor" : "none"}
+                className="h-5 w-5 cursor-pointer"
+              />
+            </Button>
+          ) : null}
+          <a
+            href={item.html_url}
+            className="ml-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <OpenInNewWindowIcon className="h-5 w-5" />
+          </a>
+        </div>
+        <div className="flex">
+          <PullRequestIcon className="fill-github_merged h-5 w-5" />
+          <a
+            href={item.html_url}
+            className="ml-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <p className="font-medium">{item.title}</p>
+          </a>
+        </div>
+      </div>
+
+      <div className="flex text-sm text-muted-foreground mt-4">
+        <div className="flex items-center">
+          <SmileIcon className="mr-1 h-4 w-4" />
+          {item.reactions.total_count}
+        </div>
+        <div className="flex items-center ml-4">
+          <ChatBubbleIcon className="mr-1 h-4 w-4" />
+          {item.comments}
+        </div>
+        <div className="ml-auto">
+          Merged on:{" "}
+          {new Date(item.pull_request.merged_at).toDateString().slice(4)}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
