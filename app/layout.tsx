@@ -2,6 +2,7 @@ import "@fontsource/inter";
 import "./globals.css";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { Analytics } from "@vercel/analytics/react";
 import { ClientHintCheck } from "~/utils/ClientHintCheck";
 import { getHints } from "~/utils/client-hints";
 import { getTheme } from "~/utils/theme.server";
@@ -46,6 +47,7 @@ export default async function RootLayout({
           <Header user={session?.user ?? null} />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
