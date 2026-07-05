@@ -16,21 +16,27 @@ export default function DarkModeToggle({
 }) {
   const requestInfo = useRequestInfo();
   const router = useRouter();
-  const [optimisticMode, setOptimisticMode] = React.useState<ThemeMode | null>(
-    null
+  const serverMode: ThemeMode = requestInfo.userPrefs.theme ?? "system";
+  // useOptimistic reverts to `serverMode` once the transition settles (or if the
+  // action rejects), so the toggle can never permanently diverge from truth.
+  const [mode, setOptimisticMode] = React.useOptimistic<ThemeMode, ThemeMode>(
+    serverMode,
+    (_current, next) => next
   );
   const [, startTransition] = React.useTransition();
 
-  const mode: ThemeMode =
-    optimisticMode ?? requestInfo.userPrefs.theme ?? "system";
   const nextMode: ThemeMode =
     mode === "system" ? "light" : mode === "light" ? "dark" : "system";
 
   const handleClick = () => {
-    setOptimisticMode(nextMode);
     startTransition(async () => {
-      await setThemeAction(nextMode);
-      router.refresh();
+      setOptimisticMode(nextMode);
+      try {
+        await setThemeAction(nextMode);
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to set theme:", error);
+      }
     });
   };
 

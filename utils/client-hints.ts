@@ -60,7 +60,6 @@ export function getHints(cookieString?: string) {
       }
       return acc;
     },
-    // eslint-disable-next-line @typescript-eslint/prefer-reduce-type-parameter
     {} as {
       [name in ClientHintNames]: (typeof clientHints)[name] extends {
         transform: (value: any) => infer ReturnValue;

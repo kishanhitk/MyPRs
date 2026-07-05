@@ -81,16 +81,28 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     headers: githubHeaders(),
     // Cache on the Next data layer, replacing the old CDN self-fetch contract.
     next: { revalidate: 3600 },
+    // Bound the request so a hanging GitHub response can't stall the render.
+    signal: AbortSignal.timeout(8000),
   };
 
   try {
     const response = await fetch(url, init);
     const data = await response.json();
-    if (data.message) throw new Error(data.message);
-    return { data, error: null } as { data: GitHubIssuesResponse; error: null };
+    if (!response.ok || data.message) {
+      return {
+        data: null,
+        error: new Error(data.message ?? `GitHub HTTP ${response.status}`),
+        status: response.status,
+      };
+    }
+    return { data, error: null, status: response.status } as {
+      data: GitHubIssuesResponse;
+      error: null;
+      status: number;
+    };
   } catch (error) {
     console.error(error);
-    return { data: null, error };
+    return { data: null, error, status: 0 };
   }
 };
 
@@ -101,15 +113,26 @@ export const getGitHubUserData = async (username: string) => {
     headers: githubHeaders(),
     // Cache on the Next data layer, replacing the old CDN self-fetch contract.
     next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(8000),
   };
 
   try {
     const response = await fetch(url, init);
     const data = await response.json();
-    if (data.message) throw new Error(data.message);
-    return { data, error: null } as { data: GitHubUser; error: null };
+    if (!response.ok || data.message) {
+      return {
+        data: null,
+        error: new Error(data.message ?? `GitHub HTTP ${response.status}`),
+        status: response.status,
+      };
+    }
+    return { data, error: null, status: response.status } as {
+      data: GitHubUser;
+      error: null;
+      status: number;
+    };
   } catch (error) {
     console.error(error);
-    return { data: null, error };
+    return { data: null, error, status: 0 };
   }
 };

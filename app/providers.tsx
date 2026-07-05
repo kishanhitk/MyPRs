@@ -57,7 +57,10 @@ export function Providers({
   React.useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Ignore background token refreshes — they change the access_token on a
+      // ~hourly cadence and would otherwise re-fetch every Server Component.
+      if (event === "TOKEN_REFRESHED") return;
       if (session?.access_token !== serverAccessToken) {
         if (session?.user?.id && session?.user?.email && posthogLoaded) {
           try {

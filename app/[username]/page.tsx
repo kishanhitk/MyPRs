@@ -22,7 +22,7 @@ export async function generateMetadata({
   const { username } = await params;
   const data = await getProfileData(username);
   const domain = await getDomain();
-  const login = data.userData?.login;
+  const login = data.userData?.login ?? username;
   const userAvatar = data.userData?.avatar_url;
   const featuredPRsCount = data.featuredPRs.length;
 
@@ -55,13 +55,13 @@ export default async function ProfilePage({
 }) {
   const { username } = await params;
   const {
-    hasGhData,
+    notFound,
+    loadError,
     userData,
     items,
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
-    featuredGithubPRIds,
     ownerRowId,
   } = await getProfileData(username);
 
@@ -75,7 +75,18 @@ export default async function ProfilePage({
     ...new Set(items.map((item) => item.repository_url.slice(29))),
   ];
 
-  if (!hasGhData || !userData) {
+  if (loadError && !userData) {
+    return (
+      <div className="mx-5 flex flex-col">
+        <p className="self-center mt-10">
+          Couldn't load this profile right now (GitHub may be rate-limiting or
+          unavailable). Please try again in a moment.
+        </p>
+      </div>
+    );
+  }
+
+  if (notFound || !userData) {
     return (
       <div className="mx-5 flex flex-col">
         <p className="self-center mt-10">The username is not valid</p>
@@ -140,7 +151,6 @@ export default async function ProfilePage({
         featuredPRs={featuredPRs}
         nonFeaturedPRs={nonFeaturedPRs}
         isOwner={isOwner}
-        featuredGithubPRs={featuredGithubPRIds}
         username={username}
       />
     </div>

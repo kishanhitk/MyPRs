@@ -83,8 +83,8 @@ export default async function Home() {
         <img
           src="/assets/hero-screenshot.webp"
           alt="MyPRs"
-          height="645.078px"
-          width="300px"
+          height={645}
+          width={300}
           className="animate-in rounded-3xl border-dashed border-2 hover:border-slate-300 border-slate-100 transition-all duration-500"
         />
       </Link>

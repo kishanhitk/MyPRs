@@ -8,12 +8,13 @@ export function LoginCTA() {
 
   const handleGitHubLogin = async () => {
     const baseUrl = new URL(window.location.origin);
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
         redirectTo: baseUrl + `auth/callback?redirectTo=false&`,
       },
     });
+    if (error) console.error("GitHub sign-in failed:", error.message);
   };
 
   return (

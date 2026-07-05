@@ -13,7 +13,6 @@ interface IGithubCardProps {
   item: GitHubIssue;
   isFeatured?: boolean;
   isOwner?: boolean;
-  featuredGithubPRs: string[];
   username: string;
 }
 
@@ -21,19 +20,17 @@ export function DemoGithub({
   item,
   isFeatured = false,
   isOwner = false,
-  featuredGithubPRs,
   username,
 }: IGithubCardProps) {
   const [isPending, startTransition] = React.useTransition();
 
   const toggleFeatured = () => {
     startTransition(async () => {
-      await toggleFeaturedAction({
+      const result = await toggleFeaturedAction({
         prId: item.id.toString(),
-        featuredGithubPRs,
-        isFeatured,
         username,
       });
+      if (result?.error) console.error("Failed to toggle featured:", result.error);
     });
   };
 
@@ -52,16 +49,16 @@ export function DemoGithub({
 
           {isOwner ? (
             <Button
-              asChild
+              type="button"
               size="icon"
               disabled={isPending}
               onClick={toggleFeatured}
               variant="ghost"
+              aria-label={isFeatured ? "Unfeature this PR" : "Feature this PR"}
             >
               <StarIcon
-                onClick={toggleFeatured}
                 fill={isFeatured ? "currentColor" : "none"}
-                className="h-5 w-5 cursor-pointer"
+                className="h-5 w-5"
               />
             </Button>
           ) : null}

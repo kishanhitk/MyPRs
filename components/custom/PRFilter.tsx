@@ -27,7 +27,8 @@ const PRFilter = ({
       (repoName) => !selected.includes(repoName)
     );
     startTransition(async () => {
-      await saveExcludedReposAction({ reposToExclude, username });
+      const result = await saveExcludedReposAction({ reposToExclude, username });
+      if (result?.error) console.error("Failed to save filters:", result.error);
     });
   };
 

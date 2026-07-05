@@ -31,6 +31,13 @@ export const getProfileData = cache(async (username: string) => {
   const ghData = ghResponse.data;
   const userData = userResponse.data as GithubUser | null;
 
+  // Distinguish "no such user" (404) from a transient failure (rate-limit,
+  // network, timeout) so the page can show the right message.
+  const notFound = userResponse.status === 404;
+  const loadError =
+    (Boolean(userResponse.error) && userResponse.status !== 404) ||
+    (Boolean(ghResponse.error) && ghResponse.status !== 404);
+
   let items: GitHubIssue[] = [];
   let featuredPRs: GitHubIssue[] = [];
   let nonFeaturedPRs: GitHubIssue[] = [];
@@ -50,7 +57,8 @@ export const getProfileData = cache(async (username: string) => {
   return {
     ownerRowId: row?.id as string | undefined,
     userData,
-    hasGhData: Boolean(ghData),
+    notFound,
+    loadError,
     items,
     featuredPRs,
     nonFeaturedPRs,

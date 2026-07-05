@@ -9,7 +9,6 @@ interface PRSectionsProps {
   featuredPRs: GitHubIssue[];
   nonFeaturedPRs: GitHubIssue[];
   isOwner: boolean;
-  featuredGithubPRs: string[];
   username: string;
 }
 
@@ -17,7 +16,6 @@ export default function PRSections({
   featuredPRs,
   nonFeaturedPRs,
   isOwner,
-  featuredGithubPRs,
   username,
 }: PRSectionsProps) {
   return (
@@ -31,7 +29,6 @@ export default function PRSections({
               item={item}
               isFeatured
               isOwner={isOwner}
-              featuredGithubPRs={featuredGithubPRs}
               username={username}
             />
           ))}
@@ -55,7 +52,6 @@ export default function PRSections({
               key={item.id}
               item={item}
               isOwner={isOwner}
-              featuredGithubPRs={featuredGithubPRs}
               username={username}
             />
           ))}

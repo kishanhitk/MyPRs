@@ -9,8 +9,6 @@ import { createClient } from "~/lib/supabase/server";
  */
 export async function toggleFeaturedAction(input: {
   prId: string;
-  featuredGithubPRs: string[];
-  isFeatured: boolean;
   username: string;
 }) {
   const supabase = await createClient();
@@ -19,9 +17,22 @@ export async function toggleFeaturedAction(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "You must be logged in to do that" };
 
-  const updated = input.isFeatured
-    ? input.featuredGithubPRs.filter((id) => id !== input.prId)
-    : [...input.featuredGithubPRs, input.prId];
+  // Read the current list from the DB (not a client-supplied snapshot) so
+  // concurrent toggles from multiple tabs don't clobber each other.
+  const { data: row, error: readError } = await supabase
+    .from("users")
+    .select("featured_github_prs")
+    .eq("id", user.id)
+    .single();
+  if (readError) {
+    console.error(readError);
+    return { error: readError.message };
+  }
+
+  const current: string[] = row?.featured_github_prs ?? [];
+  const updated = current.includes(input.prId)
+    ? current.filter((id) => id !== input.prId)
+    : [...current, input.prId];
 
   const { error } = await supabase
     .from("users")
