@@ -2,7 +2,6 @@ import "@fontsource/inter";
 import "./globals.css";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Analytics } from "@vercel/analytics/react";
 import { ClientHintCheck } from "~/utils/ClientHintCheck";
 import { getHints } from "~/utils/client-hints";
 import { getTheme } from "~/utils/theme.server";
@@ -24,12 +23,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const hints = getHints(cookieStore.toString());
-  const userPrefs = { theme: getTheme() };
+  const userPrefs = { theme: await getTheme() };
   const theme = userPrefs.theme ?? hints.theme;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -47,7 +46,6 @@ export default async function RootLayout({
           <Header user={session?.user ?? null} />
           {children}
         </Providers>
-        <Analytics />
       </body>
     </html>
   );

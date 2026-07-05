@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   let redirectUrl = redirectTo && redirectTo !== "false" ? redirectTo : "/";
 
   if (code) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase.auth.exchangeCodeForSession(code);
     const githubUsername = data.user?.user_metadata?.user_name;
 

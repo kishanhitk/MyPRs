@@ -1,0 +1,10 @@
+# Local vars for `npm run preview` (OpenNext/Wrangler). Copy to `.dev.vars`.
+# `next dev` uses .env.local instead; this file is for the Workers preview.
+NEXTJS_ENV=development
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+NEXT_PUBLIC_SITE_URL=https://myprs.xyz
+GITHUB_TOKEN=

@@ -1,3 +1,5 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -11,3 +13,6 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
+// Lets `next dev` talk to the OpenNext Cloudflare bindings (dev only).
+initOpenNextCloudflareForDev();

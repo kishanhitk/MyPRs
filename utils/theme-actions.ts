@@ -10,7 +10,7 @@ export type ThemeMode = "system" | "light" | "dark";
  * app falls back to the OS preference (via client hints).
  */
 export async function setThemeAction(theme: ThemeMode) {
-  const store = cookies();
+  const store = await cookies();
   if (theme === "system") {
     store.set(themeCookieName, "", { path: "/", maxAge: 0 });
   } else {

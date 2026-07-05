@@ -7,8 +7,8 @@ import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
 import PRSections from "./PRSections";
 
-function getDomain() {
-  const h = headers();
+async function getDomain() {
+  const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "https";
   const host = h.get("host");
   return `${proto}://${host}`;
@@ -17,11 +17,11 @@ function getDomain() {
 export async function generateMetadata({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
-  const { username } = params;
+  const { username } = await params;
   const data = await getProfileData(username);
-  const domain = getDomain();
+  const domain = await getDomain();
   const login = data.userData?.login;
   const userAvatar = data.userData?.avatar_url;
   const featuredPRsCount = data.featuredPRs.length;
@@ -51,9 +51,9 @@ export async function generateMetadata({
 export default async function ProfilePage({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
-  const { username } = params;
+  const { username } = await params;
   const {
     hasGhData,
     userData,
@@ -65,7 +65,7 @@ export default async function ProfilePage({
     ownerRowId,
   } = await getProfileData(username);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

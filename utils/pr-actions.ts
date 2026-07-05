@@ -13,7 +13,7 @@ export async function toggleFeaturedAction(input: {
   isFeatured: boolean;
   username: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -40,7 +40,7 @@ export async function saveExcludedReposAction(input: {
   reposToExclude: string[];
   username: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

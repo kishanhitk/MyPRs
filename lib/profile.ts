@@ -12,7 +12,7 @@ import type { GitHubIssue, GithubUser } from "~/types/shared";
  * a single execution per request.
  */
 export const getProfileData = cache(async (username: string) => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: rows, error: rowError } = await supabase
     .from("users")
     .select("*")

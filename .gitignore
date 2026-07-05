@@ -5,6 +5,11 @@ node_modules
 /out/
 next-env.d.ts
 
+# OpenNext / Cloudflare
+/.open-next/
+.wrangler
+.dev.vars
+
 # production
 /build
 
