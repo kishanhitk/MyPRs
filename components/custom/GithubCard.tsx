@@ -42,7 +42,7 @@ export function DemoGithub({
       className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-700"
     >
       <div className="space-y-3">
-        <div className="flex">
+        <div className="flex items-center">
           <h3 className="text-sm text-slate-700 mr-auto dark:text-slate-300">
             {item.repository_url.slice(29)}
           </h3>
