@@ -217,11 +217,21 @@
   }
 }
 
-/* Contribution cell: the hovered day pops slightly under the tooltip. */
+/* Contribution cell: chronological entrance (per-column --d delay) and a
+   subtle hover pop. @starting-style keeps cells from stranding invisible. */
 .contrib-cell {
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 1;
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 350ms ease-out;
+  transition-delay: 0ms, var(--d, 0ms);
+}
+@starting-style {
+  .contrib-cell {
+    opacity: 0;
+  }
 }
 @media (hover: hover) and (pointer: fine) {
   .contrib-cell:hover {

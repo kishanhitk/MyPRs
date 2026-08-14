@@ -64,6 +64,7 @@ export default function ContributionGraph({
               height={CELL}
               rx={2}
               className={`contrib-cell ${LEVEL_CLASSES[level] ?? LEVEL_CLASSES[0]}`}
+              style={{ "--d": `${w * 8}ms` } as React.CSSProperties}
               onMouseEnter={() =>
                 setTooltip({
                   leftPct: ((w * (CELL + GAP) + CELL / 2) / width) * 100,
