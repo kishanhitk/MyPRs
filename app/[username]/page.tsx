@@ -157,7 +157,9 @@ export default async function ProfilePage({
         src={`https://ghchart.rshah.org/${userData.login}`}
         alt={`${userData.login}'s GitHub contribution chart`}
         className="rise mt-6 w-full dark:brightness-75"
-        style={{ "--d": "90ms" } as React.CSSProperties}
+        style={
+          { "--d": "90ms", aspectRatio: "663 / 104" } as React.CSSProperties
+        }
       />
 
       {items.length ? (

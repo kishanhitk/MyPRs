@@ -10,10 +10,12 @@ const PR_ICON_PATH =
 export async function GET(request: Request) {
   const domain = new URL(request.url).origin;
   const [geistSemiBold, geistMono] = await Promise.all([
-    fetch(`${domain}/assets/Geist-SemiBold.ttf`).then((r) => r.arrayBuffer()),
-    fetch(`${domain}/assets/GeistMono-Regular.ttf`).then((r) =>
-      r.arrayBuffer()
+    fetch(`${domain}/assets/Geist-SemiBold.ttf`, { cache: "force-cache" }).then(
+      (r) => r.arrayBuffer()
     ),
+    fetch(`${domain}/assets/GeistMono-Regular.ttf`, {
+      cache: "force-cache",
+    }).then((r) => r.arrayBuffer()),
   ]);
 
   return new ImageResponse(
@@ -107,6 +109,9 @@ export async function GET(request: Request) {
         { name: "Geist", data: geistSemiBold, weight: 600 },
         { name: "Geist Mono", data: geistMono, weight: 400 },
       ],
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
     }
   );
 }

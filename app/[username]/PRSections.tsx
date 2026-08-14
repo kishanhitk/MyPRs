@@ -8,7 +8,8 @@ import { toggleFeaturedAction } from "~/utils/pr-actions";
 import type { ProfilePR } from "~/types/shared";
 
 const SWAP = { duration: 0.2, ease: [0.23, 1, 0.32, 1] as const };
-const WINDOW = 100;
+const INITIAL_WINDOW = 30;
+const WINDOW_STEP = 90;
 
 interface PRSectionsProps {
   featuredPRs: ProfilePR[];
@@ -30,7 +31,7 @@ export default function PRSections({
   excludedRepoNames,
 }: PRSectionsProps) {
   // The full history is already here; the window limits DOM size, not data.
-  const [visible, setVisible] = React.useState(WINDOW);
+  const [visible, setVisible] = React.useState(INITIAL_WINDOW);
   const sentinelRef = React.useRef<HTMLLIElement>(null);
 
   // Optimistic curation: the card moves the moment the star is pressed;
@@ -78,7 +79,7 @@ export default function PRSections({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisible((v) => v + WINDOW);
+          setVisible((v) => v + WINDOW_STEP);
         }
       },
       { rootMargin: "600px" }

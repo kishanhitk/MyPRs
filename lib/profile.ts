@@ -21,7 +21,7 @@ export const getProfileData = cache(async (username: string) => {
   const supabase = await createClient();
   const { data: rows, error: rowError } = await supabase
     .from("users")
-    .select("*")
+    .select("id, github_username, excluded_github_repos, featured_github_prs")
     .eq("github_username", username);
   if (rowError) console.error(rowError);
 

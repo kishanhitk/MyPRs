@@ -28,10 +28,12 @@ export async function GET(
   // Font files ride the same 1h data cache as the PR history; after one
   // profile render this whole route serves from cache.
   const [geistSemiBold, geistMono, prs, user, since] = await Promise.all([
-    fetch(`${domain}/assets/Geist-SemiBold.ttf`).then((r) => r.arrayBuffer()),
-    fetch(`${domain}/assets/GeistMono-Regular.ttf`).then((r) =>
-      r.arrayBuffer()
+    fetch(`${domain}/assets/Geist-SemiBold.ttf`, { cache: "force-cache" }).then(
+      (r) => r.arrayBuffer()
     ),
+    fetch(`${domain}/assets/GeistMono-Regular.ttf`, {
+      cache: "force-cache",
+    }).then((r) => r.arrayBuffer()),
     getAllMergedPRs(username),
     getGitHubUserData(username),
     // Exact first-merged-PR year even past the 1000-result search cap.
@@ -191,6 +193,9 @@ export async function GET(
         { name: "Geist", data: geistSemiBold, weight: 600 },
         { name: "Geist Mono", data: geistMono, weight: 400 },
       ],
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      },
     }
   );
 }
