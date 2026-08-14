@@ -10,18 +10,21 @@ const tweetUrl = (username: string) =>
     `Check out some of my proudest Open-Source pull requests on MyPRs.\nmyprs.dev/${username}\nIt's like a 'link-in-bio' for my Open-Source contributions.\n#OpenSource`
   )}`;
 
+const emptySubscribe = () => () => {};
+
 export default function ShareProfile({ username }: { username: string }) {
   const [open, setOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
-  const [canNativeShare, setCanNativeShare] = React.useState(false);
-  const [mounted, setMounted] = React.useState(false);
+  // true after hydration, false during SSR — lint-clean mount guard
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+  const canNativeShare =
+    mounted && typeof navigator !== "undefined" && !!navigator.share;
   const reduceMotion = useReducedMotion();
   const profileUrl = `https://myprs.dev/${username}`;
-
-  React.useEffect(() => {
-    setMounted(true);
-    setCanNativeShare(typeof navigator !== "undefined" && !!navigator.share);
-  }, []);
 
   // Esc closes; the page never scrolls under an open modal.
   React.useEffect(() => {
