@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Highlighter } from "~/components/ui/highlighter";
@@ -71,7 +72,8 @@ export default async function Home() {
                 className="mr-2 h-6 w-6 rounded-full"
                 alt={userName}
               />
-              Continue as {userName} →
+              Continue as {userName}
+              <ArrowRight aria-hidden className="ml-1.5 size-4" />
             </Link>
           </Button>
         ) : (

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import posthog from "posthog-js";
 import { Button } from "~/components/ui/button";
 import { useSupabase } from "./providers";
@@ -24,7 +25,8 @@ export function LoginCTA() {
       onClick={handleGitHubLogin}
       className="animate-in hover:scale-105 hover:shadow-md transition-all duration-500"
     >
-      Continue with GitHub -{">"}
+      Continue with GitHub
+      <ArrowRight aria-hidden className="ml-1.5 size-4" />
     </Button>
   );
 }
