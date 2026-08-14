@@ -8,7 +8,7 @@ import PRFilter from "~/components/custom/PRFilter";
 import { toggleFeaturedAction } from "~/utils/pr-actions";
 import type { ProfilePR } from "~/types/shared";
 
-const SWAP = { duration: 0.2, ease: [0.23, 1, 0.32, 1] as const };
+const SWAP = { type: "spring" as const, bounce: 0, duration: 0.3 };
 const INITIAL_WINDOW = 30;
 const WINDOW_STEP = 90;
 

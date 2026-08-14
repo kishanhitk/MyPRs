@@ -62,6 +62,7 @@ export async function GET(request: Request) {
               fontSize: 78,
               fontWeight: 600,
               lineHeight: 1.14,
+              letterSpacing: "-1.5px",
               marginTop: 56,
             }}
           >

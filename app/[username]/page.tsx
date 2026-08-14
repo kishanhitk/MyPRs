@@ -103,7 +103,7 @@ export default async function ProfilePage({
           className="h-16 w-16 rounded-full border border-zinc-200 dark:border-zinc-800"
         />
         <div>
-          <h1 className="text-[26px] font-semibold leading-tight text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-zinc-900 dark:text-zinc-100">
             {userData.name ?? userData.login}
           </h1>
           <p className="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">

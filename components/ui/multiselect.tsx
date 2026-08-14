@@ -30,8 +30,8 @@ export default function MultiSelect({
           enterFrom="opacity-0 scale-[0.97]"
           enterTo="opacity-100 scale-100"
           leave="transition duration-100 ease-out"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-[0.97]"
         >
           <Listbox.Options className="absolute left-0 z-50 mt-2 max-h-60 w-72 origin-top-left overflow-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-sm focus:outline-none motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900">
             {options.map((option) => (

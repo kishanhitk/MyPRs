@@ -44,7 +44,7 @@ export default async function Home() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
       <h1
-        className="rise text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] text-zinc-900 dark:text-zinc-100"
+        className="rise text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] tracking-[-0.02em] text-zinc-900 dark:text-zinc-100"
       >
         One link to{" "}
         <Highlighter action="highlight" delay={700} animationDuration={700}>

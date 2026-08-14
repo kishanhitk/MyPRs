@@ -147,3 +147,24 @@
 .dark {
   --annotation: rgba(234, 179, 8, 0.32);
 }
+
+/* Translucent chrome: content scrolls under the header (Apple materials).
+   Falls back to solid for reduced-transparency / high-contrast users. */
+.site-header {
+  background: rgba(253, 250, 250, 0.8);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.5);
+}
+.dark .site-header {
+  background: rgba(25, 25, 25, 0.8);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .site-header {
+    background: #fdfafa;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .dark .site-header {
+    background: #191919;
+  }
+}

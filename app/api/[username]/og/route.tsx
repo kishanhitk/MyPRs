@@ -68,6 +68,7 @@ export async function GET(
           fontSize: 100,
           fontWeight: 600,
           lineHeight: 1,
+          letterSpacing: "-2px",
         }}
       >
         {value}
@@ -127,6 +128,7 @@ export async function GET(
                     fontSize: 78,
                     fontWeight: 600,
                     lineHeight: 1.05,
+                    letterSpacing: "-1.5px",
                   }}
                 >
                   {handleLine}
