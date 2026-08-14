@@ -33,7 +33,7 @@ export async function generateMetadata({
       title: `PRs by ${login}`,
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-      url: "https://myprs.xyz/",
+      url: "https://myprs.dev/",
       images: [`${domain}/api/${username}/og?featuredPRsCount=${featuredPRsCount}`],
     },
     twitter: {
@@ -135,7 +135,7 @@ export default async function ProfilePage({
       {isOwner ? (
         <Button className="self-center mb-3" asChild>
           <a
-            href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.xyz/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
+            href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.dev/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
           >
             Share
             <Share2 className="h-5 w-5 ml-2" />

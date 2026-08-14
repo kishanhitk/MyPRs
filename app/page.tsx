@@ -13,15 +13,15 @@ export const metadata: Metadata = {
     title: "MyPRs - One link to highlight your Open-Source Contributions",
     description:
       "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    url: "https://myprs.xyz/",
-    images: ["https://www.myprs.xyz/assets/og-banner.png"],
+    url: "https://myprs.dev/",
+    images: ["https://www.myprs.dev/assets/og-banner.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "MyPRs - One link to highlight your Open-Source Contributions",
     description:
       "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    images: ["https://www.myprs.xyz/assets/og-banner.png"],
+    images: ["https://www.myprs.dev/assets/og-banner.png"],
   },
 };
 

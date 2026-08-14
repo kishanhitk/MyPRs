@@ -12,7 +12,7 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://myprs.xyz"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://myprs.dev"
   ),
   title: "MyPRs - One link to highlight your Open-Source Contributions",
   description:

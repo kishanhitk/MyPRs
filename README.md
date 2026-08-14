@@ -4,7 +4,7 @@
 ### One link to highlight your Open-Source Contributions.
 The 'link-in-bio' for your Open-Source PRs. Curate a selection of your proudest GitHub PRs, showcase your expertise, and set yourself apart in the crowd.
 
-![MyPRs](https://www.myprs.xyz/assets/og-banner.png)
+![MyPRs](https://www.myprs.dev/assets/og-banner.png)
 ## Development
 
 Copy `.env.example` to `.env.local` and fill in your Supabase / PostHog values
