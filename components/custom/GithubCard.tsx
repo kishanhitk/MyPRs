@@ -39,7 +39,7 @@ export function DemoGithub({
       {/* branch connector — starts at the node's edge, never through it */}
       <span
         aria-hidden
-        className="absolute left-[18px] top-[21px] h-px w-[14px] bg-zinc-200 transition-colors duration-150 group-hover:bg-zinc-500 dark:bg-zinc-800 dark:group-hover:bg-zinc-500"
+        className="absolute left-[18px] top-[21px] h-px w-[14px] bg-zinc-200 transition-colors duration-150 group-hover:bg-zinc-300 dark:bg-zinc-800 dark:group-hover:bg-zinc-700"
       />
       {/* merge node */}
       <span
@@ -47,7 +47,7 @@ export function DemoGithub({
         className={`absolute left-[7px] top-[16px] h-[11px] w-[11px] rounded-full border-2 transition-colors duration-150 ${
           isFeatured
             ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
-            : "border-zinc-400 bg-[#fdfafa] group-hover:border-zinc-900 dark:border-zinc-600 dark:bg-[#191919] dark:group-hover:border-zinc-100"
+            : "border-zinc-400 bg-[#fdfafa] group-hover:border-zinc-500 dark:border-zinc-600 dark:bg-[#191919] dark:group-hover:border-zinc-500"
         }`}
       />
 
@@ -57,7 +57,7 @@ export function DemoGithub({
             href={item.html_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block min-w-0 flex-1 text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-400 underline-offset-4 group-hover:underline dark:text-zinc-200"
+            className="block min-w-0 flex-1 text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-400 underline-offset-4 hover:underline dark:text-zinc-200"
           >
             {item.title}
           </a>

@@ -110,14 +110,14 @@ export default async function Home() {
                 <li key={item.id} className="group relative pl-10 pb-2">
                   <span
                     aria-hidden
-                    className="absolute left-[18px] top-[27px] h-px w-[14px] bg-zinc-200 transition-colors duration-150 group-hover:bg-zinc-500 dark:bg-zinc-800 dark:group-hover:bg-zinc-500"
+                    className="absolute left-[18px] top-[27px] h-px w-[14px] bg-zinc-200 transition-colors duration-150 group-hover:bg-zinc-300 dark:bg-zinc-800 dark:group-hover:bg-zinc-700"
                   />
                   <span
                     aria-hidden
                     className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 transition-colors duration-150 ${
                       idx === 0
                         ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
-                        : "border-zinc-400 bg-[#fdfafa] group-hover:border-zinc-900 dark:border-zinc-600 dark:bg-[#191919] dark:group-hover:border-zinc-100"
+                        : "border-zinc-400 bg-[#fdfafa] group-hover:border-zinc-500 dark:border-zinc-600 dark:bg-[#191919] dark:group-hover:border-zinc-500"
                     }`}
                   />
                   <Link
@@ -125,7 +125,7 @@ export default async function Home() {
                     prefetch
                     className="block py-2"
                   >
-                    <span className="block text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-400 underline-offset-4 group-hover:underline dark:text-zinc-200">
+                    <span className="block text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-300 underline-offset-4 group-hover:underline dark:decoration-zinc-600 dark:text-zinc-200">
                       {item.title}
                     </span>
                     <span className="font-mono mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
