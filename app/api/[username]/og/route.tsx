@@ -1,4 +1,11 @@
 import { ImageResponse } from "next/og";
+import { getAllMergedPRs, getGitHubUserData } from "~/lib/github";
+import type { GithubUser } from "~/types/shared";
+
+const INK = "#18181B";
+const MUTED = "#71717A";
+const RAIL = "#E4E4E7";
+const BG = "#FAFAF9";
 
 export async function GET(
   request: Request,
@@ -7,122 +14,174 @@ export async function GET(
   const { username } = await params;
   const url = new URL(request.url);
   const domain = url.origin;
-  const avatar = `https://github.com/${username}.png?size=200`;
-  const featuredPRsCount = url.searchParams.get("featuredPRsCount");
-
-  const interSemiBold = await fetch(`${domain}/assets/inter-semibold.ttf`).then(
-    (res) => res.arrayBuffer()
+  const avatar =
+    url.searchParams.get("avatar") ??
+    `https://github.com/${username}.png?size=200`;
+  const featuredPRsCount = Number(
+    url.searchParams.get("featuredPRsCount") ?? 0
   );
-  const interRegular = await fetch(`${domain}/assets/inter-regular.ttf`).then(
-    (res) => res.arrayBuffer()
+
+  // Font files ride the same 1h data cache as the PR history; after one
+  // profile render this whole route serves from cache.
+  const [geistSemiBold, geistMono, prs, user] = await Promise.all([
+    fetch(`${domain}/assets/Geist-SemiBold.ttf`).then((r) => r.arrayBuffer()),
+    fetch(`${domain}/assets/GeistMono-Regular.ttf`).then((r) =>
+      r.arrayBuffer()
+    ),
+    getAllMergedPRs(username),
+    getGitHubUserData(username),
+  ]);
+
+  const items = prs.data?.items ?? [];
+  const total = prs.data?.total_count ?? 0;
+  const repos = new Set(
+    items.map((i) => i.repository_url.slice(29))
+  ).size;
+  const since = items.length
+    ? Math.min(
+        ...items.map((i) =>
+          new Date(i.pull_request.merged_at).getFullYear()
+        )
+      )
+    : null;
+  const name = (user.data as GithubUser | null)?.name ?? username;
+
+  const statLine = [
+    `${total} merged pull requests`,
+    repos ? `${repos} repositories` : null,
+    since ? `since ${since}` : null,
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
+  // Satori needs single text children, and Geist Mono has no ★ glyph.
+  const handleLine =
+    `@${username}` +
+    (featuredPRsCount > 0 ? `  ·  ${featuredPRsCount} featured` : "");
+  const urlLine = `myprs.dev/${username}`;
+
+  const node = (filled: boolean, top: number) => (
+    <div
+      style={{
+        display: "flex",
+        position: "absolute",
+        left: -9,
+        top,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        border: `4px solid ${filled ? INK : "#A1A1AA"}`,
+        background: filled ? INK : BG,
+      }}
+    />
   );
 
   return new ImageResponse(
     (
       <div
         style={{
-          fontSize: 40,
-          color: "black",
-          background: "#fdfafa",
           width: "100%",
           height: "100%",
-          padding: "50px 200px",
-          textAlign: "center",
-          justifyContent: "center",
-          alignItems: "center",
           display: "flex",
+          background: BG,
+          color: INK,
+          padding: "64px 72px",
         }}
       >
+        {/* the trunk */}
         <div
           style={{
             display: "flex",
-            flexDirection: "row",
+            position: "relative",
+            width: 4,
+            borderRadius: 2,
+            background: RAIL,
+            marginRight: 64,
+          }}
+        >
+          {node(true, 48)}
+          {node(false, 240)}
+          {node(false, 400)}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
             justifyContent: "space-between",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              width: "500px",
-            }}
-          >
-            <p
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={avatar}
+              width={96}
+              height={96}
+              alt=""
               style={{
-                fontSize: "55px",
-                fontWeight: "600",
-                textAlign: "left",
-                marginBottom: "-20px",
-                lineHeight: "1.1",
+                borderRadius: 48,
+                border: `2px solid ${RAIL}`,
+              }}
+            />
+            <div
+              style={{
+                fontFamily: "Geist",
+                fontSize: 60,
+                fontWeight: 600,
+                marginTop: 28,
+                lineHeight: 1.05,
               }}
             >
-              One link to highlight your Open-Source Contributions.
-            </p>
-            <p
+              {name}
+            </div>
+            <div
               style={{
-                fontSize: "27px",
-                textAlign: "left",
-                color: "rgb(71, 85, 105)",
-                fontWeight: "400",
+                fontFamily: "Geist Mono",
+                fontSize: 26,
+                color: MUTED,
+                marginTop: 14,
               }}
             >
-              The 'link-in-bio' for your Open-Source PRs. Curate a selection of
-              your proudest GitHub PRs, showcase your expertise, and set
-              yourself apart in the crowd.
-            </p>
+              {handleLine}
+            </div>
+            <div
+              style={{
+                fontFamily: "Geist Mono",
+                fontSize: 28,
+                color: MUTED,
+                marginTop: 34,
+              }}
+            >
+              {statLine}
+            </div>
           </div>
+
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              width: "400px",
-              marginLeft: "100px",
+              justifyContent: "space-between",
+              alignItems: "baseline",
             }}
           >
-            <img
+            <div
               style={{
-                borderRadius: "100%",
-                height: "420px",
-                width: "420px",
-              }}
-              alt="User"
-              src={
-                avatar ?? "https://avatars.githubusercontent.com/u/41117038?v=4"
-              }
-            />
-            <p
-              style={{
-                fontSize: "50px",
-                fontWeight: "600",
-                textAlign: "center",
-                margin: "1px auto 0px",
+                fontFamily: "Geist Mono",
+                fontSize: 26,
+                color: INK,
               }}
             >
-              {username}
-            </p>
-            <img
-              src={`https://ghchart.rshah.org/${username}`}
-              alt={`${username}'s Github chart`}
+              {urlLine}
+            </div>
+            <div
               style={{
-                marginTop: "-10px",
+                fontFamily: "Geist",
+                fontSize: 28,
+                fontWeight: 600,
+                color: MUTED,
               }}
-            />
-            {featuredPRsCount && featuredPRsCount !== "0" ? (
-              <p
-                style={{
-                  fontSize: "30px",
-                  fontWeight: "400",
-                  textAlign: "center",
-                  margin: "5px auto 0px",
-                }}
-              >
-                {featuredPRsCount} Featured PRs
-              </p>
-            ) : null}
+            >
+              MyPRs
+            </div>
           </div>
         </div>
       </div>
@@ -131,16 +190,8 @@ export async function GET(
       width: 1200,
       height: 630,
       fonts: [
-        {
-          name: "Inter",
-          data: interSemiBold,
-          weight: 600,
-        },
-        {
-          name: "Inter",
-          data: interRegular,
-          weight: 400,
-        },
+        { name: "Geist", data: geistSemiBold, weight: 600 },
+        { name: "Geist Mono", data: geistMono, weight: 400 },
       ],
     }
   );
