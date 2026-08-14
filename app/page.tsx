@@ -156,7 +156,7 @@ async function DemoSection() {
                     prefetch
                     className="block py-2"
                   >
-                    <span className="block text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-300 underline-offset-4 group-hover:underline dark:decoration-zinc-600 dark:text-zinc-200">
+                    <span className="block truncate text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-300 underline-offset-4 group-hover:underline dark:decoration-zinc-600 dark:text-zinc-200">
                       {item.title}
                     </span>
                     <span className="font-mono mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
@@ -172,24 +172,7 @@ async function DemoSection() {
 }
 
 function DemoSkeleton() {
-  return (
-    <section
-      aria-hidden
-      className="rise mt-14"
-      style={{ "--d": "240ms" } as React.CSSProperties}
-    >
-      <div className="h-[14px] w-56 rounded bg-zinc-100 dark:bg-zinc-800/60" />
-      <div className="relative mt-4">
-        <span className="absolute bottom-2 left-3 top-1 w-[2px] rounded-full bg-zinc-200 dark:bg-zinc-800" />
-        <ul className="motion-reduce:animate-none animate-pulse">
-          {[0, 1, 2].map((i) => (
-            <li key={i} className="relative py-2 pl-10">
-              <div className="h-[15px] w-3/4 rounded bg-zinc-100 dark:bg-zinc-800/60" />
-              <div className="mt-2 h-[12px] w-40 rounded bg-zinc-100 dark:bg-zinc-800/60" />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
+  // Just reserved space — the demo streams into exactly this box, so the
+  // footer row below never moves. Height = label row + gap + 3 fixed cards.
+  return <section aria-hidden className="mt-14 h-[228px]" />;
 }
