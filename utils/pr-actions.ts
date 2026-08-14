@@ -85,18 +85,27 @@ export async function reorderFeaturedAction(input: {
     .single();
   if (readError) return { error: readError.message };
 
+  // The client reorders only the featured PRs it can render; ids orphaned
+  // by repo filters or dropped GitHub results never reach it. Validate the
+  // input as a subset and keep the orphans at the tail so they stay
+  // featured if their repo is un-excluded later.
   const current: string[] = row?.featured_github_prs ?? [];
   const currentSet = new Set(current);
+  const orderedSet = new Set(input.orderedIds);
   const valid =
-    input.orderedIds.length === current.length &&
+    orderedSet.size === input.orderedIds.length &&
     input.orderedIds.every((id) => currentSet.has(id));
   if (!valid) {
     return { error: "Order is out of date — refresh and try again" };
   }
 
+  const next = [
+    ...input.orderedIds,
+    ...current.filter((id) => !orderedSet.has(id)),
+  ];
   const { error } = await supabase
     .from("users")
-    .update({ featured_github_prs: input.orderedIds })
+    .update({ featured_github_prs: next })
     .eq("id", user.id);
 
   revalidatePath(`/${input.username}`);
