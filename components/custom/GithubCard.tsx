@@ -38,6 +38,10 @@ export function DemoGithub({
 }: IGithubCardProps) {
   const reduceMotion = useReducedMotion();
   const [dragging, setDragging] = React.useState(false);
+  // framer suppresses the post-drag tap on the item itself, but the native
+  // click still reaches inner interactive elements — releasing a drag over
+  // the pill would unfeature the card, over the title would open the PR.
+  const suppressClick = React.useRef(false);
 
   const Root: React.ElementType = reorderable ? Reorder.Item : motion.li;
   const rootProps = reorderable
@@ -47,7 +51,18 @@ export function DemoGithub({
         onDragStart: () => setDragging(true),
         onDragEnd: () => {
           setDragging(false);
+          suppressClick.current = true;
+          // the click dispatches in the same task as pointerup; clear after
+          setTimeout(() => {
+            suppressClick.current = false;
+          }, 0);
           onReorderCommit?.();
+        },
+        onClickCapture: (e: React.MouseEvent) => {
+          if (suppressClick.current) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
         },
       }
     : {};
