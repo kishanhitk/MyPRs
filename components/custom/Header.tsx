@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import posthog from "posthog-js";
-import { Button } from "../ui/button";
 import PullRequestIcon from "./PullRequestIcon";
 import DarkModeToggle from "./DarkModeToggle";
 import { useSupabase } from "~/app/providers";
@@ -32,29 +31,27 @@ export const Header = ({ user }: HeaderProps) => {
   };
 
   return (
-    <>
-      <div className="py-2 px-4 flex justify-between items-center">
-        <Link href="/" className="font-semibold text-lg flex items-center ">
+    <header className="border-b border-zinc-200 dark:border-zinc-800">
+      <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
+        <Link
+          href="/"
+          className="flex items-center gap-1 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100"
+        >
           MyPRs
-          <PullRequestIcon className="h-4 w-4 ml-1 mb-1 dark:fill-white"></PullRequestIcon>
+          <PullRequestIcon className="mb-0.5 h-4 w-4 fill-github_merged dark:fill-[#A371F7]" />
         </Link>
 
-        <div className="flex">
+        <div className="flex items-center gap-1">
           <DarkModeToggle />
-          {user ? (
-            <div className="flex items-center">
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <Button size="sm" onClick={handleGitHubLogin}>
-              Login
-            </Button>
-          )}
+          <button
+            type="button"
+            onClick={user ? handleLogout : handleGitHubLogin}
+            className="font-mono text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline active:scale-95 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            {user ? "logout" : "login ↗"}
+          </button>
         </div>
       </div>
-      <div className="h-[1px] w-full bg-slate-200 dark:bg-slate-700"></div>
-    </>
+    </header>
   );
 };

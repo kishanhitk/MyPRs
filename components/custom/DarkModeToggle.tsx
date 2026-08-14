@@ -48,7 +48,7 @@ export default function DarkModeToggle({
       type="button"
       onClick={handleClick}
       className={clsx(
-        "mr-2 border-secondary hover:border-primary focus:border-primary inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border p-1 transition focus:outline-none "
+        "mr-1 inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full p-1 text-zinc-500 transition-colors duration-150 hover:text-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-100"
       )}
     >
       {/* note that the duration is longer then the one on body, controlling the bg-color */}
