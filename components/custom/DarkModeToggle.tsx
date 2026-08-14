@@ -3,11 +3,22 @@
 import * as React from "react";
 import clsx from "clsx";
 import { MoonIcon, SunIcon, LaptopIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useRequestInfo } from "~/utils/request-info";
 import { setThemeAction, type ThemeMode } from "~/utils/theme-actions";
 
 const iconTransformOrigin = { transformOrigin: "50% 100px" };
+
+// Theme flips on the DOM immediately; the cookie persists in the background
+// so the next server render agrees. No router.refresh — that round-trip was
+// why switching felt slow.
+function applyTheme(mode: ThemeMode) {
+  const dark =
+    mode === "dark" ||
+    (mode === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.classList.toggle("light", !dark);
+}
 
 export default function DarkModeToggle({
   variant = "icon",
@@ -15,27 +26,21 @@ export default function DarkModeToggle({
   variant?: "icon" | "labelled";
 }) {
   const requestInfo = useRequestInfo();
-  const router = useRouter();
   const serverMode: ThemeMode = requestInfo.userPrefs.theme ?? "system";
-  // useOptimistic reverts to `serverMode` once the transition settles (or if the
-  // action rejects), so the toggle can never permanently diverge from truth.
-  const [mode, setOptimisticMode] = React.useOptimistic<ThemeMode, ThemeMode>(
-    serverMode,
-    (_current, next) => next
-  );
+  const [mode, setMode] = React.useState<ThemeMode>(serverMode);
   const [, startTransition] = React.useTransition();
 
   const nextMode: ThemeMode =
     mode === "system" ? "light" : mode === "light" ? "dark" : "system";
 
   const handleClick = () => {
+    setMode(nextMode);
+    applyTheme(nextMode);
     startTransition(async () => {
-      setOptimisticMode(nextMode);
       try {
         await setThemeAction(nextMode);
-        router.refresh();
       } catch (error) {
-        console.error("Failed to set theme:", error);
+        console.error("Failed to persist theme:", error);
       }
     });
   };
