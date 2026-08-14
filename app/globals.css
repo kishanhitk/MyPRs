@@ -140,10 +140,10 @@
   }
 }
 
-/* rough-notation marker wash for the Highlighter component */
+/* rough-notation marker wash — school-highlighter yellow */
 :root {
-  --annotation: #e4e4e7;
+  --annotation: #fef08a;
 }
 .dark {
-  --annotation: #3f3f46;
+  --annotation: rgba(234, 179, 8, 0.32);
 }
