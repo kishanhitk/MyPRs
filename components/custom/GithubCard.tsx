@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { motion, Reorder, useReducedMotion } from "framer-motion";
+import { MessageCircle } from "lucide-react";
 import type { ProfilePR } from "~/types/shared";
 
 function fmtMonth(iso: string): string {
@@ -116,7 +117,17 @@ export function DemoGithub({
         >
           {item.repo} · {fmtMonth(item.merged_at)}
           {item.reactions_count > 0 ? ` · ▲ ${item.reactions_count}` : ""}
-          {item.comments > 0 ? ` · ${item.comments} comments` : ""}
+          {item.comments > 0 ? (
+            <>
+              {" · "}
+              <MessageCircle
+                aria-hidden
+                className="inline h-3 w-3 -translate-y-px"
+              />{" "}
+              <span className="sr-only">comments </span>
+              {item.comments}
+            </>
+          ) : null}
         </p>
       </div>
     </Root>
