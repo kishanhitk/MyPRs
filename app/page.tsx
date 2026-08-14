@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Highlighter } from "~/components/ui/highlighter";
@@ -36,10 +37,6 @@ export default async function Home() {
   } = await supabase.auth.getUser();
   const userName = user?.user_metadata?.user_name as string | undefined;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-
-  // The demo is the pitch: real cards from a live profile, not a screenshot.
-  const demo = await getProfileData(DEMO_USER);
-  const demoPRs = [...demo.featuredPRs, ...demo.nonFeaturedPRs].slice(0, 3);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
@@ -85,7 +82,41 @@ export default async function Home() {
         </p>
       </div>
 
-      {demoPRs.length ? (
+      <Suspense fallback={<DemoSkeleton />}>
+        <DemoSection />
+      </Suspense>
+
+      <div className="mt-14 flex items-center justify-between">
+        <a
+          href="https://github.com/kishanhitk/MyPRs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
+        >
+          <span aria-hidden className="group-hover:hidden">
+            ☆
+          </span>
+          <span aria-hidden className="hidden group-hover:inline">
+            ★
+          </span>
+          <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
+        </a>
+        <p className="font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
+          *GitLab support coming soon.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Streams in after the shell: the demo needs the full profile fetch, which
+// is the slow path on a cold cache. The shell paints immediately.
+async function DemoSection() {
+  const demo = await getProfileData(DEMO_USER);
+  const demoPRs = [...demo.featuredPRs, ...demo.nonFeaturedPRs].slice(0, 3);
+  if (!demoPRs.length) return null;
+
+  return (
         <section
           className="rise mt-14"
           style={{ "--d": "240ms" } as React.CSSProperties}
@@ -137,27 +168,28 @@ export default async function Home() {
             </ul>
           </div>
         </section>
-      ) : null}
+  );
+}
 
-      <div className="mt-14 flex items-center justify-between">
-        <a
-          href="https://github.com/kishanhitk/MyPRs"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
-        >
-          <span aria-hidden className="group-hover:hidden">
-            ☆
-          </span>
-          <span aria-hidden className="hidden group-hover:inline">
-            ★
-          </span>
-          <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
-        </a>
-        <p className="font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
-          *GitLab support coming soon.
-        </p>
+function DemoSkeleton() {
+  return (
+    <section
+      aria-hidden
+      className="rise mt-14"
+      style={{ "--d": "240ms" } as React.CSSProperties}
+    >
+      <div className="h-[14px] w-56 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+      <div className="relative mt-4">
+        <span className="absolute bottom-2 left-3 top-1 w-[2px] rounded-full bg-zinc-200 dark:bg-zinc-800" />
+        <ul className="motion-reduce:animate-none animate-pulse">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="relative py-2 pl-10">
+              <div className="h-[15px] w-3/4 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+              <div className="mt-2 h-[12px] w-40 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+            </li>
+          ))}
+        </ul>
       </div>
-    </div>
+    </section>
   );
 }
