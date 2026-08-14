@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import posthog from "posthog-js";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import { toggleFeaturedAction } from "~/utils/pr-actions";
@@ -45,6 +46,10 @@ export default function PRSections({
   const [errors, setErrors] = React.useState<Record<number, string>>({});
 
   const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
+    posthog.capture(makeFeatured ? "pr_featured" : "pr_unfeatured", {
+      repo: pr.repo,
+      profile: username,
+    });
     startTransition(async () => {
       addMove({ id: pr.id, featured: makeFeatured });
       const result = await toggleFeaturedAction({
@@ -72,6 +77,17 @@ export default function PRSections({
   );
 
   const hasMore = visible < displayRest.length;
+
+  // One product event per profile view, with the numbers that matter.
+  React.useEffect(() => {
+    posthog.capture("profile_viewed", {
+      profile: username,
+      is_owner: isOwner,
+      total_prs: totalCount,
+      featured_count: featuredPRs.length,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username]);
 
   React.useEffect(() => {
     const el = sentinelRef.current;

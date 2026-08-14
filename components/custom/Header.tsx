@@ -15,6 +15,7 @@ export const Header = ({ user }: HeaderProps) => {
   const supabase = useSupabase();
 
   const handleGitHubLogin = async () => {
+    posthog.capture("login_clicked", { source: "header" });
     const baseUrl = new URL(window.location.origin);
     const pathName = window.location.pathname;
     await supabase.auth.signInWithOAuth({
@@ -26,6 +27,7 @@ export const Header = ({ user }: HeaderProps) => {
   };
 
   const handleLogout = async () => {
+    posthog.capture("logged_out");
     await supabase.auth.signOut();
     posthog.reset();
   };

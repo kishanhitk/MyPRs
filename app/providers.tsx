@@ -36,12 +36,14 @@ export function Providers({
       if (!key) return;
       posthog.init(key, {
         api_host:
-          process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
+          process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
         loaded: (ph) => {
           if (process.env.NODE_ENV === "development") ph.debug();
           setPosthogLoaded(true);
         },
         capture_pageview: false, // captured manually below
+        capture_pageleave: true, // bounce rate + time-on-page
+        capture_exceptions: true, // client error tracking
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,7 +66,11 @@ export function Providers({
       if (session?.access_token !== serverAccessToken) {
         if (session?.user?.id && session?.user?.email && posthogLoaded) {
           try {
-            posthog.identify(session.user.id, { email: session.user.email });
+            posthog.identify(session.user.id, {
+              email: session.user.email,
+              github_username: session.user.user_metadata?.user_name,
+              name: session.user.user_metadata?.full_name,
+            });
           } catch {}
         }
         router.refresh();
