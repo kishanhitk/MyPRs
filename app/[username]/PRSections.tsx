@@ -16,6 +16,7 @@ interface PRSectionsProps {
   isOwner: boolean;
   username: string;
   totalCount: number;
+  since: number | null;
   excludedRepoNames: string[];
 }
 
@@ -25,6 +26,7 @@ export default function PRSections({
   isOwner,
   username,
   totalCount,
+  since,
   excludedRepoNames,
 }: PRSectionsProps) {
   // The full history is already here; the window limits DOM size, not data.
@@ -90,9 +92,6 @@ export default function PRSections({
     ...new Set([...featuredPRs, ...nonFeaturedPRs].map((p) => p.repo)),
   ];
   const allLoaded = [...featuredPRs, ...nonFeaturedPRs];
-  const since = allLoaded.length
-    ? Math.min(...allLoaded.map((p) => new Date(p.merged_at).getFullYear()))
-    : null;
   // The search API stops at 1000 results; beyond that the numbers are floors.
   const capped = totalCount > 1000;
 

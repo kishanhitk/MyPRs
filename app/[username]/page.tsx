@@ -57,6 +57,7 @@ export default async function ProfilePage({
     userData,
     items,
     totalCount,
+    sinceYear,
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
@@ -166,6 +167,7 @@ export default async function ProfilePage({
           isOwner={isOwner}
           username={username}
           totalCount={totalCount}
+          since={sinceYear}
           excludedRepoNames={excludedGitHubRepos}
         />
       ) : (

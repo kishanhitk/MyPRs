@@ -23,6 +23,7 @@ export interface PRFilter {
   author: string;
   limit?: number;
   page?: number;
+  order?: "asc" | "desc";
 }
 
 export const getPRsFromGithubAPI = async (filter: PRFilter) => {
@@ -75,7 +76,9 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
 
   const url = `https://api.github.com/search/issues?q=${queryParts.join(
     "+"
-  )}&per_page=${limit}&page=${filter.page ?? 1}&sort=created&order=desc`;
+  )}&per_page=${limit}&page=${filter.page ?? 1}&sort=created&order=${
+    filter.order ?? "desc"
+  }`;
   const init = {
     headers: githubHeaders(),
     // Cache on the Next data layer, replacing the old CDN self-fetch contract.
@@ -137,6 +140,22 @@ export const getAllMergedPRs = async (author: string) => {
     error: null,
     status: first.status,
   };
+};
+
+/**
+ * Year of the author's first merged PR. One ascending-sorted search with
+ * per_page=1 — exact even when the career exceeds the 1000-result cap that
+ * bounds getAllMergedPRs.
+ */
+export const getFirstMergedYear = async (author: string) => {
+  const res = await getPRsFromGithubAPI({
+    author,
+    limit: 1,
+    page: 1,
+    order: "asc",
+  });
+  const first = res.data?.items?.[0];
+  return first ? new Date(first.pull_request.merged_at).getFullYear() : null;
 };
 
 export const getGitHubUserData = async (username: string) => {

@@ -1,6 +1,10 @@
 import { cache } from "react";
 import { createClient } from "~/lib/supabase/server";
-import { getAllMergedPRs, getGitHubUserData } from "~/lib/github";
+import {
+  getAllMergedPRs,
+  getFirstMergedYear,
+  getGitHubUserData,
+} from "~/lib/github";
 import type { GithubUser, ProfilePR } from "~/types/shared";
 
 /**
@@ -25,9 +29,11 @@ export const getProfileData = cache(async (username: string) => {
   const excludedGitHubRepos: string[] = row?.excluded_github_repos ?? [];
   const featuredGithubPRIds: string[] = row?.featured_github_prs ?? [];
 
-  const [ghResponse, userResponse] = await Promise.all([
+  const [ghResponse, userResponse, sinceYear] = await Promise.all([
     getAllMergedPRs(username),
     getGitHubUserData(username),
+    // Exact first-merged-PR year even past the search API's 1000-result cap.
+    getFirstMergedYear(username),
   ]);
 
   const ghData = ghResponse.data;
@@ -70,6 +76,7 @@ export const getProfileData = cache(async (username: string) => {
     notFound,
     loadError,
     totalCount: ghData?.total_count ?? 0,
+    sinceYear,
     items,
     featuredPRs,
     nonFeaturedPRs,
