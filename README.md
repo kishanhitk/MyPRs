@@ -9,8 +9,6 @@ showcase your expertise, and stand out — with a single shareable link.
 
 **[myprs.dev](https://myprs.dev)** · `myprs.dev/your-github-username`
 
-![MyPRs](https://www.myprs.dev/api/og)
-
 <p align="center">
   <img src="public/assets/screenshot-profile.png" alt="A MyPRs profile: contribution graph, curated featured PRs, and the full merged-PR history on a git-graph rail" width="720">
 </p>
