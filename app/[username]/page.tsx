@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
 import ContributionGraph from "~/components/custom/ContributionGraph";
+import ShareProfile from "~/components/custom/ShareProfile";
 import PRSections from "./PRSections";
 
 async function getDomain() {
@@ -142,12 +143,7 @@ export default async function ProfilePage({
             {isOwner ? (
               <>
                 {" · "}
-                <a
-                  href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.dev/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
-                  className="underline-offset-4 hover:underline"
-                >
-                  share ↗
-                </a>
+                <ShareProfile username={username} />
               </>
             ) : null}
           </p>
