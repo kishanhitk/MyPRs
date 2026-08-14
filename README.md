@@ -1,38 +1,74 @@
-
+<div align="center">
 
 # MyPRs
-### One link to highlight your Open-Source Contributions.
-The 'link-in-bio' for your Open-Source PRs. Curate a selection of your proudest GitHub PRs, showcase your expertise, and set yourself apart in the crowd.
+
+### One link to highlight your open-source contributions.
+
+The "link-in-bio" for your GitHub pull requests. Curate your proudest PRs,
+showcase your expertise, and stand out — with a single shareable link.
+
+**[myprs.dev](https://myprs.dev)** · `myprs.dev/your-github-username`
 
 ![MyPRs](https://www.myprs.dev/assets/og-banner.png)
-## Development
 
-Copy `.env.example` to `.env.local` and fill in your Supabase / PostHog values
-(and optionally a `GITHUB_TOKEN` to raise the GitHub API rate limit). Then:
+</div>
+
+## Why MyPRs
+
+Your best work as a developer often lives in pull requests scattered across
+other people's repositories — invisible on your GitHub profile. MyPRs pulls
+them together on one page you can put in your bio, resume, or job application.
+
+- **Instant profile** — visit `myprs.dev/<username>` and your merged PRs are
+  already there. No setup required.
+- **Curate what matters** — sign in with GitHub to feature your proudest PRs
+  and hide noisy repositories.
+- **Built to share** — clean link, rich social cards with per-profile OG
+  images, and a one-click share button.
+- **Looks good everywhere** — responsive, dark mode, GitHub contribution
+  chart included.
+
+## How it works
+
+1. Open `myprs.dev/<your-github-username>` — merged PRs load straight from
+   the GitHub API.
+2. **Continue with GitHub** to claim your profile.
+3. Star ⭐ PRs to feature them at the top; filter out repositories you don't
+   want shown.
+4. Share your link.
+
+## Tech stack
+
+- [Next.js 16](https://nextjs.org) — App Router, React Server Components, Server Actions
+- [React 19](https://react.dev) · [Tailwind CSS 4](https://tailwindcss.com) · [shadcn/ui](https://ui.shadcn.com)
+- [Supabase](https://supabase.com) — GitHub OAuth via `@supabase/ssr`, Postgres with RLS
+- [Vercel](https://vercel.com) — hosting and preview deployments
+
+## Local development
 
 ```sh
-# start the Next.js dev server
-npm run dev
+bun install
+
+# local Supabase (Docker required); prints the URL + anon key
+supabase start
+
+cp .env.example .env.local   # fill in the values from `supabase start`
+
+bun run dev                  # http://localhost:3000
 ```
 
-Open up [http://127.0.0.1:3000](http://127.0.0.1:3000) and you should be ready to go!
+Optionally set `GITHUB_TOKEN` in `.env.local` to raise the GitHub API rate
+limit. `npm` works everywhere `bun` is shown.
 
-Other scripts: `npm run build` (production build), `npm start` (serve the
-build), `npm run typecheck`, `npm run lint`.
+Other scripts: `bun run build`, `bun start`, `bun run typecheck`, `bun run lint`.
 
-## Deployment (Vercel)
+## Deployment
 
-Deploys to Vercel with zero config — it detects Next.js automatically. Set the
-environment variables from `.env.example` in the Vercel project settings
-(`NEXT_PUBLIC_*` plus `GITHUB_TOKEN`).
+Deploys to Vercel with zero config — Next.js is auto-detected. Set the
+environment variables from `.env.example` (`NEXT_PUBLIC_*` plus
+`GITHUB_TOKEN`) in the Vercel project settings.
 
-## Built with
-Using the  awesome tools:
-- @nextjs 16 (App Router — React Server Components, Server Actions)
-- @tailwindcss
-- @vercel(the perfect place to deploy modern web apps. I tried all alternatives and finally chose Vercel)
-- @shadcn (best way to build accessible web apps, by default)
-- @supabase (auth via `@supabase/ssr`)
+## Contributing
 
-
-### ⚠️ Disclamer  : This is a work in progress. I am still working on it. Feel free to contribute.
+Issues and PRs are welcome. If you ship something you're proud of —
+[feature it on your MyPRs](https://myprs.dev).
