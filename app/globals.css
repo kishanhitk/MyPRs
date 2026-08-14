@@ -139,3 +139,11 @@
     transform: translateY(0);
   }
 }
+
+/* rough-notation marker wash for the Highlighter component */
+:root {
+  --annotation: #e4e4e7;
+}
+.dark {
+  --annotation: #3f3f46;
+}

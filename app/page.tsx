@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { Highlighter } from "~/components/ui/highlighter";
+import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
 import { LoginCTA } from "./LoginCTA";
@@ -53,8 +55,7 @@ export default async function Home() {
         <span aria-hidden className="hidden group-hover:inline">
           ★
         </span>
-        Star on GitHub
-        <span aria-hidden>↗</span>
+        <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
       </a>
 
       <h1
@@ -62,9 +63,9 @@ export default async function Home() {
         style={{ "--d": "60ms" } as React.CSSProperties}
       >
         One link to{" "}
-        <span className="underline decoration-zinc-900/60 dark:decoration-zinc-100/60 underline-offset-4">
+        <Highlighter action="highlight" delay={700} animationDuration={700}>
           highlight
-        </span>{" "}
+        </Highlighter>{" "}
         your open-source contributions.
       </h1>
 
