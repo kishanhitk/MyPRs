@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
+import ContributionGraph from "~/components/custom/ContributionGraph";
 import PRSections from "./PRSections";
 
 async function getDomain() {
@@ -58,6 +59,7 @@ export default async function ProfilePage({
     items,
     totalCount,
     sinceYear,
+    contributionCalendar,
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
@@ -152,15 +154,17 @@ export default async function ProfilePage({
         </div>
       </header>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`https://ghchart.rshah.org/${userData.login}`}
-        alt={`${userData.login}'s GitHub contribution chart`}
-        className="rise mt-6 w-full dark:brightness-75"
-        style={
-          { "--d": "90ms", aspectRatio: "663 / 104" } as React.CSSProperties
-        }
-      />
+      {contributionCalendar ? (
+        <div
+          className="rise mt-6"
+          style={{ "--d": "90ms" } as React.CSSProperties}
+        >
+          <ContributionGraph
+            calendar={contributionCalendar}
+            username={userData.login}
+          />
+        </div>
+      ) : null}
 
       {items.length ? (
         <PRSections

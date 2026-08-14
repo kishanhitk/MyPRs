@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createClient } from "~/lib/supabase/server";
 import {
   getAllMergedPRs,
+  getContributionCalendar,
   getFirstMergedYear,
   getGitHubUserData,
 } from "~/lib/github";
@@ -29,12 +30,14 @@ export const getProfileData = cache(async (username: string) => {
   const excludedGitHubRepos: string[] = row?.excluded_github_repos ?? [];
   const featuredGithubPRIds: string[] = row?.featured_github_prs ?? [];
 
-  const [ghResponse, userResponse, sinceYear] = await Promise.all([
-    getAllMergedPRs(username),
-    getGitHubUserData(username),
-    // Exact first-merged-PR year even past the search API's 1000-result cap.
-    getFirstMergedYear(username),
-  ]);
+  const [ghResponse, userResponse, sinceYear, contributionCalendar] =
+    await Promise.all([
+      getAllMergedPRs(username),
+      getGitHubUserData(username),
+      // Exact first-merged-PR year even past the search API's 1000-result cap.
+      getFirstMergedYear(username),
+      getContributionCalendar(username),
+    ]);
 
   const ghData = ghResponse.data;
   const userData = userResponse.data as GithubUser | null;
@@ -81,6 +84,7 @@ export const getProfileData = cache(async (username: string) => {
     loadError,
     totalCount: ghData?.total_count ?? 0,
     sinceYear,
+    contributionCalendar,
     items,
     featuredPRs,
     nonFeaturedPRs,

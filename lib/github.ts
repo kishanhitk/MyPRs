@@ -188,3 +188,68 @@ export const getGitHubUserData = async (username: string) => {
     return { data: null, error, status: 0 };
   }
 };
+
+export interface ContributionCalendar {
+  total: number;
+  /** 53 weeks x 7 days, values 0-4 (GitHub's quartile levels). */
+  weeks: number[][];
+}
+
+const LEVELS: Record<string, number> = {
+  NONE: 0,
+  FIRST_QUARTILE: 1,
+  SECOND_QUARTILE: 2,
+  THIRD_QUARTILE: 3,
+  FOURTH_QUARTILE: 4,
+};
+
+/**
+ * First-party contribution calendar via the GraphQL API (replaces the
+ * ghchart.rshah.org hotlink). Requires GITHUB_TOKEN; returns null without
+ * it so the profile simply omits the graph.
+ */
+export const getContributionCalendar = async (
+  username: string
+): Promise<ContributionCalendar | null> => {
+  if (!process.env.GITHUB_TOKEN) return null;
+
+  const query = `query($login: String!) {
+    user(login: $login) {
+      contributionsCollection {
+        contributionCalendar {
+          totalContributions
+          weeks { contributionDays { contributionLevel } }
+        }
+      }
+    }
+  }`;
+
+  try {
+    const response = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ query, variables: { login: username } }),
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
+    });
+    const json = await response.json();
+    const calendar =
+      json?.data?.user?.contributionsCollection?.contributionCalendar;
+    if (!calendar) return null;
+    return {
+      total: calendar.totalContributions,
+      weeks: calendar.weeks.map(
+        (week: { contributionDays: { contributionLevel: string }[] }) =>
+          week.contributionDays.map(
+            (day) => LEVELS[day.contributionLevel] ?? 0
+          )
+      ),
+    };
+  } catch (error) {
+    console.error("contribution calendar fetch failed:", error);
+    return null;
+  }
+};
