@@ -46,7 +46,7 @@ export const Header = ({ user }: HeaderProps) => {
           <button
             type="button"
             onClick={user ? handleLogout : handleGitHubLogin}
-            className="font-mono text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline active:scale-95 dark:text-zinc-400 dark:hover:text-zinc-100"
+            className="font-mono text-xs text-zinc-500 underline-offset-4 transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-zinc-900 hover:underline active:scale-95 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
             {user ? "logout" : "login ↗"}
           </button>

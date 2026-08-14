@@ -16,7 +16,6 @@ interface IGithubCardProps {
   isOwner?: boolean;
   onToggle?: () => void;
   error?: string;
-  delay?: number;
 }
 
 export function DemoGithub({
@@ -25,7 +24,6 @@ export function DemoGithub({
   isOwner = false,
   onToggle,
   error,
-  delay = 0,
 }: IGithubCardProps) {
   const reduceMotion = useReducedMotion();
 
@@ -35,7 +33,7 @@ export function DemoGithub({
       initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
-      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1], delay }}
+      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
       className="relative pl-10 pb-4"
     >
       {/* branch connector — starts at the node's edge, never through it */}
@@ -68,7 +66,7 @@ export function DemoGithub({
               type="button"
               aria-label={isFeatured ? "Unfeature this PR" : "Feature this PR"}
               onClick={onToggle}
-              className={`font-mono shrink-0 text-xs transition-opacity duration-150 active:scale-95 ${
+              className={`font-mono shrink-0 text-xs transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 ${
                 isFeatured
                   ? "text-zinc-900 dark:text-zinc-100"
                   : "text-zinc-500 opacity-60 hover:opacity-100 focus-visible:opacity-100 dark:text-zinc-400"

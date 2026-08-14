@@ -68,7 +68,7 @@ const PRFilter = ({
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="appear text-zinc-900 underline underline-offset-4 active:scale-95 disabled:opacity-40 dark:text-zinc-100"
+          className="appear text-zinc-900 underline underline-offset-4 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 disabled:opacity-40 dark:text-zinc-100"
         >
           {isPending ? "saving…" : "save"}
         </button>

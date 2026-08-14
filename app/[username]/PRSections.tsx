@@ -95,9 +95,6 @@ export default function PRSections({
   // The search API stops at 1000 results; beyond that the numbers are floors.
   const capped = totalCount > 1000;
 
-  let i = 0;
-  const delay = () => Math.min(i++ * 0.04, 0.48);
-
   return (
     <>
       <p
@@ -177,7 +174,6 @@ export default function PRSections({
                   isOwner={isOwner}
                   onToggle={() => toggle(item, false)}
                   error={errors[item.id]}
-                  delay={delay()}
                 />
               ))}
             </AnimatePresence>
@@ -198,7 +194,6 @@ export default function PRSections({
                     isOwner={isOwner}
                     onToggle={() => toggle(item, true)}
                     error={errors[item.id]}
-                    delay={delay()}
                   />
                 ))}
               </AnimatePresence>
