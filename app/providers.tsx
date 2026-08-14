@@ -28,6 +28,7 @@ export function Providers({
   const pathname = usePathname();
   const [supabase] = React.useState(() => createClient());
   const [posthogLoaded, setPosthogLoaded] = React.useState(false);
+  const hadSessionRef = React.useRef(Boolean(serverAccessToken));
 
   // Initialize PostHog once on the client.
   React.useEffect(() => {
@@ -63,16 +64,23 @@ export function Providers({
       // Ignore background token refreshes — they change the access_token on a
       // ~hourly cadence and would otherwise re-fetch every Server Component.
       if (event === "TOKEN_REFRESHED") return;
+      // Re-assert identity on every session (INITIAL_SESSION included) so a
+      // returning visitor maps to their person even after a cookie reset.
+      if (session?.user?.id && posthogLoaded) {
+        try {
+          posthog.identify(session.user.id, {
+            email: session.user.email,
+            github_username: session.user.user_metadata?.user_name,
+            name: session.user.user_metadata?.full_name,
+            avatar_url: session.user.user_metadata?.avatar_url,
+          });
+          if (event === "SIGNED_IN" && !hadSessionRef.current) {
+            posthog.capture("login_completed");
+          }
+        } catch {}
+      }
+      hadSessionRef.current = Boolean(session);
       if (session?.access_token !== serverAccessToken) {
-        if (session?.user?.id && session?.user?.email && posthogLoaded) {
-          try {
-            posthog.identify(session.user.id, {
-              email: session.user.email,
-              github_username: session.user.user_metadata?.user_name,
-              name: session.user.user_metadata?.full_name,
-            });
-          } catch {}
-        }
         router.refresh();
       }
     });
