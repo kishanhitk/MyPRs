@@ -225,7 +225,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .contrib-cell:hover {
-    transform: scale(1.35);
+    transform: scale(1.15);
   }
 }
 @media (prefers-reduced-motion: reduce) {
