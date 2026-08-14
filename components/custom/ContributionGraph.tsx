@@ -63,7 +63,7 @@ export default function ContributionGraph({
               width={CELL}
               height={CELL}
               rx={2}
-              className={LEVEL_CLASSES[level] ?? LEVEL_CLASSES[0]}
+              className={`contrib-cell ${LEVEL_CLASSES[level] ?? LEVEL_CLASSES[0]}`}
               onMouseEnter={() =>
                 setTooltip({
                   leftPct: ((w * (CELL + GAP) + CELL / 2) / width) * 100,
