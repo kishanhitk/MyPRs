@@ -17,9 +17,10 @@ module.exports = {
       },
     },
     fontFamily: {
-      sans: ["inter", "sans-serif"],
-      display: ["inter", "sans-serif"],
-      body: ["inter", "sans-serif"],
+      sans: ["var(--font-geist-sans)", "inter", "sans-serif"],
+      display: ["var(--font-geist-sans)", "inter", "sans-serif"],
+      body: ["var(--font-geist-sans)", "inter", "sans-serif"],
+      mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
     },
 
     extend: {

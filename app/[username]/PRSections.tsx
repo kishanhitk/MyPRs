@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
-import { Star } from "lucide-react";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import type { GitHubIssue } from "~/types/shared";
 
@@ -18,45 +17,70 @@ export default function PRSections({
   isOwner,
   username,
 }: PRSectionsProps) {
+  let i = 0;
+  const delay = () => Math.min(i++ * 0.04, 0.48);
+
   return (
-    <AnimatePresence>
-      {featuredPRs?.length ? (
-        <div key="featured" className="mt-5">
-          <p className="font-medium">Featured PRs ✨</p>
-          {featuredPRs.map((item) => (
-            <DemoGithub
-              key={item.id}
-              item={item}
-              isFeatured
-              isOwner={isOwner}
-              username={username}
-            />
-          ))}
-        </div>
+    <div className="relative mt-10">
+      {/* the trunk */}
+      <span
+        aria-hidden
+        className="rail-line absolute bottom-2 left-3 top-0 w-[2px] rounded-full bg-zinc-200 dark:bg-zinc-800"
+      />
+
+      {featuredPRs.length ? (
+        <h2 className="font-mono relative pl-10 pb-3 text-[11px] uppercase tracking-[0.18em] text-github_merged dark:text-[#A371F7]">
+          Featured
+        </h2>
       ) : isOwner ? (
-        <div key="featured-empty" className="mt-5">
-          <p className="font-medium text-lg mb-2">Featured PRs ✨</p>
-          <p className=" text-slate-600 text-md dark:text-slate-400">
-            You don't have any featured PR yet. Add a PR to featured by clicking
-            on the star
-            <Star className="h-4 w-4 inline mx-1 mb-1" />
-            icon.
+        <div className="relative pl-10 pb-3">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-github_merged dark:text-[#A371F7]">
+            Featured
+          </h2>
+          <p className="font-mono mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            Nothing featured yet — hover a PR and press ☆ to pin your proudest
+            work here.
           </p>
         </div>
       ) : null}
-      {nonFeaturedPRs?.length ? (
-        <div key="all-prs" className="mt-5">
-          <p className="font-medium text-lg"> All My PRs</p>
-          {nonFeaturedPRs.map((item) => (
-            <DemoGithub
-              key={item.id}
-              item={item}
-              isOwner={isOwner}
-              username={username}
-            />
-          ))}
-        </div>
+
+      {featuredPRs.length ? (
+        <ul>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {featuredPRs.map((item) => (
+              <DemoGithub
+                key={item.id}
+                item={item}
+                isFeatured
+                isOwner={isOwner}
+                username={username}
+                delay={delay()}
+              />
+            ))}
+          </AnimatePresence>
+        </ul>
       ) : null}
-    </AnimatePresence>
+
+      {nonFeaturedPRs.length ? (
+        <>
+          <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+            All merged
+          </h2>
+          <ul>
+            <AnimatePresence mode="popLayout" initial={false}>
+              {nonFeaturedPRs.map((item) => (
+                <DemoGithub
+                  key={item.id}
+                  item={item}
+                  isOwner={isOwner}
+                  username={username}
+                  delay={delay()}
+                />
+              ))}
+            </AnimatePresence>
+          </ul>
+        </>
+      ) : null}
+    </div>
   );
 }

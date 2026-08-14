@@ -1,19 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { StarIcon, SmileIcon } from "lucide-react";
-import { Button } from "../ui/button";
+import { motion, useReducedMotion } from "framer-motion";
 import type { GitHubIssue } from "~/types/shared";
-import { ChatBubbleIcon, OpenInNewWindowIcon } from "@radix-ui/react-icons";
-import { motion } from "framer-motion";
-import PullRequestIcon from "./PullRequestIcon";
 import { toggleFeaturedAction } from "~/utils/pr-actions";
+
+function fmtMonth(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+}
 
 interface IGithubCardProps {
   item: GitHubIssue;
   isFeatured?: boolean;
   isOwner?: boolean;
   username: string;
+  delay?: number;
 }
 
 export function DemoGithub({
@@ -21,9 +25,11 @@ export function DemoGithub({
   isFeatured = false,
   isOwner = false,
   username,
+  delay = 0,
 }: IGithubCardProps) {
   const [isPending, startTransition] = React.useTransition();
   const [actionError, setActionError] = React.useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const toggleFeatured = () => {
     startTransition(async () => {
@@ -35,75 +41,77 @@ export function DemoGithub({
     });
   };
 
-  return (
-    <motion.div
-      initial={{ y: 300, opacity: 0, scale: 0.3 }}
-      animate={{ y: 0, opacity: 1, scale: 1 }}
-      exit={{ y: -300, opacity: 0, scale: 0.3 }}
-      className="my-3 border p-4 rounded-md border-slate-300 bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-700"
-    >
-      <div className="space-y-3">
-        <div className="flex items-center">
-          <h3 className="text-sm text-slate-700 mr-auto dark:text-slate-300">
-            {item.repository_url.slice(29)}
-          </h3>
+  const repo = item.repository_url.slice(29);
 
+  return (
+    <motion.li
+      layout={!reduceMotion}
+      initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
+      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1], delay }}
+      className="relative pl-10 pb-2"
+    >
+      {/* merge node */}
+      <span
+        aria-hidden
+        className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 bg-[#fdfafa] dark:bg-[#191919] ${
+          isFeatured
+            ? "border-github_merged dark:border-[#A371F7]"
+            : "border-zinc-400 dark:border-zinc-600"
+        }`}
+      />
+      {/* branch connector */}
+      <span
+        aria-hidden
+        className="absolute left-[12px] top-[27px] h-px w-5 bg-zinc-200 dark:bg-zinc-800"
+      />
+
+      <div className="group -mx-3 rounded-lg border border-transparent px-3 py-2 transition-colors duration-150 hover:border-zinc-200 hover:bg-white dark:hover:border-zinc-800 dark:hover:bg-zinc-900/60">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+            {repo}
+          </span>
           {isOwner ? (
-            <Button
+            <button
               type="button"
-              size="icon"
               disabled={isPending}
-              onClick={toggleFeatured}
-              variant="ghost"
               aria-label={isFeatured ? "Unfeature this PR" : "Feature this PR"}
+              onClick={toggleFeatured}
+              className={`font-mono text-xs transition-opacity duration-150 active:scale-95 disabled:opacity-40 ${
+                isFeatured
+                  ? "text-github_merged dark:text-[#A371F7]"
+                  : "text-zinc-500 opacity-60 hover:opacity-100 focus-visible:opacity-100 dark:text-zinc-400"
+              }`}
             >
-              <StarIcon
-                fill={isFeatured ? "currentColor" : "none"}
-                className="h-5 w-5"
-              />
-            </Button>
+              {isFeatured ? "★ featured" : "☆ feature"}
+            </button>
           ) : null}
-          <a
-            href={item.html_url}
-            className="ml-2"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <OpenInNewWindowIcon className="h-5 w-5" />
-          </a>
         </div>
+
         {actionError ? (
-          <p role="alert" className="text-xs text-red-500">
+          <p role="alert" className="font-mono mt-1 text-xs text-red-500">
             {actionError}
           </p>
         ) : null}
-        <div className="flex">
-          <PullRequestIcon className="fill-github_merged h-5 w-5" />
-          <a
-            href={item.html_url}
-            className="ml-2"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <p className="font-medium">{item.title}</p>
-          </a>
-        </div>
-      </div>
 
-      <div className="flex text-sm text-muted-foreground mt-4">
-        <div className="flex items-center">
-          <SmileIcon className="mr-1 h-4 w-4" />
-          {item.reactions.total_count}
-        </div>
-        <div className="flex items-center ml-4">
-          <ChatBubbleIcon className="mr-1 h-4 w-4" />
-          {item.comments}
-        </div>
-        <div className="ml-auto">
-          Merged on:{" "}
-          {new Date(item.pull_request.merged_at).toDateString().slice(4)}
-        </div>
+        <a
+          href={item.html_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-0.5 block text-[15px] font-medium leading-snug text-zinc-900 decoration-github_merged/40 underline-offset-4 hover:underline dark:text-zinc-200"
+        >
+          {item.title}
+        </a>
+
+        <p className="font-mono mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          merged {fmtMonth(item.pull_request.merged_at)}
+          {item.reactions.total_count > 0
+            ? ` · ▲ ${item.reactions.total_count}`
+            : ""}
+          {item.comments > 0 ? ` · ${item.comments} comments` : ""}
+        </p>
       </div>
-    </motion.div>
+    </motion.li>
   );
 }

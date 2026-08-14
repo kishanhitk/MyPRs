@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Share2 } from "lucide-react";
-import { Button } from "~/components/ui/button";
 import PRFilter from "~/components/custom/PRFilter";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
@@ -77,10 +75,10 @@ export default async function ProfilePage({
 
   if (loadError && !userData) {
     return (
-      <div className="mx-5 flex flex-col">
-        <p className="self-center mt-10">
-          Couldn't load this profile right now (GitHub may be rate-limiting or
-          unavailable). Please try again in a moment.
+      <div className="mx-auto max-w-2xl px-6 py-14">
+        <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
+          Couldn&apos;t load this profile right now (GitHub may be rate-limiting
+          or unavailable). Try again in a moment.
         </p>
       </div>
     );
@@ -88,79 +86,98 @@ export default async function ProfilePage({
 
   if (notFound || !userData) {
     return (
-      <div className="mx-5 flex flex-col">
-        <p className="self-center mt-10">The username is not valid</p>
-      </div>
-    );
-  }
-
-  if (!items.length) {
-    return (
-      <div className="mx-5 flex flex-col">
-        <p>
-          Looks like {username} has not created any public PR for quite a while.
-          {isOwner ? <>Go make some PRs!🚀</> : null}
+      <div className="mx-auto max-w-2xl px-6 py-14">
+        <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
+          No GitHub user named &ldquo;{username}&rdquo;.
         </p>
       </div>
     );
   }
 
+  const since = items.length
+    ? Math.min(
+        ...items.map((i) => new Date(i.pull_request.merged_at).getFullYear())
+      )
+    : null;
+
   return (
-    <div className="mx-5 flex flex-col">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={userData.avatar_url}
-        alt={userData.login}
-        className="h-52 w-52 mt-5 rounded-full self-center"
-      />
-      <p className="self-center text-3xl mt-1">{userData.name}</p>
-      <p className="self-center text-slate-700 flex text-lg dark:text-slate-300">
-        {userData.login}{" "}
-      </p>
-      <div className="flex items-center self-center mb-3 text-slate-500 ">
-        {userData.twitter_username ? (
-          <a href={`https://x.com/${userData.twitter_username}`}>
-            {/* lucide-react 1.x removed brand icons; inline X logo */}
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-label="X (Twitter)"
-              className="h-5 w-5"
-            >
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zM17.083 19.77h1.833L7.084 4.126H5.117z" />
-            </svg>
-          </a>
-        ) : null}
-      </div>
-      {isOwner ? (
-        <Button className="self-center mb-3" asChild>
-          <a
-            href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.dev/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
-          >
-            Share
-            <Share2 className="h-5 w-5 ml-2" />
-          </a>
-        </Button>
+    <div className="mx-auto max-w-2xl px-6 py-14">
+      <header className="rise flex items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={userData.avatar_url}
+          alt={userData.login}
+          className="h-16 w-16 rounded-full border border-zinc-200 dark:border-zinc-800"
+        />
+        <div>
+          <h1 className="text-[26px] font-semibold leading-tight text-zinc-900 dark:text-zinc-100">
+            {userData.name ?? userData.login}
+          </h1>
+          <p className="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">
+            @{userData.login}
+            {userData.twitter_username ? (
+              <>
+                {" · "}
+                <a
+                  href={`https://x.com/${userData.twitter_username}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  x/{userData.twitter_username}
+                </a>
+              </>
+            ) : null}
+            {isOwner ? (
+              <>
+                {" · "}
+                <a
+                  href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.dev/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  share ↗
+                </a>
+              </>
+            ) : null}
+          </p>
+        </div>
+      </header>
+
+      {items.length ? (
+        <p
+          className="rise font-mono mt-5 text-[13px] text-zinc-500 dark:text-zinc-400"
+          style={{ "--d": "60ms" } as React.CSSProperties}
+        >
+          {items.length} merged pull requests · {uniqueRepoNames.length}{" "}
+          {uniqueRepoNames.length === 1 ? "repository" : "repositories"}
+          {since ? ` · since ${since}` : ""}
+        </p>
       ) : null}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`https://ghchart.rshah.org/${userData.login}`}
-        alt={`${userData.login}'s Github chart`}
-        className="my-2 dark:brightness-75"
-      />
+
       {isOwner ? (
-        <PRFilter
-          repoNames={uniqueRepoNames}
-          excludedRepoNames={excludedGitHubRepos}
+        <div
+          className="rise mt-4"
+          style={{ "--d": "120ms" } as React.CSSProperties}
+        >
+          <PRFilter
+            repoNames={uniqueRepoNames}
+            excludedRepoNames={excludedGitHubRepos}
+            username={username}
+          />
+        </div>
+      ) : null}
+
+      {items.length ? (
+        <PRSections
+          featuredPRs={featuredPRs}
+          nonFeaturedPRs={nonFeaturedPRs}
+          isOwner={isOwner}
           username={username}
         />
-      ) : null}
-      <PRSections
-        featuredPRs={featuredPRs}
-        nonFeaturedPRs={nonFeaturedPRs}
-        isOwner={isOwner}
-        username={username}
-      />
+      ) : (
+        <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">
+          No public merged PRs in the last three years.
+          {isOwner ? " Go make some! 🚀" : ""}
+        </p>
+      )}
     </div>
   );
 }
