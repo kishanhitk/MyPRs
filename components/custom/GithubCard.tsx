@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { motion, Reorder, useReducedMotion } from "framer-motion";
 import type { ProfilePR } from "~/types/shared";
 
@@ -31,13 +32,18 @@ export function DemoGithub({
   onReorderCommit,
 }: IGithubCardProps) {
   const reduceMotion = useReducedMotion();
+  const [dragging, setDragging] = React.useState(false);
 
   const Root: React.ElementType = reorderable ? Reorder.Item : motion.li;
   const rootProps = reorderable
     ? {
         value: item,
         whileDrag: { scale: 1.01, zIndex: 10 },
-        onDragEnd: onReorderCommit,
+        onDragStart: () => setDragging(true),
+        onDragEnd: () => {
+          setDragging(false);
+          onReorderCommit?.();
+        },
       }
     : {};
 
@@ -50,10 +56,8 @@ export function DemoGithub({
       exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
       transition={{ type: "spring", bounce: 0, duration: 0.35 }}
       className={`group relative pl-10 pb-4 ${
-        reorderable
-          ? "cursor-grab bg-[#fdfafa] active:cursor-grabbing dark:bg-[#191919]"
-          : ""
-      }`}
+        reorderable ? "cursor-grab active:cursor-grabbing" : ""
+      } ${dragging ? "bg-[#fdfafa] dark:bg-[#191919]" : ""}`}
     >
       {/* branch connector — starts at the node's edge, never through it */}
       <span
