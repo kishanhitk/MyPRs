@@ -35,7 +35,21 @@ export default function DarkModeToggle({
 
   const handleClick = () => {
     setMode(nextMode);
-    applyTheme(nextMode);
+    // Ease the brightness jump: cross-fade the whole page via the View
+    // Transitions API where available; hard cut under reduced motion.
+    const flip = () => applyTheme(nextMode);
+    if (
+      "startViewTransition" in document &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      (
+        document as Document & {
+          startViewTransition: (cb: () => void) => void;
+        }
+      ).startViewTransition(flip);
+    } else {
+      flip();
+    }
     startTransition(async () => {
       try {
         await setThemeAction(nextMode);

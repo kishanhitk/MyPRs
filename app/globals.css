@@ -270,3 +270,10 @@
     background: #191919;
   }
 }
+
+/* Theme switch cross-fade (View Transitions API) — brief and even. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 280ms;
+  animation-timing-function: ease;
+}
