@@ -191,8 +191,8 @@ export const getGitHubUserData = async (username: string) => {
 
 export interface ContributionCalendar {
   total: number;
-  /** 53 weeks x 7 days, values 0-4 (GitHub's quartile levels). */
-  weeks: number[][];
+  /** 53 weeks x 7 days of [level 0-4, count, ISO date]. */
+  weeks: [number, number, string][][];
 }
 
 const LEVELS: Record<string, number> = {
@@ -218,7 +218,9 @@ export const getContributionCalendar = async (
       contributionsCollection {
         contributionCalendar {
           totalContributions
-          weeks { contributionDays { contributionLevel } }
+          weeks {
+            contributionDays { contributionLevel contributionCount date }
+          }
         }
       }
     }
@@ -242,9 +244,20 @@ export const getContributionCalendar = async (
     return {
       total: calendar.totalContributions,
       weeks: calendar.weeks.map(
-        (week: { contributionDays: { contributionLevel: string }[] }) =>
+        (week: {
+          contributionDays: {
+            contributionLevel: string;
+            contributionCount: number;
+            date: string;
+          }[];
+        }) =>
           week.contributionDays.map(
-            (day) => LEVELS[day.contributionLevel] ?? 0
+            (day) =>
+              [
+                LEVELS[day.contributionLevel] ?? 0,
+                day.contributionCount,
+                day.date,
+              ] as [number, number, string]
           )
       ),
     };
