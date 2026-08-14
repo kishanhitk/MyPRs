@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { Highlighter } from "~/components/ui/highlighter";
+import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
 import { LoginCTA } from "./LoginCTA";
@@ -14,14 +16,14 @@ export const metadata: Metadata = {
     description:
       "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
     url: "https://myprs.dev/",
-    images: ["https://www.myprs.dev/assets/og-banner.png"],
+    images: ["/api/og"],
   },
   twitter: {
     card: "summary_large_image",
     title: "MyPRs - One link to highlight your Open-Source Contributions",
     description:
       "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    images: ["https://www.myprs.dev/assets/og-banner.png"],
+    images: ["/api/og"],
   },
 };
 
@@ -41,30 +43,13 @@ export default async function Home() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
-      <a
-        href="https://github.com/kishanhitk/MyPRs"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rise group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
-      >
-        <span aria-hidden className="group-hover:hidden">
-          ☆
-        </span>
-        <span aria-hidden className="hidden group-hover:inline">
-          ★
-        </span>
-        Star on GitHub
-        <span aria-hidden>↗</span>
-      </a>
-
       <h1
-        className="rise mt-6 text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] text-zinc-900 dark:text-zinc-100"
-        style={{ "--d": "60ms" } as React.CSSProperties}
+        className="rise text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] tracking-[-0.02em] text-zinc-900 dark:text-zinc-100"
       >
         One link to{" "}
-        <span className="underline decoration-zinc-900/60 dark:decoration-zinc-100/60 underline-offset-4">
+        <Highlighter action="highlight" delay={700} animationDuration={700}>
           highlight
-        </span>{" "}
+        </Highlighter>{" "}
         your open-source contributions.
       </h1>
 
@@ -122,25 +107,25 @@ export default async function Home() {
             />
             <ul>
               {demoPRs.map((item, idx) => (
-                <li key={item.id} className="relative pl-10 pb-2">
+                <li key={item.id} className="group relative pl-10 pb-2">
                   <span
                     aria-hidden
-                    className="absolute left-[18px] top-[27px] h-px w-[14px] bg-zinc-200 dark:bg-zinc-800"
+                    className="absolute left-[18px] top-[27px] h-px w-[14px] bg-zinc-200 transition-colors duration-150 group-hover:bg-zinc-300 dark:bg-zinc-800 dark:group-hover:bg-zinc-700"
                   />
                   <span
                     aria-hidden
-                    className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 ${
+                    className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 transition-colors duration-150 ${
                       idx === 0
                         ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
-                        : "border-zinc-400 bg-[#fdfafa] dark:border-zinc-600 dark:bg-[#191919]"
+                        : "border-zinc-400 bg-[#fdfafa] group-hover:border-zinc-500 dark:border-zinc-600 dark:bg-[#191919] dark:group-hover:border-zinc-500"
                     }`}
                   />
                   <Link
                     href={`/${DEMO_USER}`}
                     prefetch
-                    className="group -mx-3 block rounded-lg border border-transparent px-3 py-2 transition-colors duration-150 hover:border-zinc-200 hover:bg-white dark:hover:border-zinc-800 dark:hover:bg-zinc-900/60"
+                    className="block py-2"
                   >
-                    <span className="block text-[15px] font-medium leading-snug text-zinc-900 dark:text-zinc-200">
+                    <span className="block text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-300 underline-offset-4 group-hover:underline dark:decoration-zinc-600 dark:text-zinc-200">
                       {item.title}
                     </span>
                     <span className="font-mono mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
@@ -154,9 +139,25 @@ export default async function Home() {
         </section>
       ) : null}
 
-      <p className="font-mono mt-10 text-xs text-zinc-500 dark:text-zinc-400">
-        *GitLab support coming soon.
-      </p>
+      <div className="mt-14 flex items-center justify-between">
+        <a
+          href="https://github.com/kishanhitk/MyPRs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
+        >
+          <span aria-hidden className="group-hover:hidden">
+            ☆
+          </span>
+          <span aria-hidden className="hidden group-hover:inline">
+            ★
+          </span>
+          <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
+        </a>
+        <p className="font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
+          *GitLab support coming soon.
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "posthog-js";
 import { Button } from "~/components/ui/button";
 import { useSupabase } from "./providers";
 
@@ -7,6 +8,7 @@ export function LoginCTA() {
   const supabase = useSupabase();
 
   const handleGitHubLogin = async () => {
+    posthog.capture("login_clicked", { source: "homepage_cta" });
     const baseUrl = new URL(window.location.origin);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",

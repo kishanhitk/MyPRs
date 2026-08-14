@@ -1,6 +1,11 @@
 import { cache } from "react";
 import { createClient } from "~/lib/supabase/server";
-import { getAllMergedPRs, getGitHubUserData } from "~/lib/github";
+import {
+  getAllMergedPRs,
+  getContributionCalendar,
+  getFirstMergedYear,
+  getGitHubUserData,
+} from "~/lib/github";
 import type { GithubUser, ProfilePR } from "~/types/shared";
 
 /**
@@ -17,7 +22,7 @@ export const getProfileData = cache(async (username: string) => {
   const supabase = await createClient();
   const { data: rows, error: rowError } = await supabase
     .from("users")
-    .select("*")
+    .select("id, github_username, excluded_github_repos, featured_github_prs")
     .eq("github_username", username);
   if (rowError) console.error(rowError);
 
@@ -25,10 +30,14 @@ export const getProfileData = cache(async (username: string) => {
   const excludedGitHubRepos: string[] = row?.excluded_github_repos ?? [];
   const featuredGithubPRIds: string[] = row?.featured_github_prs ?? [];
 
-  const [ghResponse, userResponse] = await Promise.all([
-    getAllMergedPRs(username),
-    getGitHubUserData(username),
-  ]);
+  const [ghResponse, userResponse, sinceYear, contributionCalendar] =
+    await Promise.all([
+      getAllMergedPRs(username),
+      getGitHubUserData(username),
+      // Exact first-merged-PR year even past the search API's 1000-result cap.
+      getFirstMergedYear(username),
+      getContributionCalendar(username),
+    ]);
 
   const ghData = ghResponse.data;
   const userData = userResponse.data as GithubUser | null;
@@ -56,9 +65,13 @@ export const getProfileData = cache(async (username: string) => {
         comments: item.comments,
       }))
       .filter((item) => !excludedGitHubRepos.includes(item.repo));
-    featuredPRs = items.filter((item) =>
-      featuredGithubPRIds.includes(item.id.toString())
-    );
+    featuredPRs = items
+      .filter((item) => featuredGithubPRIds.includes(item.id.toString()))
+      .sort(
+        (a, b) =>
+          featuredGithubPRIds.indexOf(a.id.toString()) -
+          featuredGithubPRIds.indexOf(b.id.toString())
+      );
     nonFeaturedPRs = items.filter(
       (item) => !featuredGithubPRIds.includes(item.id.toString())
     );
@@ -70,6 +83,8 @@ export const getProfileData = cache(async (username: string) => {
     notFound,
     loadError,
     totalCount: ghData?.total_count ?? 0,
+    sinceYear,
+    contributionCalendar,
     items,
     featuredPRs,
     nonFeaturedPRs,

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
+import ContributionGraph from "~/components/custom/ContributionGraph";
+import ShareProfile from "~/components/custom/ShareProfile";
 import PRSections from "./PRSections";
 
 async function getDomain() {
@@ -31,7 +33,7 @@ export async function generateMetadata({
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
       url: "https://myprs.dev/",
-      images: [`${domain}/api/${username}/og?featuredPRsCount=${featuredPRsCount}`],
+      images: [`${domain}/api/${username}/og`],
     },
     twitter: {
       card: "summary_large_image",
@@ -39,7 +41,7 @@ export async function generateMetadata({
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
       images: [
-        `${domain}/api/${username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
+        `${domain}/api/${username}/og?avatar=${userAvatar}`,
       ],
     },
   };
@@ -47,16 +49,22 @@ export async function generateMetadata({
 
 export default async function ProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ as?: string }>;
 }) {
   const { username } = await params;
+  const { as: viewAs } = await searchParams;
+  const asVisitor = viewAs === "visitor";
   const {
     notFound,
     loadError,
     userData,
     items,
     totalCount,
+    sinceYear,
+    contributionCalendar,
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
@@ -67,7 +75,9 @@ export default async function ProfilePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const isOwner = Boolean(user && ownerRowId && user.id === ownerRowId);
+  const isActualOwner = Boolean(user && ownerRowId && user.id === ownerRowId);
+  // ?as=visitor renders the page exactly as a stranger sees it.
+  const isOwner = isActualOwner && !asVisitor;
 
 
   if (loadError && !userData) {
@@ -102,7 +112,7 @@ export default async function ProfilePage({
           className="h-16 w-16 rounded-full border border-zinc-200 dark:border-zinc-800"
         />
         <div>
-          <h1 className="text-[26px] font-semibold leading-tight text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-zinc-900 dark:text-zinc-100">
             {userData.name ?? userData.login}
           </h1>
           <p className="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">
@@ -139,25 +149,33 @@ export default async function ProfilePage({
             {isOwner ? (
               <>
                 {" · "}
-                <a
-                  href={`https://twitter.com/intent/tweet?text=Check%20out%20some%20of%20my%20proudest%20Open-Source%20pull%20requests%20on%20MyPRs.%0Amyprs.dev/${username}%0AIt's%20like%20a%20'link-in-bio'%20for%20my%20Open-Source%20contributions.%0A%23OpenSource`}
-                  className="underline-offset-4 hover:underline"
-                >
-                  share ↗
-                </a>
+                <ShareProfile username={username} />
               </>
             ) : null}
           </p>
         </div>
       </header>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`https://ghchart.rshah.org/${userData.login}`}
-        alt={`${userData.login}'s GitHub contribution chart`}
-        className="rise mt-6 w-full dark:brightness-75"
-        style={{ "--d": "90ms" } as React.CSSProperties}
-      />
+      {contributionCalendar ? (
+        <div
+          className="rise mt-6"
+          style={{ "--d": "90ms" } as React.CSSProperties}
+        >
+          <ContributionGraph
+            calendar={contributionCalendar}
+            username={userData.login}
+          />
+        </div>
+      ) : null}
+
+      {isActualOwner && asVisitor ? (
+        <a
+          href={`/${username}`}
+          className="drag-glass font-mono fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full px-4 py-2 text-xs text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
+        >
+          viewing as visitor · exit
+        </a>
+      ) : null}
 
       {items.length ? (
         <PRSections
@@ -166,6 +184,7 @@ export default async function ProfilePage({
           isOwner={isOwner}
           username={username}
           totalCount={totalCount}
+          since={sinceYear}
           excludedRepoNames={excludedGitHubRepos}
         />
       ) : (

@@ -139,3 +139,134 @@
     transform: translateY(0);
   }
 }
+
+/* rough-notation marker wash — school-highlighter yellow */
+:root {
+  --annotation: #fef08a;
+}
+.dark {
+  --annotation: rgba(234, 179, 8, 0.32);
+}
+
+/* Translucent chrome: content scrolls under the header (Apple materials).
+   Falls back to solid for reduced-transparency / high-contrast users. */
+.site-header {
+  background: rgba(253, 250, 250, 0.8);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.5);
+}
+.dark .site-header {
+  background: rgba(25, 25, 25, 0.8);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .site-header {
+    background: #fdfafa;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .dark .site-header {
+    background: #191919;
+  }
+}
+
+/* Glass material for a card in flight — same family as .site-header,
+   lighter weight (small surface), with a soft lift shadow. */
+.drag-glass {
+  background: rgba(253, 250, 250, 0.7);
+  -webkit-backdrop-filter: blur(8px) saturate(1.5);
+  backdrop-filter: blur(8px) saturate(1.5);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.dark .drag-glass {
+  background: rgba(25, 25, 25, 0.7);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .drag-glass {
+    background: #fdfafa;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .dark .drag-glass {
+    background: #191919;
+  }
+}
+
+/* Glass chip for the contribution tooltip — same material family. */
+.tooltip-glass {
+  background: rgba(253, 250, 250, 0.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  backdrop-filter: blur(12px) saturate(1.6);
+  border: 1px solid rgba(228, 228, 231, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.dark .tooltip-glass {
+  background: rgba(25, 25, 25, 0.5);
+  border-color: rgba(63, 63, 70, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .tooltip-glass {
+    background: #fdfafa;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .dark .tooltip-glass {
+    background: #191919;
+  }
+}
+
+/* Contribution cell: chronological entrance (per-column --d delay) and a
+   subtle hover pop. @starting-style keeps cells from stranding invisible. */
+.contrib-cell {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 1;
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 350ms ease-out;
+  transition-delay: 0ms, var(--d, 0ms);
+}
+@starting-style {
+  .contrib-cell {
+    opacity: 0;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .contrib-cell:hover {
+    transform: scale(1.15);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contrib-cell {
+    transition: none;
+  }
+  .contrib-cell:hover {
+    transform: none;
+  }
+}
+
+/* Modal surface: the largest glass in the family, so the thickest. */
+.modal-glass {
+  background: rgba(253, 250, 250, 0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(228, 228, 231, 0.7);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.dark .modal-glass {
+  background: rgba(25, 25, 25, 0.85);
+  border-color: rgba(63, 63, 70, 0.7);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .modal-glass {
+    background: #fdfafa;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .dark .modal-glass {
+    background: #191919;
+  }
+}

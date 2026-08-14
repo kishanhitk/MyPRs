@@ -41,7 +41,7 @@ export default function DarkModeToggle({
   };
 
   const iconSpanClassName =
-    "absolute inset-0 transform transition-transform duration-700 motion-reduce:duration-[0s]";
+    "absolute inset-0 transform transition-transform duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:duration-[0s]";
 
   return (
     <button
@@ -51,7 +51,6 @@ export default function DarkModeToggle({
         "mr-1 inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full p-0.5 text-zinc-500 transition-colors duration-150 hover:text-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-100"
       )}
     >
-      {/* note that the duration is longer then the one on body, controlling the bg-color */}
       <div className="relative h-4 w-4">
         <span
           className={clsx(

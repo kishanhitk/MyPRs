@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import posthog from "posthog-js";
 import MultiSelect from "../ui/multiselect";
 import { saveExcludedReposAction } from "~/utils/pr-actions";
 
@@ -49,6 +50,10 @@ const PRFilter = ({
     const reposToExclude = allRepoNames.filter(
       (repoName) => !selected.includes(repoName)
     );
+    posthog.capture("repo_filter_saved", {
+      repos_hidden: reposToExclude.length,
+      repos_total: allRepoNames.length,
+    });
     startTransition(async () => {
       const result = await saveExcludedReposAction({ reposToExclude, username });
       setError(result?.error ?? null);
@@ -68,7 +73,7 @@ const PRFilter = ({
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="appear text-zinc-900 underline underline-offset-4 active:scale-95 disabled:opacity-40 dark:text-zinc-100"
+          className="appear text-zinc-900 underline underline-offset-4 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 disabled:opacity-40 dark:text-zinc-100"
         >
           {isPending ? "saving…" : "save"}
         </button>

@@ -1,14 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, Reorder } from "framer-motion";
+import Link from "next/link";
+import posthog from "posthog-js";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
-import { toggleFeaturedAction } from "~/utils/pr-actions";
+import {
+  reorderFeaturedAction,
+  toggleFeaturedAction,
+} from "~/utils/pr-actions";
 import type { ProfilePR } from "~/types/shared";
 
-const SWAP = { duration: 0.2, ease: [0.23, 1, 0.32, 1] as const };
-const WINDOW = 100;
+const SWAP = { type: "spring" as const, bounce: 0, duration: 0.3 };
+const INITIAL_WINDOW = 30;
+const WINDOW_STEP = 90;
 
 interface PRSectionsProps {
   featuredPRs: ProfilePR[];
@@ -16,6 +22,7 @@ interface PRSectionsProps {
   isOwner: boolean;
   username: string;
   totalCount: number;
+  since: number | null;
   excludedRepoNames: string[];
 }
 
@@ -25,10 +32,11 @@ export default function PRSections({
   isOwner,
   username,
   totalCount,
+  since,
   excludedRepoNames,
 }: PRSectionsProps) {
   // The full history is already here; the window limits DOM size, not data.
-  const [visible, setVisible] = React.useState(WINDOW);
+  const [visible, setVisible] = React.useState(INITIAL_WINDOW);
   const sentinelRef = React.useRef<HTMLLIElement>(null);
 
   // Optimistic curation: the card moves the moment the star is pressed;
@@ -40,8 +48,20 @@ export default function PRSections({
     { id: number; featured: boolean }
   >({}, (state, move) => ({ ...state, [move.id]: move.featured }));
   const [errors, setErrors] = React.useState<Record<number, string>>({});
+  const [curating, setCurating] = React.useState(false);
+
+  const toggleCurating = () => {
+    setCurating((c) => {
+      if (!c) posthog.capture("curate_opened", { profile: username });
+      return !c;
+    });
+  };
 
   const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
+    posthog.capture(makeFeatured ? "pr_featured" : "pr_unfeatured", {
+      repo: pr.repo,
+      profile: username,
+    });
     startTransition(async () => {
       addMove({ id: pr.id, featured: makeFeatured });
       const result = await toggleFeaturedAction({
@@ -57,10 +77,53 @@ export default function PRSections({
     });
   };
 
-  const displayFeatured = [
+  const serverFeatured = [
     ...featuredPRs.filter((p) => moves[p.id] !== false),
     ...nonFeaturedPRs.filter((p) => moves[p.id] === true),
   ];
+
+  // Drag order lives locally until the action confirms; revalidated props
+  // then match it. New stars append at the end, unknown ids drop out.
+  const [orderOverride, setOrderOverride] = React.useState<number[] | null>(
+    null
+  );
+  const orderRef = React.useRef<number[] | null>(null);
+  const displayFeatured = React.useMemo(() => {
+    if (!orderOverride) return serverFeatured;
+    const byId = new Map(serverFeatured.map((p) => [p.id, p]));
+    const ordered = orderOverride
+      .map((id) => byId.get(id))
+      .filter(Boolean) as ProfilePR[];
+    serverFeatured.forEach((p) => {
+      if (!orderOverride.includes(p.id)) ordered.push(p);
+    });
+    return ordered;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderOverride, featuredPRs, nonFeaturedPRs, moves]);
+
+  const handleReorder = (next: ProfilePR[]) => {
+    const ids = next.map((p) => p.id);
+    orderRef.current = ids;
+    setOrderOverride(ids);
+  };
+
+  const commitReorder = () => {
+    const ids = orderRef.current;
+    if (!ids) return;
+    posthog.capture("featured_reordered", { profile: username });
+    startTransition(async () => {
+      const result = await reorderFeaturedAction({
+        username,
+        orderedIds: ids.map(String),
+      });
+      if (result?.error) {
+        setOrderOverride(null);
+        orderRef.current = null;
+      }
+    });
+  };
+
+  const canReorder = isOwner && curating && displayFeatured.length > 1;
   const displayRest = [
     ...nonFeaturedPRs.filter((p) => moves[p.id] !== true),
     ...featuredPRs.filter((p) => moves[p.id] === false),
@@ -70,13 +133,24 @@ export default function PRSections({
 
   const hasMore = visible < displayRest.length;
 
+  // One product event per profile view, with the numbers that matter.
+  React.useEffect(() => {
+    posthog.capture("profile_viewed", {
+      profile: username,
+      is_owner: isOwner,
+      total_prs: totalCount,
+      featured_count: featuredPRs.length,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username]);
+
   React.useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !hasMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisible((v) => v + WINDOW);
+          setVisible((v) => v + WINDOW_STEP);
         }
       },
       { rootMargin: "600px" }
@@ -90,14 +164,8 @@ export default function PRSections({
     ...new Set([...featuredPRs, ...nonFeaturedPRs].map((p) => p.repo)),
   ];
   const allLoaded = [...featuredPRs, ...nonFeaturedPRs];
-  const since = allLoaded.length
-    ? Math.min(...allLoaded.map((p) => new Date(p.merged_at).getFullYear()))
-    : null;
   // The search API stops at 1000 results; beyond that the numbers are floors.
   const capped = totalCount > 1000;
-
-  let i = 0;
-  const delay = () => Math.min(i++ * 0.04, 0.48);
 
   return (
     <>
@@ -113,7 +181,7 @@ export default function PRSections({
       </p>
       {isOwner ? (
         <div
-          className="rise relative z-10 mt-4"
+          className="rise relative z-10 mt-4 flex items-baseline justify-between gap-4"
           style={{ "--d": "120ms" } as React.CSSProperties}
         >
           <PRFilter
@@ -121,6 +189,31 @@ export default function PRSections({
             excludedRepoNames={excludedRepoNames}
             username={username}
           />
+          <div className="flex shrink-0 items-baseline gap-2">
+            <Link
+              href={`/${username}?as=visitor`}
+              onClick={() =>
+                posthog.capture("view_as_visitor", { profile: username })
+              }
+              className="font-mono text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+            >
+              view as visitor
+            </Link>
+            <span aria-hidden className="font-mono text-xs text-zinc-300 dark:text-zinc-700">
+              ·
+            </span>
+            <button
+            type="button"
+            onClick={toggleCurating}
+            className={`font-mono shrink-0 text-xs underline-offset-4 transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 ${
+              curating
+                ? "text-zinc-900 underline dark:text-zinc-100"
+                : "text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            {curating ? "done" : "curate featured"}
+            </button>
+          </div>
         </div>
       ) : null}
       <div className="relative mt-10">
@@ -160,35 +253,61 @@ export default function PRSections({
                 className="rise font-mono mt-2 text-xs text-zinc-500 dark:text-zinc-400"
                 style={{ "--d": "300ms" } as React.CSSProperties}
               >
-                Nothing featured yet — hover a PR and press ☆ to pin your
-                proudest work here.
+                {curating
+                  ? "Nothing featured — press + feature on a PR below to pin it here."
+                  : "Nothing featured yet — press “curate featured” to pin your proudest work here."}
               </p>
             </motion.div>
           ) : null}
         </AnimatePresence>
 
         {displayFeatured.length ? (
-          <ul>
-            <AnimatePresence mode="popLayout" initial={false}>
-              {displayFeatured.map((item) => (
-                <DemoGithub
-                  key={item.id}
-                  item={item}
-                  isFeatured
-                  isOwner={isOwner}
-                  onToggle={() => toggle(item, false)}
-                  error={errors[item.id]}
-                  delay={delay()}
-                />
-              ))}
-            </AnimatePresence>
-          </ul>
+          canReorder ? (
+            <Reorder.Group
+              as="ul"
+              axis="y"
+              values={displayFeatured}
+              onReorder={handleReorder}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                {displayFeatured.map((item) => (
+                  <DemoGithub
+                    key={item.id}
+                    item={item}
+                    isFeatured
+                    isOwner={isOwner}
+                    onToggle={() => toggle(item, false)}
+                    error={errors[item.id]}
+                    reorderable
+                    onReorderCommit={commitReorder}
+                    curating={curating}
+                  />
+                ))}
+              </AnimatePresence>
+            </Reorder.Group>
+          ) : (
+            <ul>
+              <AnimatePresence mode="popLayout" initial={false}>
+                {displayFeatured.map((item) => (
+                  <DemoGithub
+                    key={item.id}
+                    item={item}
+                    isFeatured
+                    isOwner={isOwner}
+                    onToggle={() => toggle(item, false)}
+                    error={errors[item.id]}
+                    curating={curating}
+                  />
+                ))}
+              </AnimatePresence>
+            </ul>
+          )
         ) : null}
 
         {shownRest.length ? (
           <>
-            <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-              All merged
+            <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
+              All PRs
             </h2>
             <ul>
               <AnimatePresence mode="popLayout" initial={false}>
@@ -199,7 +318,7 @@ export default function PRSections({
                     isOwner={isOwner}
                     onToggle={() => toggle(item, true)}
                     error={errors[item.id]}
-                    delay={delay()}
+                    curating={curating}
                   />
                 ))}
               </AnimatePresence>
