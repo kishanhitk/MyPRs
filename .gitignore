@@ -1,18 +1,20 @@
 node_modules
 
-/.cache
-/functions/\[\[path\]\].js
-/functions/\[\[path\]\].js.map
-/functions/metafile.*
-/public/build
-.dev.vars
-.env
+# Next.js
+/.next/
+/out/
+next-env.d.ts
 
-node_modules
-
-/.cache
+# production
 /build
-.vercel
 
-
+# misc
 .DS_Store
+.vercel
+*.tsbuildinfo
+
+# env
+.env
+.env*.local
+.dev.vars
+.env*
