@@ -189,16 +189,20 @@ export default function PRSections({
             excludedRepoNames={excludedRepoNames}
             username={username}
           />
-          <Link
-            href={`/${username}?as=visitor`}
-            onClick={() =>
-              posthog.capture("view_as_visitor", { profile: username })
-            }
-            className="font-mono shrink-0 text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
-          >
-            view as visitor
-          </Link>
-          <button
+          <div className="flex shrink-0 items-baseline gap-2">
+            <Link
+              href={`/${username}?as=visitor`}
+              onClick={() =>
+                posthog.capture("view_as_visitor", { profile: username })
+              }
+              className="font-mono text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+            >
+              view as visitor
+            </Link>
+            <span aria-hidden className="font-mono text-xs text-zinc-300 dark:text-zinc-700">
+              ·
+            </span>
+            <button
             type="button"
             onClick={toggleCurating}
             className={`font-mono shrink-0 text-xs underline-offset-4 transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 ${
@@ -208,7 +212,8 @@ export default function PRSections({
             }`}
           >
             {curating ? "done" : "curate featured"}
-          </button>
+            </button>
+          </div>
         </div>
       ) : null}
       <div className="relative mt-10">

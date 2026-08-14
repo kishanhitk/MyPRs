@@ -68,13 +68,20 @@ export async function GET(request: Request) {
           >
             <div style={{ display: "flex" }}>
               <span>{"One link to "}</span>
-              <span
-                style={{
-                  borderBottom: `6px solid ${MUTED}`,
-                  paddingBottom: 2,
-                }}
-              >
-                highlight
+              <span style={{ display: "flex", position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: -10,
+                    right: -10,
+                    top: 14,
+                    bottom: 2,
+                    background: "#FEF08A",
+                    borderRadius: 16,
+                    transform: "rotate(-1.5deg)",
+                  }}
+                />
+                <span style={{ position: "relative" }}>highlight</span>
               </span>
             </div>
             <div style={{ display: "flex" }}>your open-source</div>
