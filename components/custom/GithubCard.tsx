@@ -20,6 +20,8 @@ interface IGithubCardProps {
   /** When set, the card renders as a draggable Reorder.Item. */
   reorderable?: boolean;
   onReorderCommit?: () => void;
+  /** Curate mode: show the feature/unfeature pill, dim the meta. */
+  curating?: boolean;
 }
 
 export function DemoGithub({
@@ -30,6 +32,7 @@ export function DemoGithub({
   error,
   reorderable = false,
   onReorderCommit,
+  curating = false,
 }: IGithubCardProps) {
   const reduceMotion = useReducedMotion();
   const [dragging, setDragging] = React.useState(false);
@@ -84,18 +87,18 @@ export function DemoGithub({
           >
             {item.title}
           </a>
-          {isOwner ? (
+          {isOwner && curating ? (
             <button
               type="button"
               aria-label={isFeatured ? "Unfeature this PR" : "Feature this PR"}
               onClick={onToggle}
-              className={`font-mono -m-2 shrink-0 p-2 text-xs transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 ${
+              className={`font-mono shrink-0 self-start rounded-full border px-2.5 py-1 text-xs transition-[transform,color,background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 ${
                 isFeatured
-                  ? "text-zinc-900 dark:text-zinc-100"
-                  : "text-zinc-500 opacity-60 hover:opacity-100 focus-visible:opacity-100 dark:text-zinc-400"
+                  ? "border-zinc-900 bg-zinc-900 text-zinc-50 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                  : "border-zinc-300 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
               }`}
             >
-              {isFeatured ? "★" : "☆"}
+              {isFeatured ? "★ featured" : "+ feature"}
             </button>
           ) : null}
         </div>
@@ -106,7 +109,11 @@ export function DemoGithub({
           </p>
         ) : null}
 
-        <p className="font-mono mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+        <p
+          className={`font-mono mt-1.5 text-xs text-zinc-500 transition-opacity duration-150 dark:text-zinc-400 ${
+            curating ? "opacity-60" : ""
+          }`}
+        >
           {item.repo} · {fmtMonth(item.merged_at)}
           {item.reactions_count > 0 ? ` · ▲ ${item.reactions_count}` : ""}
           {item.comments > 0 ? ` · ${item.comments} comments` : ""}

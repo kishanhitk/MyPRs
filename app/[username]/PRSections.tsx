@@ -47,6 +47,14 @@ export default function PRSections({
     { id: number; featured: boolean }
   >({}, (state, move) => ({ ...state, [move.id]: move.featured }));
   const [errors, setErrors] = React.useState<Record<number, string>>({});
+  const [curating, setCurating] = React.useState(false);
+
+  const toggleCurating = () => {
+    setCurating((c) => {
+      if (!c) posthog.capture("curate_opened", { profile: username });
+      return !c;
+    });
+  };
 
   const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
     posthog.capture(makeFeatured ? "pr_featured" : "pr_unfeatured", {
@@ -114,7 +122,7 @@ export default function PRSections({
     });
   };
 
-  const canReorder = isOwner && displayFeatured.length > 1;
+  const canReorder = isOwner && curating && displayFeatured.length > 1;
   const displayRest = [
     ...nonFeaturedPRs.filter((p) => moves[p.id] !== true),
     ...featuredPRs.filter((p) => moves[p.id] === false),
@@ -172,7 +180,7 @@ export default function PRSections({
       </p>
       {isOwner ? (
         <div
-          className="rise relative z-10 mt-4"
+          className="rise relative z-10 mt-4 flex items-baseline justify-between gap-4"
           style={{ "--d": "120ms" } as React.CSSProperties}
         >
           <PRFilter
@@ -180,6 +188,17 @@ export default function PRSections({
             excludedRepoNames={excludedRepoNames}
             username={username}
           />
+          <button
+            type="button"
+            onClick={toggleCurating}
+            className={`font-mono shrink-0 text-xs underline-offset-4 transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 ${
+              curating
+                ? "text-zinc-900 underline dark:text-zinc-100"
+                : "text-zinc-500 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            {curating ? "done" : "curate featured"}
+          </button>
         </div>
       ) : null}
       <div className="relative mt-10">
@@ -219,7 +238,7 @@ export default function PRSections({
                 className="rise font-mono mt-2 text-xs text-zinc-500 dark:text-zinc-400"
                 style={{ "--d": "300ms" } as React.CSSProperties}
               >
-                Nothing featured yet — hover a PR and press ☆ to pin your
+                Nothing featured yet — press “curate featured” to pin your
                 proudest work here.
               </p>
             </motion.div>
@@ -245,6 +264,7 @@ export default function PRSections({
                     error={errors[item.id]}
                     reorderable
                     onReorderCommit={commitReorder}
+                    curating={curating}
                   />
                 ))}
               </AnimatePresence>
@@ -281,6 +301,7 @@ export default function PRSections({
                     isOwner={isOwner}
                     onToggle={() => toggle(item, true)}
                     error={errors[item.id]}
+                    curating={curating}
                   />
                 ))}
               </AnimatePresence>
