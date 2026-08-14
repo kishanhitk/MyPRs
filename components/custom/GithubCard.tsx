@@ -23,6 +23,7 @@ export function DemoGithub({
   username,
 }: IGithubCardProps) {
   const [isPending, startTransition] = React.useTransition();
+  const [actionError, setActionError] = React.useState<string | null>(null);
 
   const toggleFeatured = () => {
     startTransition(async () => {
@@ -30,7 +31,7 @@ export function DemoGithub({
         prId: item.id.toString(),
         username,
       });
-      if (result?.error) console.error("Failed to toggle featured:", result.error);
+      setActionError(result?.error ?? null);
     });
   };
 
@@ -71,6 +72,11 @@ export function DemoGithub({
             <OpenInNewWindowIcon className="h-5 w-5" />
           </a>
         </div>
+        {actionError ? (
+          <p role="alert" className="text-xs text-red-500">
+            {actionError}
+          </p>
+        ) : null}
         <div className="flex">
           <PullRequestIcon className="fill-github_merged h-5 w-5" />
           <a
