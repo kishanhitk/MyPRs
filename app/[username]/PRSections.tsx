@@ -238,8 +238,9 @@ export default function PRSections({
                 className="rise font-mono mt-2 text-xs text-zinc-500 dark:text-zinc-400"
                 style={{ "--d": "300ms" } as React.CSSProperties}
               >
-                Nothing featured yet — press “curate featured” to pin your
-                proudest work here.
+                {curating
+                  ? "Nothing featured — press + feature on a PR below to pin it here."
+                  : "Nothing featured yet — press “curate featured” to pin your proudest work here."}
               </p>
             </motion.div>
           ) : null}
