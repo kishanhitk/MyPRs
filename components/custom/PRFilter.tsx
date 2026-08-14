@@ -23,6 +23,24 @@ const PRFilter = ({
   const [isPending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
+  // Lazy loading discovers repos over time. Fold new arrivals into the
+  // current selection (unless saved as excluded) so their appearance never
+  // reads as an unsaved change.
+  const known = React.useRef(new Set(allRepoNames));
+  React.useEffect(() => {
+    const fresh = allRepoNames.filter(
+      (repo) => !known.current.has(repo)
+    );
+    if (fresh.length === 0) return;
+    fresh.forEach((repo) => known.current.add(repo));
+    const freshSelected = fresh.filter(
+      (repo) => !excludedRepoNames.includes(repo)
+    );
+    if (freshSelected.length > 0) {
+      setSelected((prev) => [...prev, ...freshSelected]);
+    }
+  }, [allRepoNames, excludedRepoNames]);
+
   const dirty =
     selected.length !== savedSelection.length ||
     selected.some((repo) => !savedSelection.includes(repo));

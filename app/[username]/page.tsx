@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import PRFilter from "~/components/custom/PRFilter";
 import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
 import PRSections from "./PRSections";
@@ -70,9 +69,6 @@ export default async function ProfilePage({
   } = await supabase.auth.getUser();
   const isOwner = Boolean(user && ownerRowId && user.id === ownerRowId);
 
-  const uniqueRepoNames = [
-    ...new Set(items.map((item) => item.repository_url.slice(29))),
-  ];
 
   if (loadError && !userData) {
     return (
@@ -95,11 +91,6 @@ export default async function ProfilePage({
     );
   }
 
-  const since = items.length
-    ? Math.min(
-        ...items.map((i) => new Date(i.pull_request.merged_at).getFullYear())
-      )
-    : null;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
@@ -142,21 +133,6 @@ export default async function ProfilePage({
         </div>
       </header>
 
-      {items.length ? (
-        <p
-          className="rise font-mono mt-5 text-[13px] text-zinc-500 dark:text-zinc-400"
-          style={{ "--d": "60ms" } as React.CSSProperties}
-        >
-          {totalCount || items.length} merged pull requests ·{" "}
-          {uniqueRepoNames.length}
-          {totalCount > items.length ? "+" : ""}{" "}
-          {uniqueRepoNames.length === 1 && totalCount <= items.length
-            ? "repository"
-            : "repositories"}
-          {totalCount <= items.length && since ? ` · since ${since}` : ""}
-        </p>
-      ) : null}
-
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`https://ghchart.rshah.org/${userData.login}`}
@@ -165,19 +141,6 @@ export default async function ProfilePage({
         style={{ "--d": "90ms" } as React.CSSProperties}
       />
 
-      {isOwner ? (
-        <div
-          className="rise relative z-10 mt-4"
-          style={{ "--d": "120ms" } as React.CSSProperties}
-        >
-          <PRFilter
-            repoNames={uniqueRepoNames}
-            excludedRepoNames={excludedGitHubRepos}
-            username={username}
-          />
-        </div>
-      ) : null}
-
       {items.length ? (
         <PRSections
           featuredPRs={featuredPRs}
@@ -185,6 +148,7 @@ export default async function ProfilePage({
           isOwner={isOwner}
           username={username}
           totalCount={totalCount}
+          excludedRepoNames={excludedGitHubRepos}
         />
       ) : (
         <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">

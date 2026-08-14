@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DemoGithub } from "~/components/custom/GithubCard";
+import PRFilter from "~/components/custom/PRFilter";
 import { loadMorePRsAction } from "~/utils/pr-actions";
 import type { GitHubIssue } from "~/types/shared";
 
@@ -14,6 +15,7 @@ interface PRSectionsProps {
   isOwner: boolean;
   username: string;
   totalCount: number;
+  excludedRepoNames: string[];
 }
 
 export default function PRSections({
@@ -22,6 +24,7 @@ export default function PRSections({
   isOwner,
   username,
   totalCount,
+  excludedRepoNames,
 }: PRSectionsProps) {
   const initialFetched = featuredPRs.length + nonFeaturedPRs.length;
   const [extra, setExtra] = React.useState<GitHubIssue[]>([]);
@@ -72,11 +75,53 @@ export default function PRSections({
     ...extra.filter((p) => !seenIds.has(p.id)),
   ];
 
+  // Repos discovered so far, growing as lazy loading pages in — so the
+  // filter learns about repos that only appear deeper in the history.
+  const knownRepos = [
+    ...new Set(
+      [...featuredPRs, ...nonFeaturedPRs, ...extra].map((p) =>
+        p.repository_url.slice(29)
+      )
+    ),
+  ];
+
+  const allLoaded = [...featuredPRs, ...nonFeaturedPRs, ...extra];
+  const since = allLoaded.length
+    ? Math.min(
+        ...allLoaded.map((p) =>
+          new Date(p.pull_request.merged_at).getFullYear()
+        )
+      )
+    : null;
+
   let i = 0;
   const delay = () => Math.min(i++ * 0.04, 0.48);
 
   return (
-    <div className="relative mt-10">
+    <>
+      <p
+        className="rise font-mono mt-5 text-[13px] text-zinc-500 dark:text-zinc-400"
+        style={{ "--d": "60ms" } as React.CSSProperties}
+      >
+        {totalCount || allLoaded.length} merged pull requests ·{" "}
+        {knownRepos.length}
+        {hasMore ? "+" : ""}{" "}
+        {knownRepos.length === 1 && !hasMore ? "repository" : "repositories"}
+        {!hasMore && since ? ` · since ${since}` : ""}
+      </p>
+      {isOwner ? (
+        <div
+          className="rise relative z-10 mt-4"
+          style={{ "--d": "120ms" } as React.CSSProperties}
+        >
+          <PRFilter
+            repoNames={knownRepos}
+            excludedRepoNames={excludedRepoNames}
+            username={username}
+          />
+        </div>
+      ) : null}
+      <div className="relative mt-10">
       {/* the trunk */}
       <span
         aria-hidden
@@ -165,6 +210,7 @@ export default function PRSections({
           </ul>
         </>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }
