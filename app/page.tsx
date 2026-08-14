@@ -154,7 +154,7 @@ export default async function Home() {
           </span>
           <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
         </a>
-        <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
           *GitLab support coming soon.
         </p>
       </div>
