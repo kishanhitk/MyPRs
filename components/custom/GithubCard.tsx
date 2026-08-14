@@ -57,7 +57,7 @@ export function DemoGithub({
       transition={{ type: "spring", bounce: 0, duration: 0.35 }}
       className={`group relative pl-10 pb-4 ${
         reorderable ? "cursor-grab active:cursor-grabbing" : ""
-      } ${dragging ? "bg-[#fdfafa] dark:bg-[#191919]" : ""}`}
+      } ${dragging ? "drag-glass" : ""}`}
     >
       {/* branch connector — starts at the node's edge, never through it */}
       <span
