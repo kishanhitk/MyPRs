@@ -63,7 +63,7 @@ export async function GET(
       <div
         style={{
           fontFamily: "Geist",
-          fontSize: 72,
+          fontSize: 100,
           fontWeight: 600,
           lineHeight: 1,
         }}
@@ -73,9 +73,9 @@ export async function GET(
       <div
         style={{
           fontFamily: "Geist Mono",
-          fontSize: 21,
+          fontSize: 23,
           color: MUTED,
-          marginTop: 12,
+          marginTop: 14,
           textTransform: "uppercase",
           letterSpacing: "0.14em",
         }}
@@ -110,11 +110,11 @@ export async function GET(
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={avatar}
-                width={128}
-                height={128}
+                width={160}
+                height={160}
                 alt=""
                 style={{
-                  borderRadius: 64,
+                  borderRadius: 80,
                   border: `3px solid ${RAIL}`,
                 }}
               />
@@ -122,7 +122,7 @@ export async function GET(
                 <div
                   style={{
                     fontFamily: "Geist",
-                    fontSize: 62,
+                    fontSize: 78,
                     fontWeight: 600,
                     lineHeight: 1.05,
                   }}
@@ -132,9 +132,9 @@ export async function GET(
                 <div
                   style={{
                     fontFamily: "Geist Mono",
-                    fontSize: 26,
+                    fontSize: 28,
                     color: MUTED,
-                    marginTop: 10,
+                    marginTop: 12,
                   }}
                 >
                   {name}
@@ -142,7 +142,7 @@ export async function GET(
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 84, marginTop: 76 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 72, paddingRight: 24 }}>
               {stats.map(statBlock)}
             </div>
           </div>
