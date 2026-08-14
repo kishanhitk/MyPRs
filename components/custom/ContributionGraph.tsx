@@ -46,10 +46,13 @@ export default function ContributionGraph({
   const height = 7 * (CELL + GAP) - GAP;
 
   return (
-    <div className="relative">
+    <div>
+      {/* svg + tooltip share a positioning context that matches the svg box
+          exactly — the caption below must not stretch the % coordinates */}
+      <div className="relative">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full overflow-visible"
+        className="block w-full overflow-visible"
         role="img"
         aria-label={`${calendar.total} GitHub contributions in the last year by ${username}`}
         onMouseLeave={() => setTooltip(null)}
@@ -78,15 +81,11 @@ export default function ContributionGraph({
       </svg>
 
       <AnimatePresence>
-        <p className="font-mono mt-2 text-right text-[11px] text-zinc-400 dark:text-zinc-600">
-        {calendar.total.toLocaleString("en-US")} contributions in the last year
-      </p>
-
-      {tooltip ? (
+        {tooltip ? (
           // outer div owns position + centering; inner motion.div owns the
           // enter/exit transform so the two never fight over `transform`
           <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+6px)]"
+            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+3px)]"
             style={{
               left: `${tooltip.leftPct}%`,
               top: `${tooltip.topPct}%`,
@@ -112,6 +111,11 @@ export default function ContributionGraph({
           </div>
         ) : null}
       </AnimatePresence>
+      </div>
+
+      <p className="font-mono mt-2 text-right text-[11px] text-zinc-400 dark:text-zinc-600">
+        {calendar.total.toLocaleString("en-US")} contributions in the last year
+      </p>
     </div>
   );
 }
