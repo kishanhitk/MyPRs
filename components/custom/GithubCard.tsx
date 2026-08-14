@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, Reorder, useReducedMotion } from "framer-motion";
 import type { ProfilePR } from "~/types/shared";
 
 function fmtMonth(iso: string): string {
@@ -16,6 +16,9 @@ interface IGithubCardProps {
   isOwner?: boolean;
   onToggle?: () => void;
   error?: string;
+  /** When set, the card renders as a draggable Reorder.Item. */
+  reorderable?: boolean;
+  onReorderCommit?: () => void;
 }
 
 export function DemoGithub({
@@ -24,17 +27,33 @@ export function DemoGithub({
   isOwner = false,
   onToggle,
   error,
+  reorderable = false,
+  onReorderCommit,
 }: IGithubCardProps) {
   const reduceMotion = useReducedMotion();
 
+  const Root: React.ElementType = reorderable ? Reorder.Item : motion.li;
+  const rootProps = reorderable
+    ? {
+        value: item,
+        whileDrag: { scale: 1.01, zIndex: 10 },
+        onDragEnd: onReorderCommit,
+      }
+    : {};
+
   return (
-    <motion.li
+    <Root
+      {...rootProps}
       layout={!reduceMotion}
       initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: reduceMotion ? 0 : -4 }}
       transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-      className="group relative pl-10 pb-4"
+      className={`group relative pl-10 pb-4 ${
+        reorderable
+          ? "cursor-grab bg-[#fdfafa] active:cursor-grabbing dark:bg-[#191919]"
+          : ""
+      }`}
     >
       {/* branch connector — starts at the node's edge, never through it */}
       <span
@@ -89,6 +108,6 @@ export function DemoGithub({
           {item.comments > 0 ? ` · ${item.comments} comments` : ""}
         </p>
       </div>
-    </motion.li>
+    </Root>
   );
 }

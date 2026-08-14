@@ -1,11 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, Reorder } from "framer-motion";
 import posthog from "posthog-js";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
-import { toggleFeaturedAction } from "~/utils/pr-actions";
+import {
+  reorderFeaturedAction,
+  toggleFeaturedAction,
+} from "~/utils/pr-actions";
 import type { ProfilePR } from "~/types/shared";
 
 const SWAP = { type: "spring" as const, bounce: 0, duration: 0.3 };
@@ -65,10 +68,53 @@ export default function PRSections({
     });
   };
 
-  const displayFeatured = [
+  const serverFeatured = [
     ...featuredPRs.filter((p) => moves[p.id] !== false),
     ...nonFeaturedPRs.filter((p) => moves[p.id] === true),
   ];
+
+  // Drag order lives locally until the action confirms; revalidated props
+  // then match it. New stars append at the end, unknown ids drop out.
+  const [orderOverride, setOrderOverride] = React.useState<number[] | null>(
+    null
+  );
+  const orderRef = React.useRef<number[] | null>(null);
+  const displayFeatured = React.useMemo(() => {
+    if (!orderOverride) return serverFeatured;
+    const byId = new Map(serverFeatured.map((p) => [p.id, p]));
+    const ordered = orderOverride
+      .map((id) => byId.get(id))
+      .filter(Boolean) as ProfilePR[];
+    serverFeatured.forEach((p) => {
+      if (!orderOverride.includes(p.id)) ordered.push(p);
+    });
+    return ordered;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderOverride, featuredPRs, nonFeaturedPRs, moves]);
+
+  const handleReorder = (next: ProfilePR[]) => {
+    const ids = next.map((p) => p.id);
+    orderRef.current = ids;
+    setOrderOverride(ids);
+  };
+
+  const commitReorder = () => {
+    const ids = orderRef.current;
+    if (!ids) return;
+    posthog.capture("featured_reordered", { profile: username });
+    startTransition(async () => {
+      const result = await reorderFeaturedAction({
+        username,
+        orderedIds: ids.map(String),
+      });
+      if (result?.error) {
+        setOrderOverride(null);
+        orderRef.current = null;
+      }
+    });
+  };
+
+  const canReorder = isOwner && displayFeatured.length > 1;
   const displayRest = [
     ...nonFeaturedPRs.filter((p) => moves[p.id] !== true),
     ...featuredPRs.filter((p) => moves[p.id] === false),
@@ -181,20 +227,44 @@ export default function PRSections({
         </AnimatePresence>
 
         {displayFeatured.length ? (
-          <ul>
-            <AnimatePresence mode="popLayout" initial={false}>
-              {displayFeatured.map((item) => (
-                <DemoGithub
-                  key={item.id}
-                  item={item}
-                  isFeatured
-                  isOwner={isOwner}
-                  onToggle={() => toggle(item, false)}
-                  error={errors[item.id]}
-                />
-              ))}
-            </AnimatePresence>
-          </ul>
+          canReorder ? (
+            <Reorder.Group
+              as="ul"
+              axis="y"
+              values={displayFeatured}
+              onReorder={handleReorder}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                {displayFeatured.map((item) => (
+                  <DemoGithub
+                    key={item.id}
+                    item={item}
+                    isFeatured
+                    isOwner={isOwner}
+                    onToggle={() => toggle(item, false)}
+                    error={errors[item.id]}
+                    reorderable
+                    onReorderCommit={commitReorder}
+                  />
+                ))}
+              </AnimatePresence>
+            </Reorder.Group>
+          ) : (
+            <ul>
+              <AnimatePresence mode="popLayout" initial={false}>
+                {displayFeatured.map((item) => (
+                  <DemoGithub
+                    key={item.id}
+                    item={item}
+                    isFeatured
+                    isOwner={isOwner}
+                    onToggle={() => toggle(item, false)}
+                    error={errors[item.id]}
+                  />
+                ))}
+              </AnimatePresence>
+            </ul>
+          )
         ) : null}
 
         {shownRest.length ? (

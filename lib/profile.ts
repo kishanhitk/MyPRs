@@ -62,9 +62,13 @@ export const getProfileData = cache(async (username: string) => {
         comments: item.comments,
       }))
       .filter((item) => !excludedGitHubRepos.includes(item.repo));
-    featuredPRs = items.filter((item) =>
-      featuredGithubPRIds.includes(item.id.toString())
-    );
+    featuredPRs = items
+      .filter((item) => featuredGithubPRIds.includes(item.id.toString()))
+      .sort(
+        (a, b) =>
+          featuredGithubPRIds.indexOf(a.id.toString()) -
+          featuredGithubPRIds.indexOf(b.id.toString())
+      );
     nonFeaturedPRs = items.filter(
       (item) => !featuredGithubPRIds.includes(item.id.toString())
     );
