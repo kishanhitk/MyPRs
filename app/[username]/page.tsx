@@ -31,7 +31,7 @@ export async function generateMetadata({
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
       url: "https://myprs.dev/",
-      images: [`${domain}/api/${username}/og?featuredPRsCount=${featuredPRsCount}`],
+      images: [`${domain}/api/${username}/og`],
     },
     twitter: {
       card: "summary_large_image",
@@ -39,7 +39,7 @@ export async function generateMetadata({
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
       images: [
-        `${domain}/api/${username}/og?avatar=${userAvatar}&featuredPRsCount=${featuredPRsCount}`,
+        `${domain}/api/${username}/og?avatar=${userAvatar}`,
       ],
     },
   };

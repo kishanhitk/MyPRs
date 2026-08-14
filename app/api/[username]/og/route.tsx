@@ -24,9 +24,6 @@ export async function GET(
   const avatar =
     url.searchParams.get("avatar") ??
     `https://github.com/${username}.png?size=200`;
-  const featuredPRsCount = Number(
-    url.searchParams.get("featuredPRsCount") ?? 0
-  );
 
   // Font files ride the same 1h data cache as the PR history; after one
   // profile render this whole route serves from cache.
@@ -55,9 +52,6 @@ export async function GET(
   const stats: Array<[string, string]> = [
     [String(total), "merged PRs"],
     ...(repos ? [[String(repos), "repositories"] as [string, string]] : []),
-    ...(featuredPRsCount > 0
-      ? [[String(featuredPRsCount), "featured"] as [string, string]]
-      : []),
     ...(since ? [[String(since), "since"] as [string, string]] : []),
   ];
 

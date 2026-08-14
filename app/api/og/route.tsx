@@ -54,15 +54,28 @@ export async function GET(request: Request) {
 
           <div
             style={{
+              display: "flex",
+              flexDirection: "column",
               fontFamily: "Geist",
               fontSize: 78,
               fontWeight: 600,
-              lineHeight: 1.08,
+              lineHeight: 1.14,
               marginTop: 56,
-              maxWidth: 940,
             }}
           >
-            One link to highlight your open-source contributions.
+            <div style={{ display: "flex" }}>
+              <span>{"One link to "}</span>
+              <span
+                style={{
+                  borderBottom: `6px solid ${MUTED}`,
+                  paddingBottom: 2,
+                }}
+              >
+                highlight
+              </span>
+            </div>
+            <div style={{ display: "flex" }}>your open-source</div>
+            <div style={{ display: "flex" }}>contributions.</div>
           </div>
           <div
             style={{
