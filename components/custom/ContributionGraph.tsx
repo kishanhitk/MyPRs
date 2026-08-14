@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { ContributionCalendar } from "~/lib/github";
 
 // First-party contribution calendar, rendered as an SVG in the zinc scale.
-// Hover shows the day's count in a single reused tooltip chip — instant,
-// no animation (cells are scrubbed rapidly).
+// One glass tooltip chip: it animates in once, then glides between cells
+// while scrubbing (same chip retargets) and fades out fast on leave.
 
 const CELL = 10;
 const GAP = 3;
@@ -39,6 +40,7 @@ export default function ContributionGraph({
   username: string;
 }) {
   const [tooltip, setTooltip] = React.useState<Tooltip | null>(null);
+  const reduceMotion = useReducedMotion();
   const weeks = calendar.weeks;
   const width = weeks.length * (CELL + GAP) - GAP;
   const height = 7 * (CELL + GAP) - GAP;
@@ -74,14 +76,37 @@ export default function ContributionGraph({
         )}
       </svg>
 
-      {tooltip ? (
-        <div
-          className="font-mono pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+6px)] whitespace-nowrap rounded-md bg-zinc-900 px-2 py-1 text-[11px] text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900"
-          style={{ left: `${tooltip.leftPct}%`, top: `${tooltip.topPct}%` }}
-        >
-          {tooltip.text}
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {tooltip ? (
+          // outer div owns position + centering; inner motion.div owns the
+          // enter/exit transform so the two never fight over `transform`
+          <div
+            className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+6px)]"
+            style={{
+              left: `${tooltip.leftPct}%`,
+              top: `${tooltip.topPct}%`,
+              transition: reduceMotion
+                ? undefined
+                : "left 120ms cubic-bezier(0.23,1,0.32,1), top 120ms cubic-bezier(0.23,1,0.32,1)",
+            }}
+          >
+            <motion.div
+              initial={{
+                opacity: 0,
+                scale: reduceMotion ? 1 : 0.96,
+                y: reduceMotion ? 0 : 2,
+              }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+              style={{ transformOrigin: "bottom center" }}
+              className="tooltip-glass font-mono whitespace-nowrap rounded-md px-2 py-1 text-[11px] text-zinc-900 dark:text-zinc-100"
+            >
+              {tooltip.text}
+            </motion.div>
+          </div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
