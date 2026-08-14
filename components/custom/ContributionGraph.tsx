@@ -78,7 +78,11 @@ export default function ContributionGraph({
       </svg>
 
       <AnimatePresence>
-        {tooltip ? (
+        <p className="font-mono mt-2 text-right text-[11px] text-zinc-400 dark:text-zinc-600">
+        {calendar.total.toLocaleString("en-US")} contributions in the last year
+      </p>
+
+      {tooltip ? (
           // outer div owns position + centering; inner motion.div owns the
           // enter/exit transform so the two never fight over `transform`
           <div
