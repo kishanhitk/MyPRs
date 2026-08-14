@@ -150,7 +150,13 @@ export default function PRSections({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisible((v) => v + WINDOW_STEP);
+          setVisible((v) => {
+            posthog.capture("list_extended", {
+              profile: username,
+              shown_after: v + WINDOW_STEP,
+            });
+            return v + WINDOW_STEP;
+          });
         }
       },
       { rootMargin: "600px" }

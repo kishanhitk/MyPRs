@@ -45,6 +45,7 @@ export function Providers({
         capture_pageview: false, // captured manually below
         capture_pageleave: true, // bounce rate + time-on-page
         capture_exceptions: true, // client error tracking
+        capture_performance: { web_vitals: true }, // LCP/CLS/INP per view
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

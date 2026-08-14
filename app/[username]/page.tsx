@@ -4,6 +4,7 @@ import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
 import ContributionGraph from "~/components/custom/ContributionGraph";
 import ShareProfile from "~/components/custom/ShareProfile";
+import TrackEvent from "~/components/custom/TrackEvent";
 import PRSections from "./PRSections";
 
 async function getDomain() {
@@ -83,6 +84,10 @@ export default async function ProfilePage({
   if (loadError && !userData) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-14">
+        <TrackEvent
+          name="profile_error"
+          props={{ profile: username, type: "load_error" }}
+        />
         <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
           Couldn&apos;t load this profile right now (GitHub may be rate-limiting
           or unavailable). Try again in a moment.
@@ -94,6 +99,10 @@ export default async function ProfilePage({
   if (notFound || !userData) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-14">
+        <TrackEvent
+          name="profile_error"
+          props={{ profile: username, type: "not_found" }}
+        />
         <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
           No GitHub user named &ldquo;{username}&rdquo;.
         </p>

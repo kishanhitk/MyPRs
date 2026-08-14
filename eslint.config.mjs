@@ -10,7 +10,7 @@ const config = [
       "react/no-unescaped-entities": "off",
     },
   },
-  { ignores: [".next/**", "node_modules/**"] },
+  { ignores: [".next/**", "node_modules/**", ".claude/**"] },
 ];
 
 export default config;

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, Reorder, useReducedMotion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
+import posthog from "posthog-js";
 import type { ProfilePR } from "~/types/shared";
 
 function fmtMonth(iso: string): string {
@@ -84,6 +85,12 @@ export function DemoGithub({
             href={item.html_url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() =>
+              posthog.capture("pr_clicked", {
+                repo: item.repo,
+                featured: isFeatured,
+              })
+            }
             className="block min-w-0 flex-1 text-[15px] font-medium leading-snug text-zinc-900 decoration-zinc-400 underline-offset-4 hover:underline dark:text-zinc-200"
           >
             {item.title}
