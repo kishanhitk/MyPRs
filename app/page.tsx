@@ -43,24 +43,8 @@ export default async function Home() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
-      <a
-        href="https://github.com/kishanhitk/MyPRs"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rise group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
-      >
-        <span aria-hidden className="group-hover:hidden">
-          ☆
-        </span>
-        <span aria-hidden className="hidden group-hover:inline">
-          ★
-        </span>
-        <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
-      </a>
-
       <h1
-        className="rise mt-6 text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] text-zinc-900 dark:text-zinc-100"
-        style={{ "--d": "60ms" } as React.CSSProperties}
+        className="rise text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] text-zinc-900 dark:text-zinc-100"
       >
         One link to{" "}
         <Highlighter action="highlight" delay={700} animationDuration={700}>
@@ -155,9 +139,25 @@ export default async function Home() {
         </section>
       ) : null}
 
-      <p className="font-mono mt-10 text-xs text-zinc-500 dark:text-zinc-400">
-        *GitLab support coming soon.
-      </p>
+      <div className="mt-14 flex items-center justify-between">
+        <a
+          href="https://github.com/kishanhitk/MyPRs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
+        >
+          <span aria-hidden className="group-hover:hidden">
+            ☆
+          </span>
+          <span aria-hidden className="hidden group-hover:inline">
+            ★
+          </span>
+          <AnimatedShinyText>Star on GitHub ↗</AnimatedShinyText>
+        </a>
+        <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+          *GitLab support coming soon.
+        </p>
+      </div>
     </div>
   );
 }
