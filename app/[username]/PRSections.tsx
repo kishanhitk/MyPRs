@@ -281,6 +281,7 @@ export default function PRSections({
                     isOwner={isOwner}
                     onToggle={() => toggle(item, false)}
                     error={errors[item.id]}
+                    curating={curating}
                   />
                 ))}
               </AnimatePresence>
