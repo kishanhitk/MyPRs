@@ -1,15 +1,17 @@
 import { cache } from "react";
 import { createClient } from "~/lib/supabase/server";
-import { getGitHubUserData, getPRsFromGithubAPI } from "~/lib/github";
-import type { GitHubIssue, GithubUser } from "~/types/shared";
+import { getAllMergedPRs, getGitHubUserData } from "~/lib/github";
+import type { GithubUser, ProfilePR } from "~/types/shared";
 
 /**
  * Loads everything needed to render a profile: the owner's curation row, the
- * GitHub profile, and the merged PRs partitioned into featured / non-featured
- * (after applying excluded repos). Viewer-independent.
+ * GitHub profile, and the complete merged-PR history (search API caps at
+ * 1000) partitioned into featured / non-featured after applying excluded
+ * repos. Metadata (repo list, counts, "since") is exact from the first
+ * render; the client windows the list for rendering, not for data.
  *
- * Wrapped in React `cache()` so `generateMetadata` and the page component share
- * a single execution per request.
+ * Wrapped in React `cache()` so `generateMetadata` and the page component
+ * share a single execution per request.
  */
 export const getProfileData = cache(async (username: string) => {
   const supabase = await createClient();
@@ -24,7 +26,7 @@ export const getProfileData = cache(async (username: string) => {
   const featuredGithubPRIds: string[] = row?.featured_github_prs ?? [];
 
   const [ghResponse, userResponse] = await Promise.all([
-    getPRsFromGithubAPI({ author: username, limit: 100 }),
+    getAllMergedPRs(username),
     getGitHubUserData(username),
   ]);
 
@@ -38,14 +40,22 @@ export const getProfileData = cache(async (username: string) => {
     (Boolean(userResponse.error) && userResponse.status !== 404) ||
     (Boolean(ghResponse.error) && ghResponse.status !== 404);
 
-  let items: GitHubIssue[] = [];
-  let featuredPRs: GitHubIssue[] = [];
-  let nonFeaturedPRs: GitHubIssue[] = [];
+  let items: ProfilePR[] = [];
+  let featuredPRs: ProfilePR[] = [];
+  let nonFeaturedPRs: ProfilePR[] = [];
 
   if (ghData?.items?.length) {
-    items = ghData.items.filter(
-      (item) => !excludedGitHubRepos.includes(item.repository_url.slice(29))
-    );
+    items = ghData.items
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        html_url: item.html_url,
+        repo: item.repository_url.slice(29),
+        merged_at: item.pull_request.merged_at,
+        reactions_count: item.reactions.total_count,
+        comments: item.comments,
+      }))
+      .filter((item) => !excludedGitHubRepos.includes(item.repo));
     featuredPRs = items.filter((item) =>
       featuredGithubPRIds.includes(item.id.toString())
     );
@@ -59,8 +69,6 @@ export const getProfileData = cache(async (username: string) => {
     userData,
     notFound,
     loadError,
-    // Search API caps at `limit` per page; total_count is the real total
-    // within the query window. Lets the UI say "latest N shown" honestly.
     totalCount: ghData?.total_count ?? 0,
     items,
     featuredPRs,

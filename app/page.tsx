@@ -132,7 +132,7 @@ export default async function Home() {
                     className="group -mx-3 block rounded-lg border border-transparent px-3 py-2 transition-colors duration-150 hover:border-zinc-200 hover:bg-white dark:hover:border-zinc-800 dark:hover:bg-zinc-900/60"
                   >
                     <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                      {item.repository_url.slice(29)}
+                      {item.repo}
                     </span>
                     <span className="mt-0.5 block text-[15px] font-medium leading-snug text-zinc-900 dark:text-zinc-200">
                       {item.title}

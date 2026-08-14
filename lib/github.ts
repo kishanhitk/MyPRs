@@ -105,6 +105,40 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   }
 };
 
+/**
+ * Fetch the author's complete merged-PR history (search API caps at 1000).
+ * Page 1 reveals total_count; remaining pages fetch in parallel. Each page
+ * is cached on the Next data layer for an hour, so this costs at most
+ * ceil(total/100) GitHub calls per profile per hour.
+ */
+export const getAllMergedPRs = async (author: string) => {
+  const first = await getPRsFromGithubAPI({ author, limit: 100, page: 1 });
+  if (first.error || !first.data) {
+    return { data: null, error: first.error, status: first.status };
+  }
+
+  const total = first.data.total_count;
+  const pages = Math.min(Math.ceil(total / 100), 10);
+  if (pages <= 1) {
+    return { data: first.data, error: null, status: first.status };
+  }
+
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, i) =>
+      getPRsFromGithubAPI({ author, limit: 100, page: i + 2 })
+    )
+  );
+  const items = [
+    ...first.data.items,
+    ...rest.flatMap((r) => r.data?.items ?? []),
+  ];
+  return {
+    data: { ...first.data, items },
+    error: null,
+    status: first.status,
+  };
+};
+
 export const getGitHubUserData = async (username: string) => {
   const url = `https://api.github.com/users/${username}`;
 

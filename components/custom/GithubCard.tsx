@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import type { GitHubIssue } from "~/types/shared";
+import type { ProfilePR } from "~/types/shared";
 import { toggleFeaturedAction } from "~/utils/pr-actions";
 
 function fmtMonth(iso: string): string {
@@ -13,7 +13,7 @@ function fmtMonth(iso: string): string {
 }
 
 interface IGithubCardProps {
-  item: GitHubIssue;
+  item: ProfilePR;
   isFeatured?: boolean;
   isOwner?: boolean;
   username: string;
@@ -41,7 +41,7 @@ export function DemoGithub({
     });
   };
 
-  const repo = item.repository_url.slice(29);
+  const repo = item.repo;
 
   return (
     <motion.li
@@ -105,10 +105,8 @@ export function DemoGithub({
         </a>
 
         <p className="font-mono mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          merged {fmtMonth(item.pull_request.merged_at)}
-          {item.reactions.total_count > 0
-            ? ` · ▲ ${item.reactions.total_count}`
-            : ""}
+          merged {fmtMonth(item.merged_at)}
+          {item.reactions_count > 0 ? ` · ▲ ${item.reactions_count}` : ""}
           {item.comments > 0 ? ` · ${item.comments} comments` : ""}
         </p>
       </div>
