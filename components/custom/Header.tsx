@@ -37,10 +37,10 @@ export const Header = ({ user }: HeaderProps) => {
       <div className="mx-auto flex max-w-2xl items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
         <Link
           href="/"
-          className="flex items-center gap-1 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100"
+          className="flex items-center gap-1.5 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100"
         >
           MyPRs
-          <PullRequestIcon className="mb-0.5 h-4 w-4 fill-zinc-900 dark:fill-white" />
+          <PullRequestIcon className="h-[13px] w-[13px] fill-zinc-900 dark:fill-white" />
         </Link>
 
         <div className="flex items-center gap-1">
