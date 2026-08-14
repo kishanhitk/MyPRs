@@ -49,7 +49,7 @@ export default function ContributionGraph({
     <div className="relative">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full"
+        className="w-full overflow-visible"
         role="img"
         aria-label={`${calendar.total} GitHub contributions in the last year by ${username}`}
         onMouseLeave={() => setTooltip(null)}
