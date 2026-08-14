@@ -48,11 +48,11 @@ export default function DarkModeToggle({
       type="button"
       onClick={handleClick}
       className={clsx(
-        "mr-1 inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full p-1 text-zinc-500 transition-colors duration-150 hover:text-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-100"
+        "mr-1 inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full p-0.5 text-zinc-500 transition-colors duration-150 hover:text-zinc-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-100"
       )}
     >
       {/* note that the duration is longer then the one on body, controlling the bg-color */}
-      <div className="relative h-6 w-6">
+      <div className="relative h-4 w-4">
         <span
           className={clsx(
             iconSpanClassName,
@@ -60,7 +60,7 @@ export default function DarkModeToggle({
           )}
           style={iconTransformOrigin}
         >
-          <MoonIcon />
+          <MoonIcon className="h-4 w-4" />
         </span>
         <span
           className={clsx(
@@ -69,7 +69,7 @@ export default function DarkModeToggle({
           )}
           style={iconTransformOrigin}
         >
-          <SunIcon />
+          <SunIcon className="h-4 w-4" />
         </span>
 
         <span
@@ -79,7 +79,7 @@ export default function DarkModeToggle({
           )}
           style={iconTransformOrigin}
         >
-          <LaptopIcon />
+          <LaptopIcon className="h-4 w-4" />
         </span>
       </div>
       <span className={clsx("ml-4", { "sr-only": variant === "icon" })}>

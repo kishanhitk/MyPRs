@@ -53,7 +53,7 @@ export default async function Home() {
         style={{ "--d": "60ms" } as React.CSSProperties}
       >
         One link to{" "}
-        <span className="underline decoration-github_merged/60 underline-offset-4">
+        <span className="underline decoration-zinc-900/60 dark:decoration-zinc-100/60 underline-offset-4">
           highlight
         </span>{" "}
         your open-source contributions.
@@ -116,10 +116,10 @@ export default async function Home() {
                 <li key={item.id} className="relative pl-10 pb-2">
                   <span
                     aria-hidden
-                    className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 bg-[#fdfafa] dark:bg-[#191919] ${
+                    className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 ${
                       idx === 0
-                        ? "border-github_merged dark:border-[#A371F7]"
-                        : "border-zinc-400 dark:border-zinc-600"
+                        ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
+                        : "border-zinc-400 bg-[#fdfafa] dark:border-zinc-600 dark:bg-[#191919]"
                     }`}
                   />
                   <span

@@ -38,7 +38,7 @@ export const Header = ({ user }: HeaderProps) => {
           className="flex items-center gap-1 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100"
         >
           MyPRs
-          <PullRequestIcon className="mb-0.5 h-4 w-4 fill-github_merged dark:fill-[#A371F7]" />
+          <PullRequestIcon className="mb-0.5 h-4 w-4 fill-zinc-900 dark:fill-white" />
         </Link>
 
         <div className="flex items-center gap-1">

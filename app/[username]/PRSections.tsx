@@ -4,6 +4,7 @@ import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
+import { toggleFeaturedAction } from "~/utils/pr-actions";
 import type { ProfilePR } from "~/types/shared";
 
 const SWAP = { duration: 0.2, ease: [0.23, 1, 0.32, 1] as const };
@@ -29,7 +30,45 @@ export default function PRSections({
   // The full history is already here; the window limits DOM size, not data.
   const [visible, setVisible] = React.useState(WINDOW);
   const sentinelRef = React.useRef<HTMLLIElement>(null);
-  const hasMore = visible < nonFeaturedPRs.length;
+
+  // Optimistic curation: the card moves the moment the star is pressed;
+  // useOptimistic reverts to the server-derived lists if the action fails,
+  // and the revalidated props make the move permanent when it succeeds.
+  const [, startTransition] = React.useTransition();
+  const [moves, addMove] = React.useOptimistic<
+    Record<number, boolean>,
+    { id: number; featured: boolean }
+  >({}, (state, move) => ({ ...state, [move.id]: move.featured }));
+  const [errors, setErrors] = React.useState<Record<number, string>>({});
+
+  const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
+    startTransition(async () => {
+      addMove({ id: pr.id, featured: makeFeatured });
+      const result = await toggleFeaturedAction({
+        prId: pr.id.toString(),
+        username,
+      });
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (result?.error) next[pr.id] = result.error;
+        else delete next[pr.id];
+        return next;
+      });
+    });
+  };
+
+  const displayFeatured = [
+    ...featuredPRs.filter((p) => moves[p.id] !== false),
+    ...nonFeaturedPRs.filter((p) => moves[p.id] === true),
+  ];
+  const displayRest = [
+    ...nonFeaturedPRs.filter((p) => moves[p.id] !== true),
+    ...featuredPRs.filter((p) => moves[p.id] === false),
+  ].sort(
+    (a, b) => new Date(b.merged_at).getTime() - new Date(a.merged_at).getTime()
+  );
+
+  const hasMore = visible < displayRest.length;
 
   React.useEffect(() => {
     const el = sentinelRef.current;
@@ -46,7 +85,7 @@ export default function PRSections({
     return () => observer.disconnect();
   }, [hasMore]);
 
-  const shownRest = nonFeaturedPRs.slice(0, visible);
+  const shownRest = displayRest.slice(0, visible);
   const knownRepos = [
     ...new Set([...featuredPRs, ...nonFeaturedPRs].map((p) => p.repo)),
   ];
@@ -92,14 +131,14 @@ export default function PRSections({
         />
 
         <AnimatePresence mode="popLayout" initial={false}>
-          {featuredPRs.length ? (
+          {displayFeatured.length ? (
             <motion.h2
               key="featured-heading"
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={SWAP}
-              className="font-mono relative pl-10 pb-3 text-[11px] uppercase tracking-[0.18em] text-github_merged dark:text-[#A371F7]"
+              className="font-mono relative pl-10 pb-3 text-[11px] uppercase tracking-[0.18em] text-zinc-900 dark:text-zinc-100"
             >
               Featured
             </motion.h2>
@@ -112,7 +151,7 @@ export default function PRSections({
               transition={SWAP}
               className="relative pl-10 pb-3"
             >
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-github_merged dark:text-[#A371F7]">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-900 dark:text-zinc-100">
                 Featured
               </h2>
               {/* .rise with a late delay: on first paint the rail draws, then
@@ -128,16 +167,17 @@ export default function PRSections({
           ) : null}
         </AnimatePresence>
 
-        {featuredPRs.length ? (
+        {displayFeatured.length ? (
           <ul>
             <AnimatePresence mode="popLayout" initial={false}>
-              {featuredPRs.map((item) => (
+              {displayFeatured.map((item) => (
                 <DemoGithub
                   key={item.id}
                   item={item}
                   isFeatured
                   isOwner={isOwner}
-                  username={username}
+                  onToggle={() => toggle(item, false)}
+                  error={errors[item.id]}
                   delay={delay()}
                 />
               ))}
@@ -157,7 +197,8 @@ export default function PRSections({
                     key={item.id}
                     item={item}
                     isOwner={isOwner}
-                    username={username}
+                    onToggle={() => toggle(item, true)}
+                    error={errors[item.id]}
                     delay={delay()}
                   />
                 ))}

@@ -44,7 +44,7 @@ export default function MultiSelect({
                   <>
                     {option}
                     {isSelected ? (
-                      <span className="absolute inset-y-0 left-2 flex items-center text-github_merged dark:text-[#A371F7]">
+                      <span className="absolute inset-y-0 left-2 flex items-center text-zinc-900 dark:text-zinc-100">
                         <CheckIcon className="h-3.5 w-3.5" aria-hidden />
                       </span>
                     ) : null}

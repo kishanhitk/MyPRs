@@ -68,7 +68,7 @@ const PRFilter = ({
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="appear text-github_merged underline-offset-4 hover:underline active:scale-95 disabled:opacity-40 dark:text-[#A371F7]"
+          className="appear text-zinc-900 underline underline-offset-4 active:scale-95 disabled:opacity-40 dark:text-zinc-100"
         >
           {isPending ? "saving…" : "save"}
         </button>
