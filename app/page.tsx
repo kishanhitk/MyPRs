@@ -86,7 +86,7 @@ export default async function Home() {
         <DemoSection />
       </Suspense>
 
-      <div className="mt-14 flex items-center justify-between">
+      <div className="mt-14 flex flex-wrap items-center justify-between gap-3">
         <a
           href="https://github.com/kishanhitk/MyPRs"
           target="_blank"

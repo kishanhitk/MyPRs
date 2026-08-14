@@ -187,7 +187,7 @@ export default function PRSections({
       </p>
       {isOwner ? (
         <div
-          className="rise relative z-10 mt-4 flex items-baseline justify-between gap-4"
+          className="rise relative z-10 mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2"
           style={{ "--d": "120ms" } as React.CSSProperties}
         >
           <PRFilter
