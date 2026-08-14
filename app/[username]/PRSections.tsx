@@ -21,7 +21,7 @@ export default function PRSections({
   return (
     <AnimatePresence>
       {featuredPRs?.length ? (
-        <div className="mt-5">
+        <div key="featured" className="mt-5">
           <p className="font-medium">Featured PRs ✨</p>
           {featuredPRs.map((item) => (
             <DemoGithub
@@ -34,7 +34,7 @@ export default function PRSections({
           ))}
         </div>
       ) : isOwner ? (
-        <div className="mt-5">
+        <div key="featured-empty" className="mt-5">
           <p className="font-medium text-lg mb-2">Featured PRs ✨</p>
           <p className=" text-slate-600 text-md dark:text-slate-400">
             You don't have any featured PR yet. Add a PR to featured by clicking
@@ -45,7 +45,7 @@ export default function PRSections({
         </div>
       ) : null}
       {nonFeaturedPRs?.length ? (
-        <div className="mt-5">
+        <div key="all-prs" className="mt-5">
           <p className="font-medium text-lg"> All My PRs</p>
           {nonFeaturedPRs.map((item) => (
             <DemoGithub
