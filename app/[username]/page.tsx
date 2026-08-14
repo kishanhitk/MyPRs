@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Share2, TwitterIcon } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import PRFilter from "~/components/custom/PRFilter";
 import { createClient } from "~/lib/supabase/server";
@@ -120,7 +120,15 @@ export default async function ProfilePage({
       <div className="flex items-center self-center mb-3 text-slate-500 ">
         {userData.twitter_username ? (
           <a href={`https://x.com/${userData.twitter_username}`}>
-            <TwitterIcon className="h-5 w-5" />
+            {/* lucide-react 1.x removed brand icons; inline X logo */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-label="X (Twitter)"
+              className="h-5 w-5"
+            >
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zM17.083 19.77h1.833L7.084 4.126H5.117z" />
+            </svg>
           </a>
         ) : null}
       </div>
