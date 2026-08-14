@@ -24,7 +24,9 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const redirectTo = url.searchParams.get("redirectTo");
-  let redirectUrl = safeRelativePath(redirectTo, url.origin) ?? "/";
+  // A real deep path (e.g. the profile being viewed at login) is preserved;
+  // homepage, "false", or absent falls through to the user's own profile.
+  let redirectUrl = safeRelativePath(redirectTo, url.origin);
 
   if (code) {
     const supabase = await createClient();
@@ -35,10 +37,10 @@ export async function GET(request: Request) {
     }
     const githubUsername = data.user?.user_metadata?.user_name;
 
-    if (githubUsername && redirectTo !== "false") {
+    if ((!redirectUrl || redirectUrl === "/") && githubUsername) {
       redirectUrl = `/${githubUsername}`;
     }
   }
 
-  return NextResponse.redirect(new URL(redirectUrl, url.origin));
+  return NextResponse.redirect(new URL(redirectUrl ?? "/", url.origin));
 }

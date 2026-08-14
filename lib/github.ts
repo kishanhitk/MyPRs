@@ -22,18 +22,13 @@ export interface PRFilter {
   excludedOrgs?: string[];
   author: string;
   limit?: number;
+  page?: number;
+  order?: "asc" | "desc";
 }
 
 export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   let queryParts: string[] = [];
 
-  // Set default values for startDate and endDate
-  const currentDate = new Date();
-  const threeYearsAgo = new Date();
-  threeYearsAgo.setFullYear(currentDate.getFullYear() - 3);
-
-  const startDate = filter.startDate || threeYearsAgo;
-  const endDate = filter.endDate || currentDate;
   const limit = filter.limit || 30;
 
   if (filter.includedRepos && filter.includedRepos.length > 0) {
@@ -67,8 +62,13 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   const authorParam = `author:${filter.author}`;
   queryParts.push(authorParam);
 
-  const dateParam = `created:${startDate.toISOString()}..${endDate.toISOString()}`;
-  queryParts.push(dateParam);
+  // Only constrain by date when the caller asks for it — the default is the
+  // full contribution history (previously a silent 3-year window).
+  if (filter.startDate || filter.endDate) {
+    const start = filter.startDate ?? new Date("2008-01-01");
+    const end = filter.endDate ?? new Date();
+    queryParts.push(`created:${start.toISOString()}..${end.toISOString()}`);
+  }
 
   queryParts.push("type:pr");
   queryParts.push("is:public");
@@ -76,7 +76,9 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
 
   const url = `https://api.github.com/search/issues?q=${queryParts.join(
     "+"
-  )}&per_page=${limit}`;
+  )}&per_page=${limit}&page=${filter.page ?? 1}&sort=created&order=${
+    filter.order ?? "desc"
+  }`;
   const init = {
     headers: githubHeaders(),
     // Cache on the Next data layer, replacing the old CDN self-fetch contract.
@@ -104,6 +106,56 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     console.error(error);
     return { data: null, error, status: 0 };
   }
+};
+
+/**
+ * Fetch the author's complete merged-PR history (search API caps at 1000).
+ * Page 1 reveals total_count; remaining pages fetch in parallel. Each page
+ * is cached on the Next data layer for an hour, so this costs at most
+ * ceil(total/100) GitHub calls per profile per hour.
+ */
+export const getAllMergedPRs = async (author: string) => {
+  const first = await getPRsFromGithubAPI({ author, limit: 100, page: 1 });
+  if (first.error || !first.data) {
+    return { data: null, error: first.error, status: first.status };
+  }
+
+  const total = first.data.total_count;
+  const pages = Math.min(Math.ceil(total / 100), 10);
+  if (pages <= 1) {
+    return { data: first.data, error: null, status: first.status };
+  }
+
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, i) =>
+      getPRsFromGithubAPI({ author, limit: 100, page: i + 2 })
+    )
+  );
+  const items = [
+    ...first.data.items,
+    ...rest.flatMap((r) => r.data?.items ?? []),
+  ];
+  return {
+    data: { ...first.data, items },
+    error: null,
+    status: first.status,
+  };
+};
+
+/**
+ * Year of the author's first merged PR. One ascending-sorted search with
+ * per_page=1 — exact even when the career exceeds the 1000-result cap that
+ * bounds getAllMergedPRs.
+ */
+export const getFirstMergedYear = async (author: string) => {
+  const res = await getPRsFromGithubAPI({
+    author,
+    limit: 1,
+    page: 1,
+    order: "asc",
+  });
+  const first = res.data?.items?.[0];
+  return first ? new Date(first.pull_request.merged_at).getFullYear() : null;
 };
 
 export const getGitHubUserData = async (username: string) => {
@@ -134,5 +186,83 @@ export const getGitHubUserData = async (username: string) => {
   } catch (error) {
     console.error(error);
     return { data: null, error, status: 0 };
+  }
+};
+
+export interface ContributionCalendar {
+  total: number;
+  /** 53 weeks x 7 days of [level 0-4, count, ISO date]. */
+  weeks: [number, number, string][][];
+}
+
+const LEVELS: Record<string, number> = {
+  NONE: 0,
+  FIRST_QUARTILE: 1,
+  SECOND_QUARTILE: 2,
+  THIRD_QUARTILE: 3,
+  FOURTH_QUARTILE: 4,
+};
+
+/**
+ * First-party contribution calendar via the GraphQL API (replaces the
+ * ghchart.rshah.org hotlink). Requires GITHUB_TOKEN; returns null without
+ * it so the profile simply omits the graph.
+ */
+export const getContributionCalendar = async (
+  username: string
+): Promise<ContributionCalendar | null> => {
+  if (!process.env.GITHUB_TOKEN) return null;
+
+  const query = `query($login: String!) {
+    user(login: $login) {
+      contributionsCollection {
+        contributionCalendar {
+          totalContributions
+          weeks {
+            contributionDays { contributionLevel contributionCount date }
+          }
+        }
+      }
+    }
+  }`;
+
+  try {
+    const response = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ query, variables: { login: username } }),
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
+    });
+    const json = await response.json();
+    const calendar =
+      json?.data?.user?.contributionsCollection?.contributionCalendar;
+    if (!calendar) return null;
+    return {
+      total: calendar.totalContributions,
+      weeks: calendar.weeks.map(
+        (week: {
+          contributionDays: {
+            contributionLevel: string;
+            contributionCount: number;
+            date: string;
+          }[];
+        }) =>
+          week.contributionDays.map(
+            (day) =>
+              [
+                LEVELS[day.contributionLevel] ?? 0,
+                day.contributionCount,
+                day.date,
+              ] as [number, number, string]
+          )
+      ),
+    };
+  } catch (error) {
+    console.error("contribution calendar fetch failed:", error);
+    return null;
   }
 };

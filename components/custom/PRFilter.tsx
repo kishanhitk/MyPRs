@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
+import posthog from "posthog-js";
 import MultiSelect from "../ui/multiselect";
-import { Button } from "../ui/button";
 import { saveExcludedReposAction } from "~/utils/pr-actions";
 
 export interface IPRFilterProps {
@@ -10,45 +10,79 @@ export interface IPRFilterProps {
   excludedRepoNames: string[];
   username: string;
 }
+
 const PRFilter = ({
   repoNames,
   excludedRepoNames,
   username,
 }: IPRFilterProps) => {
-  const alreadySelected = repoNames.filter(
+  const allRepoNames = [...new Set(repoNames.concat(excludedRepoNames))].sort();
+  const savedSelection = allRepoNames.filter(
     (repoName) => !excludedRepoNames.includes(repoName)
   );
-  const [selected, setSelected] = React.useState(alreadySelected);
+  const [selected, setSelected] = React.useState(savedSelection);
   const [isPending, startTransition] = React.useTransition();
-  const allRepoNames = repoNames.concat(excludedRepoNames);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Lazy loading discovers repos over time. Fold new arrivals into the
+  // current selection (unless saved as excluded) so their appearance never
+  // reads as an unsaved change.
+  const known = React.useRef(new Set(allRepoNames));
+  React.useEffect(() => {
+    const fresh = allRepoNames.filter(
+      (repo) => !known.current.has(repo)
+    );
+    if (fresh.length === 0) return;
+    fresh.forEach((repo) => known.current.add(repo));
+    const freshSelected = fresh.filter(
+      (repo) => !excludedRepoNames.includes(repo)
+    );
+    if (freshSelected.length > 0) {
+      setSelected((prev) => [...prev, ...freshSelected]);
+    }
+  }, [allRepoNames, excludedRepoNames]);
+
+  const dirty =
+    selected.length !== savedSelection.length ||
+    selected.some((repo) => !savedSelection.includes(repo));
 
   const handleSave = () => {
     const reposToExclude = allRepoNames.filter(
       (repoName) => !selected.includes(repoName)
     );
+    posthog.capture("repo_filter_saved", {
+      repos_hidden: reposToExclude.length,
+      repos_total: allRepoNames.length,
+    });
     startTransition(async () => {
       const result = await saveExcludedReposAction({ reposToExclude, username });
-      if (result?.error) console.error("Failed to save filters:", result.error);
+      setError(result?.error ?? null);
     });
   };
 
   return (
-    <div className="my-2 flex justify-end items-center gap-2">
-      <div className="w-64">
-        <MultiSelect
-          selected={selected}
-          setSelected={setSelected}
-          options={allRepoNames.sort()}
-        />
-      </div>
-      <Button
-        type="button"
-        className="h-9"
-        disabled={isPending}
-        onClick={handleSave}
-      >
-        Save
-      </Button>
+    <div className="font-mono flex items-baseline gap-3 text-xs">
+      <MultiSelect
+        selected={selected}
+        setSelected={setSelected}
+        options={allRepoNames}
+        triggerLabel={`${selected.length} of ${allRepoNames.length} repositories shown`}
+      />
+      {dirty ? (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={handleSave}
+          className="appear text-zinc-900 underline underline-offset-4 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 disabled:opacity-40 dark:text-zinc-100"
+        >
+          {isPending ? "saving…" : "save"}
+        </button>
+      ) : null}
+      {error ? (
+        <span role="alert" className="appear text-red-500">
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 };

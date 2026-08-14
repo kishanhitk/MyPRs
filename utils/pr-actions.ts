@@ -3,10 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "~/lib/supabase/server";
 
-/**
- * Toggle a PR's "featured" status for the signed-in owner.
- * Re-auth is enforced server-side; UI gating is not trusted.
- */
 export async function toggleFeaturedAction(input: {
   prId: string;
   username: string;
@@ -62,6 +58,46 @@ export async function saveExcludedReposAction(input: {
     .update({ excluded_github_repos: input.reposToExclude })
     .eq("id", user.id);
   if (error) console.error(error);
+
+  revalidatePath(`/${input.username}`);
+  return { error: error?.message ?? null };
+}
+
+/**
+ * Persist the owner's featured-PR order. The submitted list must be a
+ * permutation of the current one, so a stale tab can't clobber a toggle
+ * that happened elsewhere.
+ */
+export async function reorderFeaturedAction(input: {
+  username: string;
+  orderedIds: string[];
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in to do that" };
+
+  const { data: row, error: readError } = await supabase
+    .from("users")
+    .select("featured_github_prs")
+    .eq("id", user.id)
+    .single();
+  if (readError) return { error: readError.message };
+
+  const current: string[] = row?.featured_github_prs ?? [];
+  const currentSet = new Set(current);
+  const valid =
+    input.orderedIds.length === current.length &&
+    input.orderedIds.every((id) => currentSet.has(id));
+  if (!valid) {
+    return { error: "Order is out of date — refresh and try again" };
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({ featured_github_prs: input.orderedIds })
+    .eq("id", user.id);
 
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };

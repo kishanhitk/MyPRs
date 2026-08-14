@@ -1,5 +1,6 @@
-import "@fontsource/inter";
 import "./globals.css";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
@@ -35,7 +36,11 @@ export default async function RootLayout({
   } = await supabase.auth.getSession();
 
   return (
-    <html lang="en" className={theme} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${theme} ${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <ClientHintCheck />
       </head>

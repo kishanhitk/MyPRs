@@ -118,3 +118,18 @@ export interface GithubUser {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * Slim PR shape passed to the client. The raw search items carry ~1KB each
+ * (user objects, labels, URLs); with full-history fetching the payload must
+ * stay lean.
+ */
+export interface ProfilePR {
+  id: number;
+  title: string;
+  html_url: string;
+  repo: string;
+  merged_at: string;
+  reactions_count: number;
+  comments: number;
+}
