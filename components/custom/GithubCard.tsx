@@ -90,7 +90,7 @@ export function DemoGithub({
         </div>
 
         {actionError ? (
-          <p role="alert" className="font-mono mt-1 text-xs text-red-500">
+          <p role="alert" className="appear font-mono mt-1 text-xs text-red-500">
             {actionError}
           </p>
         ) : null}

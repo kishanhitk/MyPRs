@@ -108,6 +108,18 @@
   }
 }
 
+/* Calm opacity-only entrance for alerts and secondary reveals. */
+.appear {
+  opacity: 1;
+  transition: opacity 200ms ease-out;
+}
+
+@starting-style {
+  .appear {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise {
     transition: opacity 200ms ease-out;

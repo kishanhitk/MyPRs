@@ -59,6 +59,9 @@ export const getProfileData = cache(async (username: string) => {
     userData,
     notFound,
     loadError,
+    // Search API caps at `limit` per page; total_count is the real total
+    // within the query window. Lets the UI say "latest N shown" honestly.
+    totalCount: ghData?.total_count ?? 0,
     items,
     featuredPRs,
     nonFeaturedPRs,

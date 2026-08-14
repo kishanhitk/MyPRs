@@ -22,6 +22,7 @@ export interface PRFilter {
   excludedOrgs?: string[];
   author: string;
   limit?: number;
+  page?: number;
 }
 
 export const getPRsFromGithubAPI = async (filter: PRFilter) => {
@@ -76,7 +77,7 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
 
   const url = `https://api.github.com/search/issues?q=${queryParts.join(
     "+"
-  )}&per_page=${limit}`;
+  )}&per_page=${limit}&page=${filter.page ?? 1}&sort=created&order=desc`;
   const init = {
     headers: githubHeaders(),
     // Cache on the Next data layer, replacing the old CDN self-fetch contract.

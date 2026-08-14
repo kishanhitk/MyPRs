@@ -57,6 +57,7 @@ export default async function ProfilePage({
     loadError,
     userData,
     items,
+    totalCount,
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
@@ -146,15 +147,24 @@ export default async function ProfilePage({
           className="rise font-mono mt-5 text-[13px] text-zinc-500 dark:text-zinc-400"
           style={{ "--d": "60ms" } as React.CSSProperties}
         >
-          {items.length} merged pull requests · {uniqueRepoNames.length}{" "}
+          {totalCount || items.length} merged pull requests ·{" "}
+          {uniqueRepoNames.length}{" "}
           {uniqueRepoNames.length === 1 ? "repository" : "repositories"}
-          {since ? ` · since ${since}` : ""}
+          {totalCount <= items.length && since ? ` · since ${since}` : ""}
         </p>
       ) : null}
 
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`https://ghchart.rshah.org/${userData.login}`}
+        alt={`${userData.login}'s GitHub contribution chart`}
+        className="rise mt-6 w-full dark:brightness-75"
+        style={{ "--d": "90ms" } as React.CSSProperties}
+      />
+
       {isOwner ? (
         <div
-          className="rise mt-4"
+          className="rise relative z-10 mt-4"
           style={{ "--d": "120ms" } as React.CSSProperties}
         >
           <PRFilter
@@ -171,6 +181,7 @@ export default async function ProfilePage({
           nonFeaturedPRs={nonFeaturedPRs}
           isOwner={isOwner}
           username={username}
+          totalCount={totalCount}
         />
       ) : (
         <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">

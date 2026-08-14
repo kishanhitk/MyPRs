@@ -2,6 +2,47 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "~/lib/supabase/server";
+import { getPRsFromGithubAPI } from "~/lib/github";
+
+/**
+ * Fetch the next page of merged PRs for lazy loading. Applies the owner's
+ * excluded repos and drops already-featured PRs server-side, so the client
+ * can append the result as-is. Search API pages are capped at 10 (1000 results).
+ */
+export async function loadMorePRsAction(input: {
+  username: string;
+  page: number;
+}) {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("users")
+    .select("excluded_github_repos, featured_github_prs")
+    .eq("github_username", input.username);
+  const row = rows?.[0];
+  const excluded: string[] = row?.excluded_github_repos ?? [];
+  const featured: string[] = row?.featured_github_prs ?? [];
+
+  const res = await getPRsFromGithubAPI({
+    author: input.username,
+    limit: 100,
+    page: input.page,
+  });
+  if (res.error || !res.data) {
+    return { error: "Couldn't load more PRs", items: [], hasMore: false };
+  }
+
+  const items = res.data.items.filter(
+    (item) =>
+      !excluded.includes(item.repository_url.slice(29)) &&
+      !featured.includes(item.id.toString())
+  );
+  const hasMore =
+    res.data.items.length === 100 &&
+    input.page < 10 &&
+    input.page * 100 < res.data.total_count;
+
+  return { error: null, items, hasMore };
+}
 
 /**
  * Toggle a PR's "featured" status for the signed-in owner.

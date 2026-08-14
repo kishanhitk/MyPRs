@@ -1,43 +1,51 @@
+"use client";
+
+import * as React from "react";
 import { Listbox, Transition } from "@headlessui/react";
-import { CheckIcon } from "@radix-ui/react-icons";
-import React from "react";
-export interface IMultiSelectProps {
-  options: string[];
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
+
+interface MultiSelectProps {
   selected: string[];
-  setSelected: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelected: (selected: string[]) => void;
+  options: string[];
+  triggerLabel: string;
 }
+
 export default function MultiSelect({
-  options,
   selected,
   setSelected,
-}: IMultiSelectProps) {
+  options,
+  triggerLabel,
+}: MultiSelectProps) {
   return (
     <Listbox value={selected} onChange={setSelected} multiple>
-      <div className="relative w-full">
-        <Listbox.Button className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
-          <span className="block truncate">
-            {selected.map((option) => option).join(", ")}
-          </span>
+      <div className="relative inline-block">
+        <Listbox.Button className="font-mono flex items-center gap-1 text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-100">
+          {triggerLabel}
+          <ChevronDownIcon className="h-3 w-3" aria-hidden />
         </Listbox.Button>
         <Transition
           as={React.Fragment}
-          leave="transition ease-in duration-100"
+          enter="transition duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          enterFrom="opacity-0 scale-[0.97]"
+          enterTo="opacity-100 scale-100"
+          leave="transition duration-100 ease-out"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-popover py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-            {options.map((option, optionIdx) => (
+          <Listbox.Options className="absolute left-0 z-50 mt-2 max-h-60 w-72 origin-top-left overflow-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-sm focus:outline-none motion-reduce:transition-none dark:border-zinc-800 dark:bg-zinc-900">
+            {options.map((option) => (
               <Listbox.Option
-                key={optionIdx}
-                className="relative cursor-default select-none py-1.5 pl-10 pr-4 text-sm rounded-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                key={option}
                 value={option}
+                className="font-mono relative cursor-default select-none py-1.5 pl-8 pr-3 text-xs text-zinc-700 outline-none data-[focus]:bg-zinc-100 dark:text-zinc-300 dark:data-[focus]:bg-zinc-800"
               >
-                {({ selected }) => (
+                {({ selected: isSelected }) => (
                   <>
                     {option}
-                    {selected ? (
-                      <span className="absolute inset-y-0 right-2 flex items-center pl-3">
-                        <CheckIcon className="h-4 w-4" />
+                    {isSelected ? (
+                      <span className="absolute inset-y-0 left-2 flex items-center text-github_merged dark:text-[#A371F7]">
+                        <CheckIcon className="h-3.5 w-3.5" aria-hidden />
                       </span>
                     ) : null}
                   </>
