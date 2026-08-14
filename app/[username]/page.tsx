@@ -148,8 +148,11 @@ export default async function ProfilePage({
           style={{ "--d": "60ms" } as React.CSSProperties}
         >
           {totalCount || items.length} merged pull requests ·{" "}
-          {uniqueRepoNames.length}{" "}
-          {uniqueRepoNames.length === 1 ? "repository" : "repositories"}
+          {uniqueRepoNames.length}
+          {totalCount > items.length ? "+" : ""}{" "}
+          {uniqueRepoNames.length === 1 && totalCount <= items.length
+            ? "repository"
+            : "repositories"}
           {totalCount <= items.length && since ? ` · since ${since}` : ""}
         </p>
       ) : null}

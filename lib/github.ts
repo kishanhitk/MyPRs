@@ -28,13 +28,6 @@ export interface PRFilter {
 export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   let queryParts: string[] = [];
 
-  // Set default values for startDate and endDate
-  const currentDate = new Date();
-  const threeYearsAgo = new Date();
-  threeYearsAgo.setFullYear(currentDate.getFullYear() - 3);
-
-  const startDate = filter.startDate || threeYearsAgo;
-  const endDate = filter.endDate || currentDate;
   const limit = filter.limit || 30;
 
   if (filter.includedRepos && filter.includedRepos.length > 0) {
@@ -68,8 +61,13 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
   const authorParam = `author:${filter.author}`;
   queryParts.push(authorParam);
 
-  const dateParam = `created:${startDate.toISOString()}..${endDate.toISOString()}`;
-  queryParts.push(dateParam);
+  // Only constrain by date when the caller asks for it — the default is the
+  // full contribution history (previously a silent 3-year window).
+  if (filter.startDate || filter.endDate) {
+    const start = filter.startDate ?? new Date("2008-01-01");
+    const end = filter.endDate ?? new Date();
+    queryParts.push(`created:${start.toISOString()}..${end.toISOString()}`);
+  }
 
   queryParts.push("type:pr");
   queryParts.push("is:public");
