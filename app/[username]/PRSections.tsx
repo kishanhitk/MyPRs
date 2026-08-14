@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
+import Link from "next/link";
 import posthog from "posthog-js";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
@@ -188,6 +189,15 @@ export default function PRSections({
             excludedRepoNames={excludedRepoNames}
             username={username}
           />
+          <Link
+            href={`/${username}?as=visitor`}
+            onClick={() =>
+              posthog.capture("view_as_visitor", { profile: username })
+            }
+            className="font-mono shrink-0 text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            view as visitor
+          </Link>
           <button
             type="button"
             onClick={toggleCurating}

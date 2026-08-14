@@ -49,10 +49,14 @@ export async function generateMetadata({
 
 export default async function ProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ as?: string }>;
 }) {
   const { username } = await params;
+  const { as: viewAs } = await searchParams;
+  const asVisitor = viewAs === "visitor";
   const {
     notFound,
     loadError,
@@ -71,7 +75,9 @@ export default async function ProfilePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const isOwner = Boolean(user && ownerRowId && user.id === ownerRowId);
+  const isActualOwner = Boolean(user && ownerRowId && user.id === ownerRowId);
+  // ?as=visitor renders the page exactly as a stranger sees it.
+  const isOwner = isActualOwner && !asVisitor;
 
 
   if (loadError && !userData) {
@@ -160,6 +166,15 @@ export default async function ProfilePage({
             username={userData.login}
           />
         </div>
+      ) : null}
+
+      {isActualOwner && asVisitor ? (
+        <a
+          href={`/${username}`}
+          className="drag-glass font-mono fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full px-4 py-2 text-xs text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
+        >
+          viewing as visitor · exit
+        </a>
       ) : null}
 
       {items.length ? (
