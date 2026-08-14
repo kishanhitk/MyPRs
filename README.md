@@ -12,7 +12,7 @@ showcase your expertise, and stand out — with a single shareable link.
 ![MyPRs](https://www.myprs.dev/api/og)
 
 <p align="center">
-  <img src="public/assets/screenshot-profile.jpg" alt="A MyPRs profile: contribution graph, curated featured PRs, and the full merged-PR history on a git-graph rail" width="720">
+  <img src="public/assets/screenshot-profile.png" alt="A MyPRs profile: contribution graph, curated featured PRs, and the full merged-PR history on a git-graph rail" width="720">
 </p>
 
 </div>
