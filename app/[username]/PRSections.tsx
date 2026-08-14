@@ -270,7 +270,7 @@ export default function PRSections({
         {shownRest.length ? (
           <>
             <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-              All merged
+              All PRs
             </h2>
             <ul>
               <AnimatePresence mode="popLayout" initial={false}>
