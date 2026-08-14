@@ -85,6 +85,9 @@ export function DemoGithub({
             href={item.html_url}
             target="_blank"
             rel="noopener noreferrer"
+            // native link-drag swallows the pointer stream before framer's
+            // pan session starts, so the item never moves while reordering
+            draggable={reorderable ? false : undefined}
             onClick={() =>
               posthog.capture("pr_clicked", {
                 repo: item.repo,
