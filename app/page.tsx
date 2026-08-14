@@ -125,15 +125,15 @@ export default async function Home() {
                 <li key={item.id} className="relative pl-10 pb-2">
                   <span
                     aria-hidden
+                    className="absolute left-[18px] top-[27px] h-px w-[14px] bg-zinc-200 dark:bg-zinc-800"
+                  />
+                  <span
+                    aria-hidden
                     className={`absolute left-[7px] top-[22px] h-[11px] w-[11px] rounded-full border-2 ${
                       idx === 0
                         ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
                         : "border-zinc-400 bg-[#fdfafa] dark:border-zinc-600 dark:bg-[#191919]"
                     }`}
-                  />
-                  <span
-                    aria-hidden
-                    className="absolute left-[12px] top-[27px] h-px w-5 bg-zinc-200 dark:bg-zinc-800"
                   />
                   <Link
                     href={`/${DEMO_USER}`}

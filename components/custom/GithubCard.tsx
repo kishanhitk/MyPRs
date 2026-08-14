@@ -38,6 +38,11 @@ export function DemoGithub({
       transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1], delay }}
       className="relative pl-10 pb-4"
     >
+      {/* branch connector — starts at the node's edge, never through it */}
+      <span
+        aria-hidden
+        className="absolute left-[18px] top-[21px] h-px w-[14px] bg-zinc-200 dark:bg-zinc-800"
+      />
       {/* merge node */}
       <span
         aria-hidden
@@ -46,11 +51,6 @@ export function DemoGithub({
             ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100"
             : "border-zinc-400 bg-[#fdfafa] dark:border-zinc-600 dark:bg-[#191919]"
         }`}
-      />
-      {/* branch connector */}
-      <span
-        aria-hidden
-        className="absolute left-[12px] top-[21px] h-px w-5 bg-zinc-200 dark:bg-zinc-800"
       />
 
       <div className="group -mx-3 rounded-lg border border-transparent px-3 py-2 transition-colors duration-150 hover:border-zinc-200 hover:bg-white dark:hover:border-zinc-800 dark:hover:bg-zinc-900/60">

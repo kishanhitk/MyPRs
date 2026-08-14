@@ -31,8 +31,8 @@ export const Header = ({ user }: HeaderProps) => {
   };
 
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
+    <header>
+      <div className="mx-auto flex max-w-2xl items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
         <Link
           href="/"
           className="flex items-center gap-1 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100"
