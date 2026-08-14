@@ -118,6 +118,24 @@ export default async function ProfilePage({
                 </a>
               </>
             ) : null}
+            {userData.blog ? (
+              <>
+                {" · "}
+                <a
+                  href={
+                    userData.blog.startsWith("http")
+                      ? userData.blog
+                      : `https://${userData.blog}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-4 hover:underline"
+                >
+                  {userData.blog.replace(/^https?:\/\//, "").replace(/\/$/, "")}{" "}
+                  ↗
+                </a>
+              </>
+            ) : null}
             {isOwner ? (
               <>
                 {" · "}
