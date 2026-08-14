@@ -43,9 +43,18 @@ export default async function Home() {
     <div className="mx-auto max-w-2xl px-6 py-16">
       <a
         href="https://github.com/kishanhitk/MyPRs"
-        className="rise font-mono text-xs text-zinc-500 underline decoration-wavy underline-offset-4 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rise group inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-600 transition-colors duration-150 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-100 dark:hover:text-zinc-100"
       >
-        Star the repo on GitHub ↗
+        <span aria-hidden className="group-hover:hidden">
+          ☆
+        </span>
+        <span aria-hidden className="hidden group-hover:inline">
+          ★
+        </span>
+        Star on GitHub
+        <span aria-hidden>↗</span>
       </a>
 
       <h1
@@ -131,11 +140,11 @@ export default async function Home() {
                     prefetch
                     className="group -mx-3 block rounded-lg border border-transparent px-3 py-2 transition-colors duration-150 hover:border-zinc-200 hover:bg-white dark:hover:border-zinc-800 dark:hover:bg-zinc-900/60"
                   >
-                    <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                      {item.repo}
-                    </span>
-                    <span className="mt-0.5 block text-[15px] font-medium leading-snug text-zinc-900 dark:text-zinc-200">
+                    <span className="block text-[15px] font-medium leading-snug text-zinc-900 dark:text-zinc-200">
                       {item.title}
+                    </span>
+                    <span className="font-mono mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                      {item.repo}
                     </span>
                   </Link>
                 </li>
