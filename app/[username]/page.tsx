@@ -61,6 +61,8 @@ export default async function ProfilePage({
   const {
     notFound,
     loadError,
+    errorReason,
+    errorStatus,
     userData,
     items,
     totalCount,
@@ -86,7 +88,12 @@ export default async function ProfilePage({
       <div className="mx-auto max-w-2xl px-6 py-14">
         <TrackEvent
           name="profile_error"
-          props={{ profile: username, type: "load_error" }}
+          props={{
+            profile: username,
+            type: "load_error",
+            reason: errorReason ?? "error",
+            status: errorStatus ?? 0,
+          }}
         />
         <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
           Couldn&apos;t load this profile right now (GitHub may be rate-limiting

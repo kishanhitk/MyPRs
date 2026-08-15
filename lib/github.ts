@@ -1,4 +1,8 @@
 import type { GitHubIssuesResponse, GitHubUser } from "~/types/shared";
+import {
+  type GithubFailureReason,
+  reportGithubFailure,
+} from "~/lib/observability";
 
 // A GitHub token lifts the unauthenticated 60 req/hr limit to 5000 req/hr.
 // Optional: unauthenticated requests still work, just rate-limited.
@@ -24,6 +28,8 @@ export interface PRFilter {
   limit?: number;
   page?: number;
   order?: "asc" | "desc";
+  /** Call-site label for failure reporting, e.g. "history" | "since-year". */
+  tag?: string;
 }
 
 export const getPRsFromGithubAPI = async (filter: PRFilter) => {
@@ -87,24 +93,37 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     signal: AbortSignal.timeout(8000),
   };
 
+  const source = `search:${filter.tag ?? "adhoc"}:p${filter.page ?? 1}`;
   try {
     const response = await fetch(url, init);
     const data = await response.json();
     if (!response.ok || data.message) {
+      const reason = reportGithubFailure({
+        source,
+        status: response.status,
+        message: data.message,
+        headers: response.headers,
+      });
       return {
         data: null,
         error: new Error(data.message ?? `GitHub HTTP ${response.status}`),
         status: response.status,
+        reason,
       };
     }
     return { data, error: null, status: response.status } as {
       data: GitHubIssuesResponse;
       error: null;
       status: number;
+      reason?: GithubFailureReason;
     };
   } catch (error) {
-    console.error(error);
-    return { data: null, error, status: 0 };
+    const reason = reportGithubFailure({
+      source,
+      status: 0,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return { data: null, error, status: 0, reason };
   }
 };
 
@@ -115,9 +134,19 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
  * ceil(total/100) GitHub calls per profile per hour.
  */
 export const getAllMergedPRs = async (author: string) => {
-  const first = await getPRsFromGithubAPI({ author, limit: 100, page: 1 });
+  const first = await getPRsFromGithubAPI({
+    author,
+    limit: 100,
+    page: 1,
+    tag: "history",
+  });
   if (first.error || !first.data) {
-    return { data: null, error: first.error, status: first.status };
+    return {
+      data: null,
+      error: first.error,
+      status: first.status,
+      reason: first.reason,
+    };
   }
 
   const total = first.data.total_count;
@@ -128,7 +157,7 @@ export const getAllMergedPRs = async (author: string) => {
 
   const rest = await Promise.all(
     Array.from({ length: pages - 1 }, (_, i) =>
-      getPRsFromGithubAPI({ author, limit: 100, page: i + 2 })
+      getPRsFromGithubAPI({ author, limit: 100, page: i + 2, tag: "history" })
     )
   );
   const items = [
@@ -153,6 +182,7 @@ export const getFirstMergedYear = async (author: string) => {
     limit: 1,
     page: 1,
     order: "asc",
+    tag: "since-year",
   });
   const first = res.data?.items?.[0];
   return first ? new Date(first.pull_request.merged_at).getFullYear() : null;
@@ -172,20 +202,36 @@ export const getGitHubUserData = async (username: string) => {
     const response = await fetch(url, init);
     const data = await response.json();
     if (!response.ok || data.message) {
+      // 404 is expected input (unknown username), not an API failure.
+      const reason =
+        response.status === 404
+          ? undefined
+          : reportGithubFailure({
+              source: "user",
+              status: response.status,
+              message: data.message,
+              headers: response.headers,
+            });
       return {
         data: null,
         error: new Error(data.message ?? `GitHub HTTP ${response.status}`),
         status: response.status,
+        reason,
       };
     }
     return { data, error: null, status: response.status } as {
       data: GitHubUser;
       error: null;
       status: number;
+      reason?: GithubFailureReason;
     };
   } catch (error) {
-    console.error(error);
-    return { data: null, error, status: 0 };
+    const reason = reportGithubFailure({
+      source: "user",
+      status: 0,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return { data: null, error, status: 0, reason };
   }
 };
 
@@ -240,7 +286,15 @@ export const getContributionCalendar = async (
     const json = await response.json();
     const calendar =
       json?.data?.user?.contributionsCollection?.contributionCalendar;
-    if (!calendar) return null;
+    if (!calendar) {
+      reportGithubFailure({
+        source: "graphql",
+        status: response.status,
+        message: json?.errors?.[0]?.message ?? json?.message,
+        headers: response.headers,
+      });
+      return null;
+    }
     return {
       total: calendar.totalContributions,
       weeks: calendar.weeks.map(
@@ -262,7 +316,11 @@ export const getContributionCalendar = async (
       ),
     };
   } catch (error) {
-    console.error("contribution calendar fetch failed:", error);
+    reportGithubFailure({
+      source: "graphql",
+      status: 0,
+      message: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 };

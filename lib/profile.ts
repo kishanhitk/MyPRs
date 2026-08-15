@@ -48,6 +48,12 @@ export const getProfileData = cache(async (username: string) => {
   const loadError =
     (Boolean(userResponse.error) && userResponse.status !== 404) ||
     (Boolean(ghResponse.error) && ghResponse.status !== 404);
+  const errorReason = loadError
+    ? (ghResponse.reason ?? userResponse.reason ?? "error")
+    : undefined;
+  const errorStatus = loadError
+    ? (ghResponse.error ? ghResponse.status : userResponse.status)
+    : undefined;
 
   let items: ProfilePR[] = [];
   let featuredPRs: ProfilePR[] = [];
@@ -82,6 +88,8 @@ export const getProfileData = cache(async (username: string) => {
     userData,
     notFound,
     loadError,
+    errorReason,
+    errorStatus,
     totalCount: ghData?.total_count ?? 0,
     sinceYear,
     contributionCalendar,

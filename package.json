@@ -24,6 +24,7 @@
     "lucide-react": "^1.31.0",
     "next": "^16.3.1",
     "posthog-js": "^1.417.1",
+    "posthog-node": "^5.49.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "rough-notation": "^0.5.1",
