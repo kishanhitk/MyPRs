@@ -1,5 +1,5 @@
 import { revalidateTag } from "next/cache";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "~/lib/supabase/server";
 
 // Prevents an open redirect via the `redirectTo` param. Resolve the value
@@ -26,8 +26,9 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const redirectTo = url.searchParams.get("redirectTo");
   // A real deep path (e.g. the profile being viewed at login) is preserved;
-  // homepage, "false", or absent falls through to the user's own profile.
-  let redirectUrl = safeRelativePath(redirectTo, url.origin);
+  // otherwise land on the instant homepage while the profile warms behind
+  // (the "Continue as" link there is prefetched and will be warm on click).
+  const redirectUrl = safeRelativePath(redirectTo, url.origin);
 
   if (code) {
     const supabase = await createClient();
@@ -45,10 +46,20 @@ export async function GET(request: Request) {
       // Server-Action-only; revalidateTag is the Route Handler equivalent
       // (SWR semantics: at worst one stale render right after login).
       revalidateTag(`curation-${githubUsername}`, "max");
-    }
 
-    if ((!redirectUrl || redirectUrl === "/") && githubUsername) {
-      redirectUrl = `/${githubUsername}`;
+      // Warm the profile while they read the homepage: a real self-fetch
+      // through the normal render path fills the use-cache-remote entries
+      // AND the cached shell, starting the 5-14s cold fill at the earliest
+      // possible moment. after() runs once the redirect is sent.
+      const profileUrl = new URL(`/${githubUsername}`, url.origin);
+      after(async () => {
+        try {
+          await fetch(profileUrl, { cache: "no-store" });
+          console.log(`login warm completed for ${githubUsername}`);
+        } catch (error) {
+          console.error("login warm failed:", error);
+        }
+      });
     }
   }
 
