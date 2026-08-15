@@ -49,7 +49,6 @@ export default async function ProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const t0 = Date.now();
   const {
     notFound,
     loadError,
@@ -68,8 +67,6 @@ export default async function ProfilePage({
     repoNames,
     ownerRowId,
   } = await getProfileData(username);
-  console.log(`TIMING profile-data ${username} ${Date.now() - t0}ms`);
-
 
   if (loadError && !userData) {
     return (

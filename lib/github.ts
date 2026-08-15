@@ -211,7 +211,6 @@ async function rawGraphQLSearchPage(
   author: string,
   cursor: string | null
 ): Promise<PRPage> {
-  console.log(`TIMING raw-search-fetch ${author} ${cursor ?? "p1"}`);
   const q = `author:${author} type:pr is:public is:merged sort:created-desc`;
   const probeQ = `author:${author} type:pr is:public is:merged sort:created-asc`;
   const firstPage = cursor === null;
@@ -274,7 +273,7 @@ async function cachedGraphQLSearchPage(
   author: string,
   cursor: string | null
 ): Promise<PRPage> {
-  "use cache";
+  "use cache: remote";
   cacheLife("hours");
   cacheTag(`profile-${author}`);
   return rawGraphQLSearchPage(author, cursor);
@@ -395,7 +394,7 @@ async function cachedDeepRepoNames(
   author: string,
   pages: number
 ): Promise<string[]> {
-  "use cache";
+  "use cache: remote";
   cacheLife("hours");
   cacheTag(`profile-${author}`);
   return rawDeepRepoNames(author, pages);
@@ -446,50 +445,65 @@ export const searchMergedPRs = async (
   }
 };
 
-export const getGitHubUserData = async (username: string) => {
-  const url = `https://api.github.com/users/${username}`;
-
-  const init = {
+// Throws on real failures so they never cache; a 404 is a valid answer
+// (unknown username) and caches like any other result.
+async function rawGitHubUserData(
+  username: string
+): Promise<{ data: GitHubUser | null; status: number }> {
+  const response = await fetch(`https://api.github.com/users/${username}`, {
     headers: githubHeaders(),
-    // Cache on the Next data layer, replacing the old CDN self-fetch contract.
-    next: { revalidate: 3600 },
+    cache: "no-store",
     signal: AbortSignal.timeout(8000),
-  };
+  });
+  const data = await response.json();
+  if (response.status === 404) return { data: null, status: 404 };
+  if (!response.ok || data.message) {
+    throw new GithubApiError(
+      data.message ?? `GitHub HTTP ${response.status}`,
+      response.status,
+      response.headers.get("x-ratelimit-remaining"),
+      response.headers.get("x-ratelimit-reset"),
+      response.headers.get("retry-after")
+    );
+  }
+  return { data: data as GitHubUser, status: response.status };
+}
 
+async function cachedGitHubUserData(username: string) {
+  "use cache: remote";
+  cacheLife("hours");
+  cacheTag(`profile-${username}`);
+  return rawGitHubUserData(username);
+}
+
+export const getGitHubUserData = async (username: string) => {
   try {
-    const response = await fetch(url, init);
-    const data = await response.json();
-    if (!response.ok || data.message) {
-      // 404 is expected input (unknown username), not an API failure.
-      const reason =
-        response.status === 404
-          ? undefined
-          : reportGithubFailure({
-              source: "user",
-              status: response.status,
-              message: data.message,
-              headers: response.headers,
-            });
+    const { data, status } = await cachedGitHubUserData(username);
+    if (status === 404) {
       return {
         data: null,
-        error: new Error(data.message ?? `GitHub HTTP ${response.status}`),
-        status: response.status,
-        reason,
+        error: new Error("Not Found") as Error | null,
+        status: 404,
+        reason: undefined as GithubFailureReason | undefined,
       };
     }
-    return { data, error: null, status: response.status } as {
-      data: GitHubUser;
-      error: null;
-      status: number;
-      reason?: GithubFailureReason;
+    return {
+      data,
+      error: null as Error | null,
+      status,
+      reason: undefined as GithubFailureReason | undefined,
     };
   } catch (error) {
+    const apiError = error instanceof GithubApiError ? error : null;
     const reason = reportGithubFailure({
       source: "user",
-      status: 0,
+      status: apiError?.status ?? 0,
       message: error instanceof Error ? error.message : String(error),
+      rateLimitRemaining: apiError?.rateLimitRemaining,
+      rateLimitReset: apiError?.rateLimitReset,
+      retryAfter: apiError?.retryAfter,
     });
-    return { data: null, error, status: 0, reason };
+    return { data: null, error, status: apiError?.status ?? 0, reason };
   }
 };
 
@@ -575,7 +589,7 @@ async function rawContributionCalendar(
 async function cachedContributionCalendar(
   username: string
 ): Promise<ContributionCalendar | null> {
-  "use cache";
+  "use cache: remote";
   cacheLife("hours");
   cacheTag(`profile-${username}`);
   return rawContributionCalendar(username);
