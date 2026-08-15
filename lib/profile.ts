@@ -1,19 +1,23 @@
 import { cache } from "react";
 import { createClient } from "~/lib/supabase/server";
 import {
-  getAllMergedPRs,
   getContributionCalendar,
-  getFirstMergedYear,
   getGitHubUserData,
+  searchMergedPRs,
+  type PRPageResult,
 } from "~/lib/github";
 import type { GithubUser, ProfilePR } from "~/types/shared";
 
+// Curated profiles may feature PRs deeper than page 1; walk until every
+// featured URL resolves. Bounded by search's own 1000-result ceiling.
+const MAX_FEATURED_WALK_PAGES = 10;
+
 /**
  * Loads everything needed to render a profile: the owner's curation row, the
- * GitHub profile, and the complete merged-PR history (search API caps at
- * 1000) partitioned into featured / non-featured after applying excluded
- * repos. Metadata (repo list, counts, "since") is exact from the first
- * render; the client windows the list for rendering, not for data.
+ * GitHub profile, and the first page (100) of merged PRs — one GraphQL
+ * request including the exact "since" year. Deeper pages stream to the
+ * client through /api/[username]/prs as the visitor scrolls; only profiles
+ * whose featured PRs sit past page 1 fetch further pages server-side.
  *
  * Wrapped in React `cache()` so `generateMetadata` and the page component
  * share a single execution per request.
@@ -28,75 +32,80 @@ export const getProfileData = cache(async (username: string) => {
 
   const row = rows?.[0];
   const excludedGitHubRepos: string[] = row?.excluded_github_repos ?? [];
-  const featuredGithubPRIds: string[] = row?.featured_github_prs ?? [];
+  // PR URLs (https://github.com/owner/repo/pull/N) — the one id both the
+  // GraphQL and REST engines agree on.
+  const featuredPRUrls: string[] = row?.featured_github_prs ?? [];
 
-  const [ghResponse, userResponse, sinceYear, contributionCalendar] =
-    await Promise.all([
-      getAllMergedPRs(username),
-      getGitHubUserData(username),
-      // Exact first-merged-PR year even past the search API's 1000-result cap.
-      getFirstMergedYear(username),
-      getContributionCalendar(username),
-    ]);
+  const [firstPage, userResponse, contributionCalendar] = await Promise.all([
+    searchMergedPRs(username),
+    getGitHubUserData(username),
+    getContributionCalendar(username),
+  ]);
 
-  const ghData = ghResponse.data;
   const userData = userResponse.data as GithubUser | null;
 
-  // Distinguish "no such user" (404) from a transient failure (rate-limit,
-  // network, timeout) so the page can show the right message.
-  const notFound = userResponse.status === 404;
-  const loadError =
-    (Boolean(userResponse.error) && userResponse.status !== 404) ||
-    (Boolean(ghResponse.error) && ghResponse.status !== 404);
-  const errorReason = loadError
-    ? (ghResponse.reason ?? userResponse.reason ?? "error")
-    : undefined;
-  const errorStatus = loadError
-    ? (ghResponse.error ? ghResponse.status : userResponse.status)
-    : undefined;
-
-  let items: ProfilePR[] = [];
-  let featuredPRs: ProfilePR[] = [];
-  let nonFeaturedPRs: ProfilePR[] = [];
-
-  if (ghData?.items?.length) {
-    items = ghData.items
-      .map((item) => ({
-        id: item.id,
-        title: item.title,
-        html_url: item.html_url,
-        repo: item.repository_url.slice(29),
-        merged_at: item.pull_request.merged_at,
-        reactions_count: item.reactions.total_count,
-        comments: item.comments,
-      }))
-      .filter((item) => !excludedGitHubRepos.includes(item.repo));
-    featuredPRs = items
-      .filter((item) => featuredGithubPRIds.includes(item.id.toString()))
-      .sort(
-        (a, b) =>
-          featuredGithubPRIds.indexOf(a.id.toString()) -
-          featuredGithubPRIds.indexOf(b.id.toString())
-      );
-    nonFeaturedPRs = items.filter(
-      (item) => !featuredGithubPRIds.includes(item.id.toString())
-    );
+  let page: PRPageResult = firstPage;
+  let loaded: ProfilePR[] = firstPage.items;
+  if (featuredPRUrls.length) {
+    const resolved = new Set(loaded.map((i) => i.html_url));
+    let walked = 1;
+    while (
+      page.hasNext &&
+      page.endCursor &&
+      walked < MAX_FEATURED_WALK_PAGES &&
+      !featuredPRUrls.every((url) => resolved.has(url))
+    ) {
+      page = await searchMergedPRs(username, page.endCursor);
+      if (page.error) break;
+      loaded = [...loaded, ...page.items];
+      page.items.forEach((i) => resolved.add(i.html_url));
+      walked += 1;
+    }
   }
+
+  // Distinguish "no such user" (404) from a transient failure (rate-limit,
+  // network, timeout) so the page can show the right message. A search
+  // failure with a healthy user is degraded, not dead: identity and the
+  // contribution graph still render while the PR list retries client-side.
+  const notFound = userResponse.status === 404;
+  const searchFailed = Boolean(firstPage.error);
+  const loadError = Boolean(userResponse.error) && userResponse.status !== 404;
+  const prsDegraded = !loadError && !notFound && searchFailed;
+  const errorReason =
+    loadError || prsDegraded
+      ? (firstPage.reason ?? userResponse.reason ?? "error")
+      : undefined;
+
+  const items = loaded.filter(
+    (item) => !excludedGitHubRepos.includes(item.repo)
+  );
+  const featuredPRs = items
+    .filter((item) => featuredPRUrls.includes(item.html_url))
+    .sort(
+      (a, b) =>
+        featuredPRUrls.indexOf(a.html_url) - featuredPRUrls.indexOf(b.html_url)
+    );
+  const nonFeaturedPRs = items.filter(
+    (item) => !featuredPRUrls.includes(item.html_url)
+  );
 
   return {
     ownerRowId: row?.id as string | undefined,
     userData,
     notFound,
     loadError,
+    prsDegraded,
     errorReason,
-    errorStatus,
-    totalCount: ghData?.total_count ?? 0,
-    sinceYear,
+    totalCount: firstPage.totalCount,
+    sinceYear: firstPage.sinceYear,
     contributionCalendar,
     items,
     featuredPRs,
     nonFeaturedPRs,
+    // Where the client resumes loading deeper pages.
+    endCursor: page.endCursor,
+    hasNext: page.hasNext,
     excludedGitHubRepos,
-    featuredGithubPRIds,
+    featuredPRUrls,
   };
 });

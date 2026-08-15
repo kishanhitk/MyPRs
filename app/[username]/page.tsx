@@ -5,6 +5,7 @@ import { getProfileData } from "~/lib/profile";
 import ContributionGraph from "~/components/custom/ContributionGraph";
 import ShareProfile from "~/components/custom/ShareProfile";
 import TrackEvent from "~/components/custom/TrackEvent";
+import PRRetry from "./PRRetry";
 import PRSections from "./PRSections";
 
 async function getDomain() {
@@ -61,8 +62,8 @@ export default async function ProfilePage({
   const {
     notFound,
     loadError,
+    prsDegraded,
     errorReason,
-    errorStatus,
     userData,
     items,
     totalCount,
@@ -71,6 +72,8 @@ export default async function ProfilePage({
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
+    endCursor,
+    hasNext,
     ownerRowId,
   } = await getProfileData(username);
 
@@ -92,7 +95,6 @@ export default async function ProfilePage({
             profile: username,
             type: "load_error",
             reason: errorReason ?? "error",
-            status: errorStatus ?? 0,
           }}
         />
         <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
@@ -193,7 +195,9 @@ export default async function ProfilePage({
         </a>
       ) : null}
 
-      {items.length ? (
+      {prsDegraded ? (
+        <PRRetry username={username} reason={errorReason ?? "error"} />
+      ) : items.length ? (
         <PRSections
           featuredPRs={featuredPRs}
           nonFeaturedPRs={nonFeaturedPRs}
@@ -202,10 +206,12 @@ export default async function ProfilePage({
           totalCount={totalCount}
           since={sinceYear}
           excludedRepoNames={excludedGitHubRepos}
+          endCursor={endCursor}
+          hasNext={hasNext}
         />
       ) : (
         <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">
-          No public merged PRs in the last three years.
+          No public merged PRs yet.
           {isOwner ? " Go make some! 🚀" : ""}
         </p>
       )}

@@ -1,9 +1,5 @@
 import { ImageResponse } from "next/og";
-import {
-  getAllMergedPRs,
-  getFirstMergedYear,
-  getGitHubUserData,
-} from "~/lib/github";
+import { getGitHubUserData, searchMergedPRs } from "~/lib/github";
 import type { GithubUser } from "~/types/shared";
 
 const INK = "#18181B";
@@ -27,24 +23,23 @@ export async function GET(
 
   // Font files ride the same 1h data cache as the PR history; after one
   // profile render this whole route serves from cache.
-  const [geistSemiBold, geistMono, prs, user, since] = await Promise.all([
+  const [geistSemiBold, geistMono, prs, user] = await Promise.all([
     fetch(`${domain}/assets/Geist-SemiBold.ttf`, { cache: "force-cache" }).then(
       (r) => r.arrayBuffer()
     ),
     fetch(`${domain}/assets/GeistMono-Regular.ttf`, {
       cache: "force-cache",
     }).then((r) => r.arrayBuffer()),
-    getAllMergedPRs(username),
+    // One batched GraphQL request: page 1, total, and the since-year probe.
+    searchMergedPRs(username),
     getGitHubUserData(username),
-    // Exact first-merged-PR year even past the 1000-result search cap.
-    getFirstMergedYear(username),
   ]);
 
-  const items = prs.data?.items ?? [];
-  const total = prs.data?.total_count ?? 0;
-  const repos = new Set(
-    items.map((i) => i.repository_url.slice(29))
-  ).size;
+  const total = prs.totalCount;
+  const repoCount = new Set(prs.items.map((i) => i.repo)).size;
+  // Page 1 sees at most 100 PRs; deeper history can only add repos.
+  const repos = prs.hasNext && repoCount ? `${repoCount}+` : String(repoCount);
+  const since = prs.sinceYear;
   const name = (user.data as GithubUser | null)?.name ?? username;
 
   // Satori needs single text children.
@@ -53,7 +48,7 @@ export async function GET(
 
   const stats: Array<[string, string]> = [
     [String(total), "merged PRs"],
-    ...(repos ? [[String(repos), "repositories"] as [string, string]] : []),
+    ...(repoCount ? [[repos, "repositories"] as [string, string]] : []),
     ...(since ? [[String(since), "since"] as [string, string]] : []),
   ];
 

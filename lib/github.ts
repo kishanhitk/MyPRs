@@ -1,4 +1,9 @@
-import type { GitHubIssuesResponse, GitHubUser } from "~/types/shared";
+import { unstable_cache } from "next/cache";
+import type {
+  GitHubIssuesResponse,
+  GitHubUser,
+  ProfilePR,
+} from "~/types/shared";
 import {
   type GithubFailureReason,
   reportGithubFailure,
@@ -128,64 +133,231 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
 };
 
 /**
- * Fetch the author's complete merged-PR history (search API caps at 1000).
- * Page 1 reveals total_count; remaining pages fetch in parallel. Each page
- * is cached on the Next data layer for an hour, so this costs at most
- * ceil(total/100) GitHub calls per profile per hour.
+ * One page of an author's merged-PR history, oldest-visible-first cursor.
+ * GraphQL is the primary engine: the search bills GraphQL points (5000/hr)
+ * instead of REST search's 30 req/min, and the first page batches the
+ * since-year probe into the same request (~1 point total). REST search
+ * remains the tokenless fallback, with cursors encoded as "p:<page>".
  */
-export const getAllMergedPRs = async (author: string) => {
-  const first = await getPRsFromGithubAPI({
-    author,
-    limit: 100,
-    page: 1,
-    tag: "history",
-  });
-  if (first.error || !first.data) {
-    return {
-      data: null,
-      error: first.error,
-      status: first.status,
-      reason: first.reason,
-    };
-  }
+export interface PRPage {
+  items: ProfilePR[];
+  totalCount: number;
+  endCursor: string | null;
+  hasNext: boolean;
+  /** Exact first-merged year; resolved on first pages only. */
+  sinceYear: number | null;
+}
 
-  const total = first.data.total_count;
-  const pages = Math.min(Math.ceil(total / 100), 10);
-  if (pages <= 1) {
-    return { data: first.data, error: null, status: first.status };
-  }
-
-  const rest = await Promise.all(
-    Array.from({ length: pages - 1 }, (_, i) =>
-      getPRsFromGithubAPI({ author, limit: 100, page: i + 2, tag: "history" })
-    )
-  );
-  const items = [
-    ...first.data.items,
-    ...rest.flatMap((r) => r.data?.items ?? []),
-  ];
-  return {
-    data: { ...first.data, items },
-    error: null,
-    status: first.status,
-  };
+export type PRPageResult = PRPage & {
+  error: unknown | null;
+  reason?: GithubFailureReason;
 };
 
-/**
- * Year of the author's first merged PR. One ascending-sorted search with
- * per_page=1 — exact even when the career exceeds the 1000-result cap that
- * bounds getAllMergedPRs.
- */
-export const getFirstMergedYear = async (author: string) => {
+const EMPTY_PAGE: PRPage = {
+  items: [],
+  totalCount: 0,
+  endCursor: null,
+  hasNext: false,
+  sinceYear: null,
+};
+
+class GithubApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly rateLimitRemaining: string | null,
+    public readonly rateLimitReset: string | null,
+    public readonly retryAfter: string | null
+  ) {
+    super(message);
+    this.name = "GithubApiError";
+  }
+}
+
+const PR_NODE_FIELDS = `... on PullRequest {
+  databaseId
+  title
+  url
+  mergedAt
+  comments { totalCount }
+  reactions { totalCount }
+  repository { nameWithOwner }
+}`;
+
+interface GraphQLPRNode {
+  databaseId: number;
+  title: string;
+  url: string;
+  mergedAt: string;
+  comments: { totalCount: number };
+  reactions: { totalCount: number };
+  repository: { nameWithOwner: string };
+}
+
+function nodeToProfilePR(node: GraphQLPRNode): ProfilePR {
+  return {
+    id: node.databaseId,
+    title: node.title,
+    html_url: node.url,
+    repo: node.repository.nameWithOwner,
+    merged_at: node.mergedAt,
+    reactions_count: node.reactions.totalCount,
+    comments: node.comments.totalCount,
+  };
+}
+
+// Throws GithubApiError so unstable_cache never caches a failed page.
+async function rawGraphQLSearchPage(
+  author: string,
+  cursor: string | null
+): Promise<PRPage> {
+  const q = `author:${author} type:pr is:public is:merged sort:created-desc`;
+  const probeQ = `author:${author} type:pr is:public is:merged sort:created-asc`;
+  const firstPage = cursor === null;
+
+  const query = firstPage
+    ? `query($q: String!, $probeQ: String!) {
+        search(query: $q, type: ISSUE, first: 100) {
+          issueCount
+          pageInfo { endCursor hasNextPage }
+          nodes { ${PR_NODE_FIELDS} }
+        }
+        probe: search(query: $probeQ, type: ISSUE, first: 1) {
+          nodes { ... on PullRequest { mergedAt } }
+        }
+      }`
+    : `query($q: String!, $cursor: String!) {
+        search(query: $q, type: ISSUE, first: 100, after: $cursor) {
+          issueCount
+          pageInfo { endCursor hasNextPage }
+          nodes { ${PR_NODE_FIELDS} }
+        }
+      }`;
+
+  const response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: githubHeaders(),
+    body: JSON.stringify({
+      query,
+      variables: firstPage ? { q, probeQ } : { q, cursor },
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  const json = await response.json();
+  const search = json?.data?.search;
+  if (!response.ok || json.errors || !search) {
+    throw new GithubApiError(
+      json?.errors?.[0]?.message ?? json?.message ?? `GitHub HTTP ${response.status}`,
+      response.status,
+      response.headers.get("x-ratelimit-remaining"),
+      response.headers.get("x-ratelimit-reset"),
+      response.headers.get("retry-after")
+    );
+  }
+
+  const probeMergedAt: string | undefined =
+    json.data.probe?.nodes?.[0]?.mergedAt;
+  return {
+    items: (search.nodes as GraphQLPRNode[])
+      .filter((n) => n && n.databaseId)
+      .map(nodeToProfilePR),
+    totalCount: search.issueCount,
+    endCursor: search.pageInfo.hasNextPage ? search.pageInfo.endCursor : null,
+    hasNext: search.pageInfo.hasNextPage,
+    sinceYear: probeMergedAt ? new Date(probeMergedAt).getFullYear() : null,
+  };
+}
+
+const cachedGraphQLSearchPage = unstable_cache(
+  rawGraphQLSearchPage,
+  ["gh-search-page"],
+  { revalidate: 3600 }
+);
+
+function restItemToProfilePR(
+  item: GitHubIssuesResponse["items"][number]
+): ProfilePR {
+  return {
+    id: item.id,
+    title: item.title,
+    html_url: item.html_url,
+    repo: item.repository_url.slice(29),
+    merged_at: item.pull_request.merged_at,
+    reactions_count: item.reactions.total_count,
+    comments: item.comments,
+  };
+}
+
+// Tokenless fallback: GraphQL requires auth, REST search allows 10 req/min
+// unauthenticated. Dev-only in practice; every real deployment has a token.
+async function restSearchPage(
+  author: string,
+  cursor: string | null
+): Promise<PRPageResult> {
+  const page = cursor ? Number(cursor.slice(2)) : 1;
   const res = await getPRsFromGithubAPI({
     author,
-    limit: 1,
-    page: 1,
-    order: "asc",
-    tag: "since-year",
+    limit: 100,
+    page,
+    tag: "history",
   });
-  const first = res.data?.items?.[0];
-  return first ? new Date(first.pull_request.merged_at).getFullYear() : null;
+  if (res.error || !res.data) {
+    return { ...EMPTY_PAGE, error: res.error, reason: res.reason };
+  }
+  const total = res.data.total_count;
+  const loadedThrough = page * 100;
+  const hasNext = loadedThrough < Math.min(total, 1000);
+  let sinceYear: number | null = null;
+  if (page === 1) {
+    if (total <= 100 && res.data.items.length) {
+      sinceYear = new Date(
+        res.data.items[res.data.items.length - 1].pull_request.merged_at
+      ).getFullYear();
+    } else {
+      const probe = await getPRsFromGithubAPI({
+        author,
+        limit: 1,
+        page: 1,
+        order: "asc",
+        tag: "since-year",
+      });
+      const first = probe.data?.items?.[0];
+      sinceYear = first
+        ? new Date(first.pull_request.merged_at).getFullYear()
+        : null;
+    }
+  }
+  return {
+    items: res.data.items.map(restItemToProfilePR),
+    totalCount: total,
+    endCursor: hasNext ? `p:${page + 1}` : null,
+    hasNext,
+    sinceYear,
+    error: null,
+  };
+}
+
+export const searchMergedPRs = async (
+  author: string,
+  cursor: string | null = null
+): Promise<PRPageResult> => {
+  if (!process.env.GITHUB_TOKEN) return restSearchPage(author, cursor);
+  try {
+    const page = await cachedGraphQLSearchPage(author, cursor);
+    return { ...page, error: null };
+  } catch (error) {
+    const apiError = error instanceof GithubApiError ? error : null;
+    const reason = reportGithubFailure({
+      source: cursor ? "graphql-search:cursor" : "graphql-search:p1",
+      status: apiError?.status ?? 0,
+      message: error instanceof Error ? error.message : String(error),
+      rateLimitRemaining: apiError?.rateLimitRemaining,
+      rateLimitReset: apiError?.rateLimitReset,
+      retryAfter: apiError?.retryAfter,
+    });
+    return { ...EMPTY_PAGE, error, reason };
+  }
 };
 
 export const getGitHubUserData = async (username: string) => {

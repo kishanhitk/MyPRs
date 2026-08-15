@@ -24,6 +24,9 @@ interface PRSectionsProps {
   totalCount: number;
   since: number | null;
   excludedRepoNames: string[];
+  /** Cursor to resume loading deeper history pages; null when complete. */
+  endCursor: string | null;
+  hasNext: boolean;
 }
 
 export default function PRSections({
@@ -34,10 +37,19 @@ export default function PRSections({
   totalCount,
   since,
   excludedRepoNames,
+  endCursor,
+  hasNext,
 }: PRSectionsProps) {
-  // The full history is already here; the window limits DOM size, not data.
+  // The server sends page 1 (100 PRs); the window limits DOM size and the
+  // sentinel pulls deeper data pages through /api/[username]/prs on scroll.
   const [visible, setVisible] = React.useState(INITIAL_WINDOW);
   const sentinelRef = React.useRef<HTMLLIElement>(null);
+  const [deeperPRs, setDeeperPRs] = React.useState<ProfilePR[]>([]);
+  const [paging, setPaging] = React.useState({ cursor: endCursor, hasNext });
+  const loadingRef = React.useRef(false);
+  // The observer callback can fire with a stale closure between a fetch
+  // resolving and the re-render; never fetch the same cursor twice.
+  const fetchedCursorsRef = React.useRef(new Set<string>());
 
   // Optimistic curation: the card moves the moment the star is pressed;
   // useOptimistic reverts to the server-derived lists if the action fails,
@@ -65,7 +77,7 @@ export default function PRSections({
     startTransition(async () => {
       addMove({ id: pr.id, featured: makeFeatured });
       const result = await toggleFeaturedAction({
-        prId: pr.id.toString(),
+        prUrl: pr.html_url,
         username,
       });
       setErrors((prev) => {
@@ -79,7 +91,7 @@ export default function PRSections({
 
   const serverFeatured = [
     ...featuredPRs.filter((p) => moves[p.id] !== false),
-    ...nonFeaturedPRs.filter((p) => moves[p.id] === true),
+    ...[...nonFeaturedPRs, ...deeperPRs].filter((p) => moves[p.id] === true),
   ];
 
   // Drag order lives locally until the action confirms; revalidated props
@@ -111,10 +123,13 @@ export default function PRSections({
     const ids = orderRef.current;
     if (!ids) return;
     posthog.capture("featured_reordered", { profile: username });
+    const byId = new Map(displayFeatured.map((p) => [p.id, p.html_url]));
     startTransition(async () => {
       const result = await reorderFeaturedAction({
         username,
-        orderedIds: ids.map(String),
+        orderedUrls: ids
+          .map((id) => byId.get(id))
+          .filter((url): url is string => Boolean(url)),
       });
       if (result?.error) {
         setOrderOverride(null);
@@ -124,14 +139,52 @@ export default function PRSections({
   };
 
   const canReorder = isOwner && curating && displayFeatured.length > 1;
+  const seenUrls = new Set(
+    [...featuredPRs, ...nonFeaturedPRs].map((p) => p.html_url)
+  );
+  const freshDeeper = deeperPRs.filter(
+    (p) => !seenUrls.has(p.html_url) && !excludedRepoNames.includes(p.repo)
+  );
   const displayRest = [
     ...nonFeaturedPRs.filter((p) => moves[p.id] !== true),
+    ...freshDeeper.filter((p) => moves[p.id] !== true),
     ...featuredPRs.filter((p) => moves[p.id] === false),
   ].sort(
     (a, b) => new Date(b.merged_at).getTime() - new Date(a.merged_at).getTime()
   );
 
-  const hasMore = visible < displayRest.length;
+  const hasMore = visible < displayRest.length || paging.hasNext;
+
+  const loadDeeperPage = React.useCallback(async () => {
+    if (!paging.hasNext || !paging.cursor || loadingRef.current) return;
+    if (fetchedCursorsRef.current.has(paging.cursor)) return;
+    loadingRef.current = true;
+    fetchedCursorsRef.current.add(paging.cursor);
+    try {
+      const params = new URLSearchParams({ cursor: paging.cursor });
+      const res = await fetch(`/api/${username}/prs?${params}`);
+      if (!res.ok) {
+        fetchedCursorsRef.current.delete(paging.cursor);
+        return; // sentinel stays; the next intersection retries
+      }
+      const page: {
+        items: ProfilePR[];
+        endCursor: string | null;
+        hasNext: boolean;
+      } = await res.json();
+      setPaging({ cursor: page.endCursor, hasNext: page.hasNext });
+      setDeeperPRs((prev) => {
+        const seen = new Set(prev.map((p) => p.html_url));
+        return [...prev, ...page.items.filter((p) => !seen.has(p.html_url))];
+      });
+      posthog.capture("history_page_loaded", { profile: username });
+    } catch {
+      fetchedCursorsRef.current.delete(paging.cursor);
+      // transient network failure — retry on the next intersection
+    } finally {
+      loadingRef.current = false;
+    }
+  }, [username, paging.cursor, paging.hasNext]);
 
   // One product event per profile view, with the numbers that matter.
   React.useEffect(() => {
@@ -149,29 +202,34 @@ export default function PRSections({
     if (!el || !hasMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisible((v) => {
-            posthog.capture("list_extended", {
-              profile: username,
-              shown_after: v + WINDOW_STEP,
-            });
-            return v + WINDOW_STEP;
+        if (!entries[0].isIntersecting) return;
+        setVisible((v) => {
+          posthog.capture("list_extended", {
+            profile: username,
+            shown_after: v + WINDOW_STEP,
           });
-        }
+          return v + WINDOW_STEP;
+        });
+        // Keep the data ahead of the window.
+        if (visible + WINDOW_STEP >= displayRest.length) void loadDeeperPage();
       },
       { rootMargin: "600px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, visible, displayRest.length, loadDeeperPage]);
 
   const shownRest = displayRest.slice(0, visible);
   const knownRepos = [
-    ...new Set([...featuredPRs, ...nonFeaturedPRs].map((p) => p.repo)),
+    ...new Set(
+      [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper].map((p) => p.repo)
+    ),
   ];
-  const allLoaded = [...featuredPRs, ...nonFeaturedPRs];
-  // The search API stops at 1000 results; beyond that the numbers are floors.
-  const capped = totalCount > 1000;
+  const allLoaded = [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper];
+  // Floors, not exact: search caps at 1000 results, and repo variety can
+  // only grow while deeper pages remain unloaded.
+  const capped = totalCount > 1000 || paging.hasNext;
 
   return (
     <>
