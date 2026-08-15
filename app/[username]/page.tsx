@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound as renderNotFound } from "next/navigation";
 import { connection } from "next/server";
 import { getProfileData } from "~/lib/profile";
 import { SITE_URL } from "~/lib/site";
@@ -38,8 +37,13 @@ export async function generateMetadata({
     title: `PRs by ${login} | MyPRs`,
     description,
     alternates: { canonical: `/${login}` },
-    // A transient failure page is thin content — keep it out of the index.
-    robots: data.loadError || data.prsDegraded ? { index: false } : undefined,
+    // Thin content stays out of the index: transient failures AND unknown
+    // usernames (a streamed response can't 404, so noindex is the signal —
+    // Google drops noindexed pages, which closes the soft-404 hole).
+    robots:
+      data.loadError || data.prsDegraded || data.notFound || !data.userData
+        ? { index: false }
+        : undefined,
     openGraph: {
       title: `PRs by ${login}`,
       description,
@@ -80,9 +84,10 @@ export default async function ProfilePage({
     ownerRowId,
   } = await getProfileData(username);
 
-  // A transient failure must never become the cached shell for an hour —
-  // degrade dynamically; the first healthy render becomes the shell.
-  if (loadError || prsDegraded) await connection();
+  // Transient failures and unknown usernames must never become cached
+  // shells — failures would stick for an hour, and the junk-URL space is
+  // unbounded. Render them dynamically; only healthy profiles cache.
+  if (loadError || prsDegraded || notFound || !userData) await connection();
 
   if (loadError && !userData) {
     return (
@@ -103,7 +108,22 @@ export default async function ProfilePage({
     );
   }
 
-  if (notFound || !userData) renderNotFound();
+  if (notFound || !userData) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-14">
+        <TrackEvent
+          name="profile_error"
+          props={{ profile: username, type: "not_found" }}
+        />
+        <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
+          No GitHub user named &ldquo;{username}&rdquo;.
+        </p>
+        <p className="font-mono mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          Yours is waiting at myprs.dev/&lt;your-github-username&gt;.
+        </p>
+      </div>
+    );
+  }
 
 
   const jsonLd = {
