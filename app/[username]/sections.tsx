@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import { notFound as renderNotFound } from "next/navigation";
 import { connection } from "next/server";
 import {
   getContributionCalendar,
@@ -53,7 +52,27 @@ export async function IdentitySection({ params }: { params: ParamsPromise }) {
     );
   }
 
-  if (notFound || !userData) renderNotFound();
+  // A streamed response can't 404 after the shell's 200 commits, and
+  // notFound() strands no-JS agents on the skeleton — render the message
+  // inline; generateMetadata already ships robots noindex for this case,
+  // and connection() keeps the unbounded junk-URL space out of the cache.
+  if (notFound || !userData) {
+    await connection();
+    return (
+      <>
+        <TrackEvent
+          name="profile_error"
+          props={{ profile: username, type: "not_found" }}
+        />
+        <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
+          No GitHub user named &ldquo;{username}&rdquo;.
+        </p>
+        <p className="font-mono mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          Yours is waiting at myprs.dev/&lt;your-github-username&gt;.
+        </p>
+      </>
+    );
+  }
 
   const ownerRowId = curationRow?.id as string | undefined;
 

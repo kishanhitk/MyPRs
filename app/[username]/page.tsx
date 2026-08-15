@@ -39,8 +39,13 @@ export async function generateMetadata({
     title: `PRs by ${login} | MyPRs`,
     description,
     alternates: { canonical: `/${login}` },
-    // A transient failure page is thin content — keep it out of the index.
-    robots: data.loadError || data.prsDegraded ? { index: false } : undefined,
+    // Thin content stays out of the index: transient failures AND unknown
+    // usernames (a streamed response can't 404, so noindex is the signal —
+    // Google drops noindexed pages, which closes the soft-404 hole).
+    robots:
+      data.loadError || data.prsDegraded || data.notFound || !data.userData
+        ? { index: false }
+        : undefined,
     openGraph: {
       title: `PRs by ${login}`,
       description,
