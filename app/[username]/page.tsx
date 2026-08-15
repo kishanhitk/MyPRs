@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { getProfileData } from "~/lib/profile";
 import ContributionGraph from "~/components/custom/ContributionGraph";
 import OwnerGate from "~/components/custom/OwnerGate";
@@ -67,6 +68,10 @@ export default async function ProfilePage({
     repoNames,
     ownerRowId,
   } = await getProfileData(username);
+
+  // A transient failure must never become the cached shell for an hour —
+  // degrade dynamically; the first healthy render becomes the shell.
+  if (loadError || prsDegraded) await connection();
 
   if (loadError && !userData) {
     return (
@@ -168,7 +173,7 @@ export default async function ProfilePage({
 
       {prsDegraded ? (
         <PRRetry username={username} reason={errorReason ?? "error"} />
-      ) : items.length ? (
+      ) : items.length || hasNext ? (
         <PRSections
           featuredPRs={featuredPRs}
           nonFeaturedPRs={nonFeaturedPRs}

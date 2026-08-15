@@ -83,8 +83,11 @@ export const getProfileData = cache(async (username: string) => {
       walked < MAX_FEATURED_WALK_PAGES &&
       !featuredPRUrls.every((url) => resolved.has(url))
     ) {
-      page = await searchMergedPRs(username, page.endCursor);
-      if (page.error) break;
+      // A transient failure must not clobber the last good cursor — the
+      // client resumes deep-loading from wherever the walk stopped.
+      const next = await searchMergedPRs(username, page.endCursor);
+      if (next.error) break;
+      page = next;
       loaded = [...loaded, ...page.items];
       page.items.forEach((i) => resolved.add(i.html_url));
       walked += 1;

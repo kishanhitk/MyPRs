@@ -1,3 +1,4 @@
+import { updateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { createClient } from "~/lib/supabase/server";
 
@@ -36,6 +37,13 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/?error=auth", url.origin));
     }
     const githubUsername = data.user?.user_metadata?.user_name;
+
+    if (githubUsername) {
+      // A profile viewed before its owner ever signed in cached a missing
+      // curation row (no ownerRowId) — without this purge the owner could
+      // not curate for up to an hour after their first login.
+      updateTag(`curation-${githubUsername}`);
+    }
 
     if ((!redirectUrl || redirectUrl === "/") && githubUsername) {
       redirectUrl = `/${githubUsername}`;

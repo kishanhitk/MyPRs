@@ -41,6 +41,8 @@ export async function GET(
     getGitHubUserData(username),
   ]);
 
+  // Never bake a transient failure into a cached social card.
+  const searchFailed = Boolean(prs.error);
   const total = prs.totalCount;
   const page1Repos = [...new Set(prs.items.map((i) => i.repo))];
   const deep = prs.hasNext ? await getDeepRepoNames(username, total) : [];
@@ -59,11 +61,13 @@ export async function GET(
   const handleLine = `@${username}`;
   const urlLine = `myprs.dev/${username}`;
 
-  const stats: Array<[string, string]> = [
-    [String(total), "merged PRs"],
-    ...(repoCount ? [[repos, "repositories"] as [string, string]] : []),
-    ...(since ? [[String(since), "since"] as [string, string]] : []),
-  ];
+  const stats: Array<[string, string]> = searchFailed
+    ? []
+    : [
+        [String(total), "merged PRs"],
+        ...(repoCount ? [[repos, "repositories"] as [string, string]] : []),
+        ...(since ? [[String(since), "since"] as [string, string]] : []),
+      ];
 
   const statBlock = ([value, label]: [string, string]) => (
     <div
@@ -204,7 +208,9 @@ export async function GET(
         { name: "Geist Mono", data: geistMono, weight: 400 },
       ],
       headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        "Cache-Control": searchFailed
+          ? "no-store"
+          : "public, s-maxage=3600, stale-while-revalidate=86400",
       },
     }
   );

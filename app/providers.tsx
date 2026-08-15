@@ -26,6 +26,17 @@ export function useSession() {
   return React.useContext(SessionContext);
 }
 
+// "View as visitor" preview — shared so every owner affordance (share,
+// curate, filter) hides together, not just the PR sections.
+const VisitorPreviewContext = React.createContext<{
+  previewing: boolean;
+  setPreviewing: (v: boolean) => void;
+}>({ previewing: false, setPreviewing: () => {} });
+
+export function useVisitorPreview() {
+  return React.useContext(VisitorPreviewContext);
+}
+
 // usePathname is request-dependent, which would block the static shell if
 // called in Providers itself; isolated here it streams in after prerender.
 function PageViewTracker({ ready }: { ready: boolean }) {
@@ -43,6 +54,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     undefined
   );
   const [posthogLoaded, setPosthogLoaded] = React.useState(false);
+  const [previewing, setPreviewing] = React.useState(false);
   const hadSessionRef = React.useRef(false);
 
   // Initialize PostHog once on the client.
@@ -104,10 +116,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SupabaseContext.Provider value={supabase}>
       <SessionContext.Provider value={session}>
-        <Suspense fallback={null}>
-          <PageViewTracker ready={posthogLoaded} />
-        </Suspense>
-        {children}
+        <VisitorPreviewContext.Provider value={{ previewing, setPreviewing }}>
+          <Suspense fallback={null}>
+            <PageViewTracker ready={posthogLoaded} />
+          </Suspense>
+          {children}
+        </VisitorPreviewContext.Provider>
       </SessionContext.Provider>
     </SupabaseContext.Provider>
   );

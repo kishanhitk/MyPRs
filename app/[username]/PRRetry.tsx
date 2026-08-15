@@ -10,6 +10,7 @@ import posthog from "posthog-js";
 // refresh re-renders the full page.
 const BASE_DELAY_MS = 8000;
 const MAX_DELAY_MS = 30000;
+const MAX_ATTEMPTS = 10;
 
 export default function PRRetry({
   username,
@@ -27,6 +28,7 @@ export default function PRRetry({
   }, [username]);
 
   React.useEffect(() => {
+    if (attempt >= MAX_ATTEMPTS) return;
     let cancelled = false;
     const delay =
       Math.min(BASE_DELAY_MS * (attempt + 1), MAX_DELAY_MS) +
@@ -61,9 +63,11 @@ export default function PRRetry({
         className="rail-line absolute bottom-2 left-3 top-0 w-[2px] rounded-full bg-zinc-200 dark:bg-zinc-800"
       />
       <p className="font-mono relative pl-10 text-sm text-zinc-500 dark:text-zinc-400">
-        {reason === "rate_limited"
-          ? "GitHub is rate-limiting us right now — the pull requests will load automatically in a moment."
-          : "GitHub isn't answering right now — retrying automatically."}
+        {attempt >= MAX_ATTEMPTS
+          ? "GitHub still isn't answering — reload the page to try again."
+          : reason === "rate_limited"
+            ? "GitHub is rate-limiting us right now — the pull requests will load automatically in a moment."
+            : "GitHub isn't answering right now — retrying automatically."}
       </p>
     </div>
   );

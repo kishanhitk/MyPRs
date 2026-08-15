@@ -4,7 +4,7 @@ import * as React from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
 import Link from "next/link";
 import posthog from "posthog-js";
-import { useSession } from "~/app/providers";
+import { useSession, useVisitorPreview } from "~/app/providers";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import {
@@ -53,7 +53,8 @@ export default function PRSections({
   const isActualOwner = Boolean(
     ownerRowId && session?.user?.id && session.user.id === ownerRowId
   );
-  const [previewVisitor, setPreviewVisitor] = React.useState(false);
+  const { previewing: previewVisitor, setPreviewing: setPreviewVisitor } =
+    useVisitorPreview();
   const isOwner = isActualOwner && !previewVisitor;
   const sentinelRef = React.useRef<HTMLLIElement>(null);
   const [deeperPRs, setDeeperPRs] = React.useState<ProfilePR[]>([]);
@@ -220,13 +221,12 @@ export default function PRSections({
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
-        setVisible((v) => {
-          posthog.capture("list_extended", {
-            profile: username,
-            shown_after: v + WINDOW_STEP,
-          });
-          return v + WINDOW_STEP;
+        // capture outside the updater — React may invoke updaters twice
+        posthog.capture("list_extended", {
+          profile: username,
+          shown_after: visible + WINDOW_STEP,
         });
+        setVisible((v) => v + WINDOW_STEP);
         // Keep the data ahead of the window.
         if (visible + WINDOW_STEP >= displayRest.length) void loadDeeperPage();
       },
