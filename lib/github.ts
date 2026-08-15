@@ -590,7 +590,10 @@ async function cachedContributionCalendar(
   username: string
 ): Promise<ContributionCalendar | null> {
   "use cache: remote";
-  cacheLife("hours");
+  // Contributions tolerate a day of staleness (today's square may lag);
+  // in exchange the hourly shell rebuild almost always finds this warm,
+  // so the graph lands with the identity instead of ~1s later.
+  cacheLife("days");
   cacheTag(`profile-${username}`);
   return rawContributionCalendar(username);
 }
