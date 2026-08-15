@@ -41,6 +41,7 @@ def run_sql(target: str, query: str):
         headers={
             "Authorization": f"Bearer {token}",
             "content-type": "application/json",
+            "User-Agent": "myprs-migration",
         },
         method="POST",
     )
