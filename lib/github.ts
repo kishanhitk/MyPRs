@@ -496,16 +496,10 @@ const LEVELS: Record<string, number> = {
   FOURTH_QUARTILE: 4,
 };
 
-/**
- * First-party contribution calendar via the GraphQL API (replaces the
- * ghchart.rshah.org hotlink). Requires GITHUB_TOKEN; returns null without
- * it so the profile simply omits the graph.
- */
-export const getContributionCalendar = async (
+// Throws so unstable_cache never stores a failed calendar.
+async function rawContributionCalendar(
   username: string
-): Promise<ContributionCalendar | null> => {
-  if (!process.env.GITHUB_TOKEN) return null;
-
+): Promise<ContributionCalendar | null> {
   const query = `query($login: String!) {
     user(login: $login) {
       contributionsCollection {
@@ -519,54 +513,80 @@ export const getContributionCalendar = async (
     }
   }`;
 
+  const response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ query, variables: { login: username } }),
+    // POST fetches never enter the Next data cache; unstable_cache below
+    // is the real cache for this call.
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  const json = await response.json();
+  const calendar =
+    json?.data?.user?.contributionsCollection?.contributionCalendar;
+  if (!calendar) {
+    // "no such user" is a valid, cacheable answer, not a failure.
+    if (response.ok && json?.errors?.[0]?.type === "NOT_FOUND") return null;
+    throw new GithubApiError(
+      json?.errors?.[0]?.message ?? json?.message ?? `GitHub HTTP ${response.status}`,
+      response.status,
+      response.headers.get("x-ratelimit-remaining"),
+      response.headers.get("x-ratelimit-reset"),
+      response.headers.get("retry-after")
+    );
+  }
+  return {
+    total: calendar.totalContributions,
+    weeks: calendar.weeks.map(
+      (week: {
+        contributionDays: {
+          contributionLevel: string;
+          contributionCount: number;
+          date: string;
+        }[];
+      }) =>
+        week.contributionDays.map(
+          (day) =>
+            [
+              LEVELS[day.contributionLevel] ?? 0,
+              day.contributionCount,
+              day.date,
+            ] as [number, number, string]
+        )
+    ),
+  };
+}
+
+const cachedContributionCalendar = unstable_cache(
+  rawContributionCalendar,
+  ["gh-contribution-calendar"],
+  { revalidate: 3600 }
+);
+
+/**
+ * First-party contribution calendar via the GraphQL API. Requires
+ * GITHUB_TOKEN; returns null without it (or on failure) so the profile
+ * simply omits the graph.
+ */
+export const getContributionCalendar = async (
+  username: string
+): Promise<ContributionCalendar | null> => {
+  if (!process.env.GITHUB_TOKEN) return null;
   try {
-    const response = await fetch("https://api.github.com/graphql", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ query, variables: { login: username } }),
-      next: { revalidate: 3600 },
-      signal: AbortSignal.timeout(8000),
-    });
-    const json = await response.json();
-    const calendar =
-      json?.data?.user?.contributionsCollection?.contributionCalendar;
-    if (!calendar) {
-      reportGithubFailure({
-        source: "graphql",
-        status: response.status,
-        message: json?.errors?.[0]?.message ?? json?.message,
-        headers: response.headers,
-      });
-      return null;
-    }
-    return {
-      total: calendar.totalContributions,
-      weeks: calendar.weeks.map(
-        (week: {
-          contributionDays: {
-            contributionLevel: string;
-            contributionCount: number;
-            date: string;
-          }[];
-        }) =>
-          week.contributionDays.map(
-            (day) =>
-              [
-                LEVELS[day.contributionLevel] ?? 0,
-                day.contributionCount,
-                day.date,
-              ] as [number, number, string]
-          )
-      ),
-    };
+    return await cachedContributionCalendar(username);
   } catch (error) {
+    const apiError = error instanceof GithubApiError ? error : null;
     reportGithubFailure({
       source: "graphql",
-      status: 0,
+      status: apiError?.status ?? 0,
       message: error instanceof Error ? error.message : String(error),
+      rateLimitRemaining: apiError?.rateLimitRemaining,
+      rateLimitReset: apiError?.rateLimitReset,
+      retryAfter: apiError?.retryAfter,
     });
     return null;
   }
