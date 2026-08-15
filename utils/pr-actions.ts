@@ -1,12 +1,17 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "~/lib/supabase/server";
 
+// featured_github_prs stores canonical PR URLs — the only identifier the
+// REST and GraphQL search engines agree on (their numeric ids differ).
+const PR_URL = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+$/;
+
 export async function toggleFeaturedAction(input: {
-  prId: string;
+  prUrl: string;
   username: string;
 }) {
+  if (!PR_URL.test(input.prUrl)) return { error: "Invalid PR" };
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,9 +31,9 @@ export async function toggleFeaturedAction(input: {
   }
 
   const current: string[] = row?.featured_github_prs ?? [];
-  const updated = current.includes(input.prId)
-    ? current.filter((id) => id !== input.prId)
-    : [...current, input.prId];
+  const updated = current.includes(input.prUrl)
+    ? current.filter((url) => url !== input.prUrl)
+    : [...current, input.prUrl];
 
   const { error } = await supabase
     .from("users")
@@ -36,6 +41,9 @@ export async function toggleFeaturedAction(input: {
     .eq("id", user.id);
   if (error) console.error(error);
 
+  // updateTag (not revalidateTag): the owner just edited — they must see
+  // the change on the next render, not a stale-while-revalidate shell.
+  updateTag(`curation-${input.username}`);
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };
 }
@@ -59,6 +67,9 @@ export async function saveExcludedReposAction(input: {
     .eq("id", user.id);
   if (error) console.error(error);
 
+  // updateTag (not revalidateTag): the owner just edited — they must see
+  // the change on the next render, not a stale-while-revalidate shell.
+  updateTag(`curation-${input.username}`);
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };
 }
@@ -70,8 +81,11 @@ export async function saveExcludedReposAction(input: {
  */
 export async function reorderFeaturedAction(input: {
   username: string;
-  orderedIds: string[];
+  orderedUrls: string[];
 }) {
+  if (!input.orderedUrls.every((url) => PR_URL.test(url))) {
+    return { error: "Invalid PR" };
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -91,23 +105,26 @@ export async function reorderFeaturedAction(input: {
   // featured if their repo is un-excluded later.
   const current: string[] = row?.featured_github_prs ?? [];
   const currentSet = new Set(current);
-  const orderedSet = new Set(input.orderedIds);
+  const orderedSet = new Set(input.orderedUrls);
   const valid =
-    orderedSet.size === input.orderedIds.length &&
-    input.orderedIds.every((id) => currentSet.has(id));
+    orderedSet.size === input.orderedUrls.length &&
+    input.orderedUrls.every((url) => currentSet.has(url));
   if (!valid) {
     return { error: "Order is out of date — refresh and try again" };
   }
 
   const next = [
-    ...input.orderedIds,
-    ...current.filter((id) => !orderedSet.has(id)),
+    ...input.orderedUrls,
+    ...current.filter((url) => !orderedSet.has(url)),
   ];
   const { error } = await supabase
     .from("users")
     .update({ featured_github_prs: next })
     .eq("id", user.id);
 
+  // updateTag (not revalidateTag): the owner just edited — they must see
+  // the change on the next render, not a stale-while-revalidate shell.
+  updateTag(`curation-${input.username}`);
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };
 }

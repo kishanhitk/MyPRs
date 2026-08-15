@@ -3,8 +3,19 @@
 import * as React from "react";
 import clsx from "clsx";
 import { MoonIcon, SunIcon, LaptopIcon } from "lucide-react";
-import { useRequestInfo } from "~/utils/request-info";
-import { setThemeAction, type ThemeMode } from "~/utils/theme-actions";
+export type ThemeMode = "system" | "light" | "dark";
+
+const THEME_COOKIE = "en_theme";
+const ONE_YEAR = 60 * 60 * 24 * 365;
+
+function getCookieMode(): ThemeMode {
+  const match = document.cookie.match(/(?:^|;\s*)en_theme=(light|dark)/);
+  return (match?.[1] as ThemeMode) ?? "system";
+}
+
+function emptySubscribe() {
+  return () => {};
+}
 
 const iconTransformOrigin = { transformOrigin: "50% 100px" };
 
@@ -25,16 +36,30 @@ export default function DarkModeToggle({
 }: {
   variant?: "icon" | "labelled";
 }) {
-  const requestInfo = useRequestInfo();
-  const serverMode: ThemeMode = requestInfo.userPrefs.theme ?? "system";
-  const [mode, setMode] = React.useState<ThemeMode>(serverMode);
-  const [, startTransition] = React.useTransition();
+  // Hydration-safe cookie read: the static shell renders "system" and the
+  // client snapshot corrects it; clicks act through the local override.
+  const cookieMode = React.useSyncExternalStore(
+    emptySubscribe,
+    getCookieMode,
+    () => "system" as ThemeMode
+  );
+  const [override, setOverride] = React.useState<ThemeMode | null>(null);
+  const mode = override ?? cookieMode;
+
+  // In system mode, follow live OS theme changes.
+  React.useEffect(() => {
+    if (mode !== "system") return;
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => applyTheme("system");
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, [mode]);
 
   const nextMode: ThemeMode =
     mode === "system" ? "light" : mode === "light" ? "dark" : "system";
 
   const handleClick = () => {
-    setMode(nextMode);
+    setOverride(nextMode);
     // Ease the brightness jump: cross-fade the whole page via the View
     // Transitions API where available; hard cut under reduced motion.
     const flip = () => applyTheme(nextMode);
@@ -50,13 +75,13 @@ export default function DarkModeToggle({
     } else {
       flip();
     }
-    startTransition(async () => {
-      try {
-        await setThemeAction(nextMode);
-      } catch (error) {
-        console.error("Failed to persist theme:", error);
-      }
-    });
+    // Client-owned persistence: the pre-paint script in the layout reads
+    // this cookie, so no server round-trip is involved anywhere.
+    if (nextMode === "system") {
+      document.cookie = `${THEME_COOKIE}=; Path=/; Max-Age=0`;
+    } else {
+      document.cookie = `${THEME_COOKIE}=${nextMode}; Path=/; Max-Age=${ONE_YEAR}`;
+    }
   };
 
   const iconSpanClassName =

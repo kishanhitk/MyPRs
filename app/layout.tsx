@@ -2,12 +2,7 @@ import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
-import { ClientHintCheck } from "~/utils/ClientHintCheck";
-import { getHints } from "~/utils/client-hints";
-import { getTheme } from "~/utils/theme.server";
-import { createClient } from "~/lib/supabase/server";
 import { Header } from "~/components/custom/Header";
 import { Providers } from "./providers";
 
@@ -20,36 +15,29 @@ export const metadata: Metadata = {
     "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
 };
 
-export default async function RootLayout({
+// Pre-paint theme: explicit cookie first, OS preference otherwise. Keeping
+// this out of the server render is what lets every route prerender — a
+// cookies() read here would dynamize the whole app.
+const THEME_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)en_theme=(light|dark)/);var t=m?m[1]:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");var c=document.documentElement.classList;c.toggle("dark",t==="dark");c.toggle("light",t!=="dark");}catch(e){}})();`;
+
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const hints = getHints(cookieStore.toString());
-  const userPrefs = { theme: await getTheme() };
-  const theme = userPrefs.theme ?? hints.theme;
-
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   return (
     <html
       lang="en"
-      className={`${theme} ${GeistSans.variable} ${GeistMono.variable}`}
+      className={`light ${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <head>
-        <ClientHintCheck />
+        {/* biome-ignore-like note: must run before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="max-w-4xl mx-auto bg-[#fdfafa] dark:bg-[#191919]">
-        <Providers
-          serverAccessToken={session?.access_token}
-          requestInfo={{ hints, userPrefs }}
-        >
-          <Header user={session?.user ?? null} />
+        <Providers>
+          <Header />
           {children}
         </Providers>
         <Analytics />

@@ -1,18 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import type { User } from "@supabase/supabase-js";
 import posthog from "posthog-js";
 import PullRequestIcon from "./PullRequestIcon";
 import DarkModeToggle from "./DarkModeToggle";
-import { useSupabase } from "~/app/providers";
+import { useSession, useSupabase } from "~/app/providers";
 
-interface HeaderProps {
-  user: User | null;
-}
-
-export const Header = ({ user }: HeaderProps) => {
+export const Header = () => {
   const supabase = useSupabase();
+  // Static shell renders the signed-out state; the label corrects itself
+  // once the client session resolves.
+  const user = useSession()?.user ?? null;
 
   const handleGitHubLogin = async () => {
     posthog.capture("login_clicked", { source: "header" });

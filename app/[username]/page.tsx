@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
-import { createClient } from "~/lib/supabase/server";
+import { connection } from "next/server";
 import { getProfileData } from "~/lib/profile";
 import ContributionGraph from "~/components/custom/ContributionGraph";
+import OwnerGate from "~/components/custom/OwnerGate";
 import ShareProfile from "~/components/custom/ShareProfile";
 import TrackEvent from "~/components/custom/TrackEvent";
+import PRRetry from "./PRRetry";
 import PRSections from "./PRSections";
 
-async function getDomain() {
-  const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("host");
-  return `${proto}://${host}`;
-}
+// Cold shell generation performs the full GitHub fill (search, calendar,
+// repo breakdown, featured walk) — comfortably done in seconds, but past
+// Vercel's 10s default. A timeout mid-fill also discards the cache writes,
+// which turns one slow request into a permanent timeout loop.
+export const maxDuration = 60;
 
 export async function generateMetadata({
   params,
@@ -21,10 +21,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const data = await getProfileData(username);
-  const domain = await getDomain();
   const login = data.userData?.login ?? username;
   const userAvatar = data.userData?.avatar_url;
-  const featuredPRsCount = data.featuredPRs.length;
 
   return {
     title: `PRs by ${login} | MyPRs`,
@@ -34,35 +32,29 @@ export async function generateMetadata({
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
       url: "https://myprs.dev/",
-      images: [`${domain}/api/${username}/og`],
+      images: [`/api/${username}/og`],
     },
     twitter: {
       card: "summary_large_image",
       title: "MyPRs - One link to highlight your Open-Source Contributions",
       description:
         "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-      images: [
-        `${domain}/api/${username}/og?avatar=${userAvatar}`,
-      ],
+      images: [`/api/${username}/og?avatar=${userAvatar}`],
     },
   };
 }
 
 export default async function ProfilePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ as?: string }>;
 }) {
   const { username } = await params;
-  const { as: viewAs } = await searchParams;
-  const asVisitor = viewAs === "visitor";
   const {
     notFound,
     loadError,
+    prsDegraded,
     errorReason,
-    errorStatus,
     userData,
     items,
     totalCount,
@@ -71,17 +63,15 @@ export default async function ProfilePage({
     featuredPRs,
     nonFeaturedPRs,
     excludedGitHubRepos,
+    endCursor,
+    hasNext,
+    repoNames,
     ownerRowId,
   } = await getProfileData(username);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const isActualOwner = Boolean(user && ownerRowId && user.id === ownerRowId);
-  // ?as=visitor renders the page exactly as a stranger sees it.
-  const isOwner = isActualOwner && !asVisitor;
-
+  // A transient failure must never become the cached shell for an hour —
+  // degrade dynamically; the first healthy render becomes the shell.
+  if (loadError || prsDegraded) await connection();
 
   if (loadError && !userData) {
     return (
@@ -92,7 +82,6 @@ export default async function ProfilePage({
             profile: username,
             type: "load_error",
             reason: errorReason ?? "error",
-            status: errorStatus ?? 0,
           }}
         />
         <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
@@ -162,12 +151,10 @@ export default async function ProfilePage({
                 </a>
               </>
             ) : null}
-            {isOwner ? (
-              <>
-                {" · "}
-                <ShareProfile username={username} />
-              </>
-            ) : null}
+            <OwnerGate ownerRowId={ownerRowId}>
+              {" · "}
+              <ShareProfile username={username} />
+            </OwnerGate>
           </p>
         </div>
       </header>
@@ -184,29 +171,24 @@ export default async function ProfilePage({
         </div>
       ) : null}
 
-      {isActualOwner && asVisitor ? (
-        <a
-          href={`/${username}`}
-          className="drag-glass font-mono fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full px-4 py-2 text-xs text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
-        >
-          viewing as visitor · exit
-        </a>
-      ) : null}
-
-      {items.length ? (
+      {prsDegraded ? (
+        <PRRetry username={username} reason={errorReason ?? "error"} />
+      ) : items.length || hasNext ? (
         <PRSections
           featuredPRs={featuredPRs}
           nonFeaturedPRs={nonFeaturedPRs}
-          isOwner={isOwner}
+          ownerRowId={ownerRowId}
           username={username}
           totalCount={totalCount}
           since={sinceYear}
           excludedRepoNames={excludedGitHubRepos}
+          endCursor={endCursor}
+          hasNext={hasNext}
+          repoNames={repoNames}
         />
       ) : (
         <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">
-          No public merged PRs in the last three years.
-          {isOwner ? " Go make some! 🚀" : ""}
+          No public merged PRs yet.
         </p>
       )}
     </div>

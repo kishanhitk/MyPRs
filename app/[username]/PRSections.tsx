@@ -4,6 +4,7 @@ import * as React from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
 import Link from "next/link";
 import posthog from "posthog-js";
+import { useSession, useVisitorPreview } from "~/app/providers";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import {
@@ -19,25 +20,49 @@ const WINDOW_STEP = 90;
 interface PRSectionsProps {
   featuredPRs: ProfilePR[];
   nonFeaturedPRs: ProfilePR[];
-  isOwner: boolean;
+  ownerRowId: string | undefined;
   username: string;
   totalCount: number;
   since: number | null;
   excludedRepoNames: string[];
+  /** Cursor to resume loading deeper history pages; null when complete. */
+  endCursor: string | null;
+  hasNext: boolean;
+  /** Exact full repo list (incl. excluded); null = unknown, show a floor. */
+  repoNames: string[] | null;
 }
 
 export default function PRSections({
   featuredPRs,
   nonFeaturedPRs,
-  isOwner,
+  ownerRowId,
   username,
   totalCount,
   since,
   excludedRepoNames,
+  endCursor,
+  hasNext,
+  repoNames,
 }: PRSectionsProps) {
-  // The full history is already here; the window limits DOM size, not data.
+  // The server sends page 1 (100 PRs); the window limits DOM size and the
+  // sentinel pulls deeper data pages through /api/[username]/prs on scroll.
   const [visible, setVisible] = React.useState(INITIAL_WINDOW);
+  // Owner affordances hydrate from the client session — the static shell
+  // is identical for everyone. "View as visitor" is a client-side preview.
+  const session = useSession();
+  const isActualOwner = Boolean(
+    ownerRowId && session?.user?.id && session.user.id === ownerRowId
+  );
+  const { previewing: previewVisitor, setPreviewing: setPreviewVisitor } =
+    useVisitorPreview();
+  const isOwner = isActualOwner && !previewVisitor;
   const sentinelRef = React.useRef<HTMLLIElement>(null);
+  const [deeperPRs, setDeeperPRs] = React.useState<ProfilePR[]>([]);
+  const [paging, setPaging] = React.useState({ cursor: endCursor, hasNext });
+  const loadingRef = React.useRef(false);
+  // The observer callback can fire with a stale closure between a fetch
+  // resolving and the re-render; never fetch the same cursor twice.
+  const fetchedCursorsRef = React.useRef(new Set<string>());
 
   // Optimistic curation: the card moves the moment the star is pressed;
   // useOptimistic reverts to the server-derived lists if the action fails,
@@ -65,7 +90,7 @@ export default function PRSections({
     startTransition(async () => {
       addMove({ id: pr.id, featured: makeFeatured });
       const result = await toggleFeaturedAction({
-        prId: pr.id.toString(),
+        prUrl: pr.html_url,
         username,
       });
       setErrors((prev) => {
@@ -79,7 +104,7 @@ export default function PRSections({
 
   const serverFeatured = [
     ...featuredPRs.filter((p) => moves[p.id] !== false),
-    ...nonFeaturedPRs.filter((p) => moves[p.id] === true),
+    ...[...nonFeaturedPRs, ...deeperPRs].filter((p) => moves[p.id] === true),
   ];
 
   // Drag order lives locally until the action confirms; revalidated props
@@ -111,10 +136,13 @@ export default function PRSections({
     const ids = orderRef.current;
     if (!ids) return;
     posthog.capture("featured_reordered", { profile: username });
+    const byId = new Map(displayFeatured.map((p) => [p.id, p.html_url]));
     startTransition(async () => {
       const result = await reorderFeaturedAction({
         username,
-        orderedIds: ids.map(String),
+        orderedUrls: ids
+          .map((id) => byId.get(id))
+          .filter((url): url is string => Boolean(url)),
       });
       if (result?.error) {
         setOrderOverride(null);
@@ -124,57 +152,116 @@ export default function PRSections({
   };
 
   const canReorder = isOwner && curating && displayFeatured.length > 1;
+  const seenUrls = new Set(
+    [...featuredPRs, ...nonFeaturedPRs].map((p) => p.html_url)
+  );
+  const freshDeeper = deeperPRs.filter(
+    (p) => !seenUrls.has(p.html_url) && !excludedRepoNames.includes(p.repo)
+  );
   const displayRest = [
     ...nonFeaturedPRs.filter((p) => moves[p.id] !== true),
+    ...freshDeeper.filter((p) => moves[p.id] !== true),
     ...featuredPRs.filter((p) => moves[p.id] === false),
   ].sort(
     (a, b) => new Date(b.merged_at).getTime() - new Date(a.merged_at).getTime()
   );
 
-  const hasMore = visible < displayRest.length;
+  const hasMore = visible < displayRest.length || paging.hasNext;
+
+  const loadDeeperPage = React.useCallback(async () => {
+    if (!paging.hasNext || !paging.cursor || loadingRef.current) return;
+    if (fetchedCursorsRef.current.has(paging.cursor)) return;
+    loadingRef.current = true;
+    fetchedCursorsRef.current.add(paging.cursor);
+    try {
+      const params = new URLSearchParams({ cursor: paging.cursor });
+      const res = await fetch(`/api/${username}/prs?${params}`);
+      if (!res.ok) {
+        fetchedCursorsRef.current.delete(paging.cursor);
+        return; // sentinel stays; the next intersection retries
+      }
+      const page: {
+        items: ProfilePR[];
+        endCursor: string | null;
+        hasNext: boolean;
+      } = await res.json();
+      setPaging({ cursor: page.endCursor, hasNext: page.hasNext });
+      setDeeperPRs((prev) => {
+        const seen = new Set(prev.map((p) => p.html_url));
+        return [...prev, ...page.items.filter((p) => !seen.has(p.html_url))];
+      });
+      posthog.capture("history_page_loaded", { profile: username });
+    } catch {
+      fetchedCursorsRef.current.delete(paging.cursor);
+      // transient network failure — retry on the next intersection
+    } finally {
+      loadingRef.current = false;
+    }
+  }, [username, paging.cursor, paging.hasNext]);
 
   // One product event per profile view, with the numbers that matter.
+  // Held until the session resolves (undefined -> null | Session) so
+  // is_owner is the truth, not a race; the ref keeps it to one capture.
+  const viewCapturedRef = React.useRef(false);
   React.useEffect(() => {
+    if (session === undefined || viewCapturedRef.current) return;
+    viewCapturedRef.current = true;
     posthog.capture("profile_viewed", {
       profile: username,
-      is_owner: isOwner,
+      is_owner: isActualOwner,
       total_prs: totalCount,
       featured_count: featuredPRs.length,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username]);
+  }, [username, session]);
 
   React.useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !hasMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisible((v) => {
-            posthog.capture("list_extended", {
-              profile: username,
-              shown_after: v + WINDOW_STEP,
-            });
-            return v + WINDOW_STEP;
-          });
-        }
+        if (!entries[0].isIntersecting) return;
+        // capture outside the updater — React may invoke updaters twice
+        posthog.capture("list_extended", {
+          profile: username,
+          shown_after: visible + WINDOW_STEP,
+        });
+        setVisible((v) => v + WINDOW_STEP);
+        // Keep the data ahead of the window.
+        if (visible + WINDOW_STEP >= displayRest.length) void loadDeeperPage();
       },
       { rootMargin: "600px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, visible, displayRest.length, loadDeeperPage]);
 
   const shownRest = displayRest.slice(0, visible);
-  const knownRepos = [
-    ...new Set([...featuredPRs, ...nonFeaturedPRs].map((p) => p.repo)),
-  ];
-  const allLoaded = [...featuredPRs, ...nonFeaturedPRs];
-  // The search API stops at 1000 results; beyond that the numbers are floors.
-  const capped = totalCount > 1000;
+  // Exact when the repo breakdown resolved; loaded-derived floor otherwise.
+  const knownRepos = repoNames
+    ? repoNames.filter((r) => !excludedRepoNames.includes(r))
+    : [
+        ...new Set(
+          [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper].map((p) => p.repo)
+        ),
+      ];
+  const allLoaded = [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper];
+  // Search caps at 1000 results; without the breakdown the repo list is
+  // also a floor while deeper pages remain unloaded.
+  const capped = totalCount > 1000 || (!repoNames && paging.hasNext);
 
   return (
     <>
+      {previewVisitor ? (
+        <button
+          type="button"
+          onClick={() => setPreviewVisitor(false)}
+          className="drag-glass font-mono fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full px-4 py-2 text-xs text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
+        >
+          viewing as visitor · exit
+        </button>
+      ) : null}
       <p
         className="rise font-mono mt-5 text-[13px] text-zinc-500 dark:text-zinc-400"
         style={{ "--d": "60ms" } as React.CSSProperties}
@@ -196,15 +283,16 @@ export default function PRSections({
             username={username}
           />
           <div className="flex shrink-0 items-baseline gap-2">
-            <Link
-              href={`/${username}?as=visitor`}
-              onClick={() =>
-                posthog.capture("view_as_visitor", { profile: username })
-              }
+            <button
+              type="button"
+              onClick={() => {
+                posthog.capture("view_as_visitor", { profile: username });
+                setPreviewVisitor(true);
+              }}
               className="font-mono text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
             >
               view as visitor
-            </Link>
+            </button>
             <span aria-hidden className="font-mono text-xs text-zinc-300 dark:text-zinc-700">
               ·
             </span>
@@ -310,11 +398,15 @@ export default function PRSections({
           )
         ) : null}
 
-        {shownRest.length ? (
+        {/* hasMore keeps the sentinel mounted even when every visible PR
+            was filtered out of page 1 — deeper pages stay reachable */}
+        {shownRest.length || hasMore ? (
           <>
-            <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
-              All PRs
-            </h2>
+            {shownRest.length ? (
+              <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
+                All PRs
+              </h2>
+            ) : null}
             <ul>
               <AnimatePresence mode="popLayout" initial={false}>
                 {shownRest.map((item) => (

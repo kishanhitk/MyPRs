@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
 import {
-  getAllMergedPRs,
-  getFirstMergedYear,
+  getDeepRepoNames,
   getGitHubUserData,
+  searchMergedPRs,
 } from "~/lib/github";
 import type { GithubUser } from "~/types/shared";
 
@@ -13,6 +13,8 @@ const BG = "#FAFAF9";
 
 const PR_ICON_PATH =
   "M305.8 2.1C314.4 5.9 320 14.5 320 24V72h16c66.3 0 120 53.7 120 120V355.7c32.5 10.2 56 40.5 56 76.3c0 44.2-35.8 80-80 80s-80-35.8-80-80c0-35.8 23.5-66.1 56-76.3V192c0-39.8-32.2-72-72-72H320v48c0 9.5-5.6 18.1-14.2 21.9s-18.8 2.3-25.8-4.1l-80-72c-5.1-4.6-7.9-11-7.9-17.8s2.9-13.3 7.9-17.8l80-72c7-6.3 17.2-7.9 25.8-4.1zM112 80A32 32 0 1 0 48 80a32 32 0 1 0 64 0zm-8 76.3V355.7c32.5 10.2 56 40.5 56 76.3c0 44.2-35.8 80-80 80s-80-35.8-80-80c0-35.8 23.5-66.1 56-76.3V156.3C23.5 146.1 0 115.8 0 80C0 35.8 35.8 0 80 0s80 35.8 80 80c0 35.8-23.5 66.1-56 76.3zM112 432a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm320 32a32 32 0 1 0 0-64 32 32 0 1 0 0 64z";
+
+export const maxDuration = 60;
 
 export async function GET(
   request: Request,
@@ -27,35 +29,45 @@ export async function GET(
 
   // Font files ride the same 1h data cache as the PR history; after one
   // profile render this whole route serves from cache.
-  const [geistSemiBold, geistMono, prs, user, since] = await Promise.all([
+  const [geistSemiBold, geistMono, prs, user] = await Promise.all([
     fetch(`${domain}/assets/Geist-SemiBold.ttf`, { cache: "force-cache" }).then(
       (r) => r.arrayBuffer()
     ),
     fetch(`${domain}/assets/GeistMono-Regular.ttf`, {
       cache: "force-cache",
     }).then((r) => r.arrayBuffer()),
-    getAllMergedPRs(username),
+    // One batched GraphQL request: page 1, total, and the since-year probe.
+    searchMergedPRs(username),
     getGitHubUserData(username),
-    // Exact first-merged-PR year even past the 1000-result search cap.
-    getFirstMergedYear(username),
   ]);
 
-  const items = prs.data?.items ?? [];
-  const total = prs.data?.total_count ?? 0;
-  const repos = new Set(
-    items.map((i) => i.repository_url.slice(29))
-  ).size;
+  // Never bake a transient failure into a cached social card.
+  const searchFailed = Boolean(prs.error);
+  const total = prs.totalCount;
+  const page1Repos = [...new Set(prs.items.map((i) => i.repo))];
+  const deep = prs.hasNext ? await getDeepRepoNames(username, total) : [];
+  const repoCount = deep
+    ? new Set([...page1Repos, ...deep]).size
+    : page1Repos.length;
+  // Exact unless the breakdown failed or the 1000-result cap hides history.
+  const repos =
+    (deep === null || total > 1000) && repoCount
+      ? `${repoCount}+`
+      : String(repoCount);
+  const since = prs.sinceYear;
   const name = (user.data as GithubUser | null)?.name ?? username;
 
   // Satori needs single text children.
   const handleLine = `@${username}`;
   const urlLine = `myprs.dev/${username}`;
 
-  const stats: Array<[string, string]> = [
-    [String(total), "merged PRs"],
-    ...(repos ? [[String(repos), "repositories"] as [string, string]] : []),
-    ...(since ? [[String(since), "since"] as [string, string]] : []),
-  ];
+  const stats: Array<[string, string]> = searchFailed
+    ? []
+    : [
+        [String(total), "merged PRs"],
+        ...(repoCount ? [[repos, "repositories"] as [string, string]] : []),
+        ...(since ? [[String(since), "since"] as [string, string]] : []),
+      ];
 
   const statBlock = ([value, label]: [string, string]) => (
     <div
@@ -196,7 +208,9 @@ export async function GET(
         { name: "Geist Mono", data: geistMono, weight: 400 },
       ],
       headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        "Cache-Control": searchFailed
+          ? "no-store"
+          : "public, s-maxage=3600, stale-while-revalidate=86400",
       },
     }
   );

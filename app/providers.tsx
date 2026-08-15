@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import posthog from "posthog-js";
 import { createClient } from "~/lib/supabase/client";
-import { RequestInfoProvider, type RequestInfo } from "~/utils/request-info";
 
 const SupabaseContext = React.createContext<SupabaseClient | null>(null);
 
@@ -15,20 +15,47 @@ export function useSupabase() {
   return client;
 }
 
-export function Providers({
-  serverAccessToken,
-  requestInfo,
-  children,
-}: {
-  serverAccessToken: string | undefined;
-  requestInfo: RequestInfo;
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
+// The static shell renders the visitor view for everyone; owner and login
+// affordances hydrate from this client-side session. undefined = still
+// resolving (render nothing owner-specific yet), null = signed out.
+const SessionContext = React.createContext<Session | null | undefined>(
+  undefined
+);
+
+export function useSession() {
+  return React.useContext(SessionContext);
+}
+
+// "View as visitor" preview — shared so every owner affordance (share,
+// curate, filter) hides together, not just the PR sections.
+const VisitorPreviewContext = React.createContext<{
+  previewing: boolean;
+  setPreviewing: (v: boolean) => void;
+}>({ previewing: false, setPreviewing: () => {} });
+
+export function useVisitorPreview() {
+  return React.useContext(VisitorPreviewContext);
+}
+
+// usePathname is request-dependent, which would block the static shell if
+// called in Providers itself; isolated here it streams in after prerender.
+function PageViewTracker({ ready }: { ready: boolean }) {
   const pathname = usePathname();
+  React.useEffect(() => {
+    if (ready) posthog.capture("$pageview");
+  }, [ready, pathname]);
+  return null;
+}
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [supabase] = React.useState(() => createClient());
+  const [session, setSession] = React.useState<Session | null | undefined>(
+    undefined
+  );
   const [posthogLoaded, setPosthogLoaded] = React.useState(false);
-  const hadSessionRef = React.useRef(Boolean(serverAccessToken));
+  const [previewing, setPreviewing] = React.useState(false);
+  const hadSessionRef = React.useRef(false);
 
   // Initialize PostHog once on the client.
   React.useEffect(() => {
@@ -51,47 +78,51 @@ export function Providers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Manual pageview capture on route change.
-  React.useEffect(() => {
-    if (posthogLoaded) posthog.capture("$pageview");
-  }, [posthogLoaded, pathname]);
-
-  // Keep server and client auth in sync: refresh RSC data when the token
-  // diverges from the server-rendered session.
   React.useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      // Ignore background token refreshes — they change the access_token on a
-      // ~hourly cadence and would otherwise re-fetch every Server Component.
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Background token refreshes change the access_token hourly; they
+      // are not a state change the UI cares about.
       if (event === "TOKEN_REFRESHED") return;
+      setSession(nextSession);
       // Re-assert identity on every session (INITIAL_SESSION included) so a
       // returning visitor maps to their person even after a cookie reset.
-      if (session?.user?.id && posthogLoaded) {
+      if (nextSession?.user?.id && posthogLoaded) {
         try {
-          posthog.identify(session.user.id, {
-            email: session.user.email,
-            github_username: session.user.user_metadata?.user_name,
-            name: session.user.user_metadata?.full_name,
-            avatar_url: session.user.user_metadata?.avatar_url,
+          posthog.identify(nextSession.user.id, {
+            email: nextSession.user.email,
+            github_username: nextSession.user.user_metadata?.user_name,
+            name: nextSession.user.user_metadata?.full_name,
+            avatar_url: nextSession.user.user_metadata?.avatar_url,
           });
           if (event === "SIGNED_IN" && !hadSessionRef.current) {
             posthog.capture("login_completed");
           }
         } catch {}
       }
-      hadSessionRef.current = Boolean(session);
-      if (session?.access_token !== serverAccessToken) {
+      const had = hadSessionRef.current;
+      hadSessionRef.current = Boolean(nextSession);
+      // Login/logout changes what server actions may do; refresh RSC data
+      // only on a real transition, never on the initial resolution.
+      if (event === "SIGNED_OUT" || (event === "SIGNED_IN" && !had)) {
         router.refresh();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [serverAccessToken, router, posthogLoaded, supabase]);
+  }, [router, posthogLoaded, supabase]);
 
   return (
     <SupabaseContext.Provider value={supabase}>
-      <RequestInfoProvider value={requestInfo}>{children}</RequestInfoProvider>
+      <SessionContext.Provider value={session}>
+        <VisitorPreviewContext.Provider value={{ previewing, setPreviewing }}>
+          <Suspense fallback={null}>
+            <PageViewTracker ready={posthogLoaded} />
+          </Suspense>
+          {children}
+        </VisitorPreviewContext.Provider>
+      </SessionContext.Provider>
     </SupabaseContext.Provider>
   );
 }

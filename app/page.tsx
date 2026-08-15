@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { Button } from "~/components/ui/button";
 import { Highlighter } from "~/components/ui/highlighter";
 import { AnimatedShinyText } from "~/components/ui/animated-shiny-text";
-import { createClient } from "~/lib/supabase/server";
 import { getProfileData } from "~/lib/profile";
-import { LoginCTA } from "./LoginCTA";
+import HomeCTA from "./HomeCTA";
 
 export const metadata: Metadata = {
   title: "MyPRs - One link to highlight your Open-Source Contributions",
@@ -31,14 +28,7 @@ export const metadata: Metadata = {
 
 const DEMO_USER = "kishanhitk";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const userName = user?.user_metadata?.user_name as string | undefined;
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-
+export default function Home() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
       <h1
@@ -63,22 +53,7 @@ export default async function Home() {
         className="rise mt-6"
         style={{ "--d": "180ms" } as React.CSSProperties}
       >
-        {userName ? (
-          <Button asChild>
-            <Link href={`/${userName}`} prefetch>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={avatarUrl}
-                className="mr-2 h-6 w-6 rounded-full"
-                alt={userName}
-              />
-              Continue as {userName}
-              <ArrowRight aria-hidden className="ml-1.5 size-4" />
-            </Link>
-          </Button>
-        ) : (
-          <LoginCTA />
-        )}
+        <HomeCTA />
         <p className="font-mono mt-2 text-xs text-zinc-500 dark:text-zinc-400">
           Your page already exists — myprs.dev/&lt;your-github-username&gt;
         </p>

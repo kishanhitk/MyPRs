@@ -50,10 +50,19 @@ export function reportGithubFailure(input: {
   status: number;
   message?: string;
   headers?: Headers;
+  /** Direct rate fields for callers that can't pass Headers (cached scopes). */
+  rateLimitRemaining?: string | null;
+  rateLimitReset?: string | null;
+  retryAfter?: string | null;
 }) {
-  const remaining = input.headers?.get("x-ratelimit-remaining") ?? null;
-  const reset = input.headers?.get("x-ratelimit-reset") ?? null;
-  const retryAfter = input.headers?.get("retry-after") ?? null;
+  const remaining =
+    input.headers?.get("x-ratelimit-remaining") ??
+    input.rateLimitRemaining ??
+    null;
+  const reset =
+    input.headers?.get("x-ratelimit-reset") ?? input.rateLimitReset ?? null;
+  const retryAfter =
+    input.headers?.get("retry-after") ?? input.retryAfter ?? null;
   const reason = classifyGithubFailure(input.status, input.message, remaining);
 
   console.error(

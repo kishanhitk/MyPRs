@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { createClient } from "~/lib/supabase/server";
 
@@ -36,6 +37,15 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/?error=auth", url.origin));
     }
     const githubUsername = data.user?.user_metadata?.user_name;
+
+    if (githubUsername) {
+      // A profile viewed before its owner ever signed in cached a missing
+      // curation row (no ownerRowId) — without this purge the owner could
+      // not curate for up to an hour after their first login. updateTag is
+      // Server-Action-only; revalidateTag is the Route Handler equivalent
+      // (SWR semantics: at worst one stale render right after login).
+      revalidateTag(`curation-${githubUsername}`, "max");
+    }
 
     if ((!redirectUrl || redirectUrl === "/") && githubUsername) {
       redirectUrl = `/${githubUsername}`;
