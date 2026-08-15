@@ -199,15 +199,20 @@ export default function PRSections({
   }, [username, paging.cursor, paging.hasNext]);
 
   // One product event per profile view, with the numbers that matter.
+  // Held until the session resolves (undefined -> null | Session) so
+  // is_owner is the truth, not a race; the ref keeps it to one capture.
+  const viewCapturedRef = React.useRef(false);
   React.useEffect(() => {
+    if (session === undefined || viewCapturedRef.current) return;
+    viewCapturedRef.current = true;
     posthog.capture("profile_viewed", {
       profile: username,
-      is_owner: isOwner,
+      is_owner: isActualOwner,
       total_prs: totalCount,
       featured_count: featuredPRs.length,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username]);
+  }, [username, session]);
 
   React.useEffect(() => {
     const el = sentinelRef.current;
