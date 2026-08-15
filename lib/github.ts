@@ -211,6 +211,7 @@ async function rawGraphQLSearchPage(
   author: string,
   cursor: string | null
 ): Promise<PRPage> {
+  console.log(`TIMING raw-search-fetch ${author} ${cursor ?? "p1"}`);
   const q = `author:${author} type:pr is:public is:merged sort:created-desc`;
   const probeQ = `author:${author} type:pr is:public is:merged sort:created-asc`;
   const firstPage = cursor === null;

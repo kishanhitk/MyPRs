@@ -32,6 +32,7 @@ async function getCurationRow(username: string) {
   "use cache";
   cacheLife("hours");
   cacheTag(`curation-${username}`);
+  console.log(`TIMING curation-fetch ${username}`);
   const supabase = createAnonClient();
   const { data: rows, error } = await supabase
     .from("users")
