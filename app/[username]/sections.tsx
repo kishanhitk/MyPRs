@@ -268,17 +268,52 @@ export function GraphSkeleton() {
   );
 }
 
+// Cold fills take seconds — this is the rare/first-time tier, so it earns
+// a real loading story instead of a mute pulse: nodes land on the trunk
+// like commits while status lines narrate the actual pipeline. Pure CSS,
+// so it runs before hydration and in throttled tabs.
+const CRUNCH_STEPS = [
+  "searching GitHub for merged pull requests…",
+  "scanning repositories…",
+  "resolving the first merged year…",
+  "drawing the rail…",
+];
+
 export function RailSkeleton() {
   return (
-    <div aria-hidden className="animate-pulse motion-reduce:animate-none">
-      <div className="mt-5 h-[13px] w-80 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+    <div aria-hidden>
+      <div className="crunch-status font-mono mt-5 h-[13px] text-[13px] text-zinc-500 dark:text-zinc-400 motion-reduce:hidden">
+        {CRUNCH_STEPS.map((step, i) => (
+          <span
+            key={step}
+            className="crunch-line"
+            style={{ "--i": i } as CSSProperties}
+          >
+            {step}
+          </span>
+        ))}
+      </div>
+      <p className="font-mono mt-5 hidden h-[13px] text-[13px] text-zinc-500 motion-reduce:block dark:text-zinc-400">
+        crunching the data…
+      </p>
       <div className="relative mt-10">
         <span className="absolute bottom-2 left-3 top-0 w-[2px] rounded-full bg-zinc-200 dark:bg-zinc-800" />
         <ul>
           {[0, 1, 2, 3, 4].map((i) => (
             <li key={i} className="relative py-2 pl-10">
-              <div className="h-[15px] w-3/4 rounded bg-zinc-100 dark:bg-zinc-800/60" />
-              <div className="mt-2 h-[12px] w-48 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+              {/* ghost node: lights up when its "commit" lands */}
+              <span
+                className="crunch-node absolute left-[7px] top-[16px] h-[11px] w-[11px] rounded-full border-2 border-zinc-300 bg-[#fdfafa] dark:border-zinc-700 dark:bg-[#191919]"
+                style={{ "--i": i } as CSSProperties}
+              />
+              <span
+                className="crunch-connector absolute left-[18px] top-[21px] h-px w-[14px] bg-zinc-200 dark:bg-zinc-800"
+                style={{ "--i": i } as CSSProperties}
+              />
+              <div className="crunch-row" style={{ "--i": i } as CSSProperties}>
+                <div className="h-[15px] w-3/4 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+                <div className="mt-2 h-[12px] w-48 rounded bg-zinc-100 dark:bg-zinc-800/60" />
+              </div>
             </li>
           ))}
         </ul>
