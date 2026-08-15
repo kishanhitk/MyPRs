@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound as renderNotFound } from "next/navigation";
 import { connection } from "next/server";
 import { getProfileData } from "~/lib/profile";
+import { SITE_URL } from "~/lib/site";
 import ContributionGraph from "~/components/custom/ContributionGraph";
 import OwnerGate from "~/components/custom/OwnerGate";
 import ShareProfile from "~/components/custom/ShareProfile";
@@ -21,24 +23,33 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const data = await getProfileData(username);
+  // GitHub usernames are case-insensitive; canonicalize to the exact-case
+  // login so /KishanHitk and /kishanhitk don't index as duplicates.
   const login = data.userData?.login ?? username;
   const userAvatar = data.userData?.avatar_url;
+  const description =
+    data.totalCount > 0
+      ? `${login} on MyPRs — ${data.totalCount} merged pull request${
+          data.totalCount === 1 ? "" : "s"
+        }${data.sinceYear ? ` since ${data.sinceYear}` : ""}. One link for their open-source contributions.`
+      : `Merged pull requests by ${login} — one link for their open-source contributions | MyPRs`;
 
   return {
     title: `PRs by ${login} | MyPRs`,
-    description: `Best of the Pull Requests created by ${login} | MyPRs`,
+    description,
+    alternates: { canonical: `/${login}` },
+    // A transient failure page is thin content — keep it out of the index.
+    robots: data.loadError || data.prsDegraded ? { index: false } : undefined,
     openGraph: {
       title: `PRs by ${login}`,
-      description:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-      url: "https://myprs.dev/",
+      description,
+      url: `${SITE_URL}/${login}`,
       images: [`/api/${username}/og`],
     },
     twitter: {
       card: "summary_large_image",
-      title: "MyPRs - One link to highlight your Open-Source Contributions",
-      description:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+      title: `PRs by ${login} | MyPRs`,
+      description,
       images: [`/api/${username}/og?avatar=${userAvatar}`],
     },
   };
@@ -92,23 +103,42 @@ export default async function ProfilePage({
     );
   }
 
-  if (notFound || !userData) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-14">
-        <TrackEvent
-          name="profile_error"
-          props={{ profile: username, type: "not_found" }}
-        />
-        <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
-          No GitHub user named &ldquo;{username}&rdquo;.
-        </p>
-      </div>
-    );
-  }
+  if (notFound || !userData) renderNotFound();
 
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: userData.name ?? userData.login,
+      alternateName: `@${userData.login}`,
+      image: userData.avatar_url,
+      url: `${SITE_URL}/${userData.login}`,
+      sameAs: [
+        `https://github.com/${userData.login}`,
+        ...(userData.twitter_username
+          ? [`https://x.com/${userData.twitter_username}`]
+          : []),
+        ...(userData.blog
+          ? [
+              userData.blog.startsWith("http")
+                ? userData.blog
+                : `https://${userData.blog}`,
+            ]
+          : []),
+      ],
+      description: `${totalCount} merged pull requests${sinceYear ? ` since ${sinceYear}` : ""} on GitHub.`,
+    },
+  };
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
+      <script
+        type="application/ld+json"
+         
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className="rise flex items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

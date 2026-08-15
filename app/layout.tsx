@@ -2,14 +2,13 @@ import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
+import { SITE_URL } from "~/lib/site";
 import { Analytics } from "@vercel/analytics/react";
 import { Header } from "~/components/custom/Header";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://myprs.dev"
-  ),
+  metadataBase: new URL(SITE_URL),
   title: "MyPRs - One link to highlight your Open-Source Contributions",
   description:
     "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
