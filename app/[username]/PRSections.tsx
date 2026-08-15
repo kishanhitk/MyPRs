@@ -398,11 +398,15 @@ export default function PRSections({
           )
         ) : null}
 
-        {shownRest.length ? (
+        {/* hasMore keeps the sentinel mounted even when every visible PR
+            was filtered out of page 1 — deeper pages stay reachable */}
+        {shownRest.length || hasMore ? (
           <>
-            <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
-              All PRs
-            </h2>
+            {shownRest.length ? (
+              <h2 className="font-mono relative pl-10 pb-3 pt-6 text-[11px] tracking-[0.08em] text-zinc-500 dark:text-zinc-400">
+                All PRs
+              </h2>
+            ) : null}
             <ul>
               <AnimatePresence mode="popLayout" initial={false}>
                 {shownRest.map((item) => (
