@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "~/lib/supabase/server";
 
 // featured_github_prs stores canonical PR URLs — the only identifier the
@@ -41,6 +41,9 @@ export async function toggleFeaturedAction(input: {
     .eq("id", user.id);
   if (error) console.error(error);
 
+  // updateTag (not revalidateTag): the owner just edited — they must see
+  // the change on the next render, not a stale-while-revalidate shell.
+  updateTag(`curation-${input.username}`);
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };
 }
@@ -64,6 +67,9 @@ export async function saveExcludedReposAction(input: {
     .eq("id", user.id);
   if (error) console.error(error);
 
+  // updateTag (not revalidateTag): the owner just edited — they must see
+  // the change on the next render, not a stale-while-revalidate shell.
+  updateTag(`curation-${input.username}`);
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };
 }
@@ -116,6 +122,9 @@ export async function reorderFeaturedAction(input: {
     .update({ featured_github_prs: next })
     .eq("id", user.id);
 
+  // updateTag (not revalidateTag): the owner just edited — they must see
+  // the change on the next render, not a stale-while-revalidate shell.
+  updateTag(`curation-${input.username}`);
   revalidatePath(`/${input.username}`);
   return { error: error?.message ?? null };
 }

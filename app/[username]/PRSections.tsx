@@ -4,6 +4,7 @@ import * as React from "react";
 import { AnimatePresence, motion, Reorder } from "framer-motion";
 import Link from "next/link";
 import posthog from "posthog-js";
+import { useSession } from "~/app/providers";
 import { DemoGithub } from "~/components/custom/GithubCard";
 import PRFilter from "~/components/custom/PRFilter";
 import {
@@ -19,7 +20,7 @@ const WINDOW_STEP = 90;
 interface PRSectionsProps {
   featuredPRs: ProfilePR[];
   nonFeaturedPRs: ProfilePR[];
-  isOwner: boolean;
+  ownerRowId: string | undefined;
   username: string;
   totalCount: number;
   since: number | null;
@@ -34,7 +35,7 @@ interface PRSectionsProps {
 export default function PRSections({
   featuredPRs,
   nonFeaturedPRs,
-  isOwner,
+  ownerRowId,
   username,
   totalCount,
   since,
@@ -46,6 +47,14 @@ export default function PRSections({
   // The server sends page 1 (100 PRs); the window limits DOM size and the
   // sentinel pulls deeper data pages through /api/[username]/prs on scroll.
   const [visible, setVisible] = React.useState(INITIAL_WINDOW);
+  // Owner affordances hydrate from the client session — the static shell
+  // is identical for everyone. "View as visitor" is a client-side preview.
+  const session = useSession();
+  const isActualOwner = Boolean(
+    ownerRowId && session?.user?.id && session.user.id === ownerRowId
+  );
+  const [previewVisitor, setPreviewVisitor] = React.useState(false);
+  const isOwner = isActualOwner && !previewVisitor;
   const sentinelRef = React.useRef<HTMLLIElement>(null);
   const [deeperPRs, setDeeperPRs] = React.useState<ProfilePR[]>([]);
   const [paging, setPaging] = React.useState({ cursor: endCursor, hasNext });
@@ -239,6 +248,15 @@ export default function PRSections({
 
   return (
     <>
+      {previewVisitor ? (
+        <button
+          type="button"
+          onClick={() => setPreviewVisitor(false)}
+          className="drag-glass font-mono fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full px-4 py-2 text-xs text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300"
+        >
+          viewing as visitor · exit
+        </button>
+      ) : null}
       <p
         className="rise font-mono mt-5 text-[13px] text-zinc-500 dark:text-zinc-400"
         style={{ "--d": "60ms" } as React.CSSProperties}
@@ -260,15 +278,16 @@ export default function PRSections({
             username={username}
           />
           <div className="flex shrink-0 items-baseline gap-2">
-            <Link
-              href={`/${username}?as=visitor`}
-              onClick={() =>
-                posthog.capture("view_as_visitor", { profile: username })
-              }
+            <button
+              type="button"
+              onClick={() => {
+                posthog.capture("view_as_visitor", { profile: username });
+                setPreviewVisitor(true);
+              }}
               className="font-mono text-xs text-zinc-500 underline-offset-4 transition-colors duration-150 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
             >
               view as visitor
-            </Link>
+            </button>
             <span aria-hidden className="font-mono text-xs text-zinc-300 dark:text-zinc-700">
               ·
             </span>

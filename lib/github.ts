@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import type {
   GitHubIssuesResponse,
   GitHubUser,
@@ -269,11 +269,15 @@ async function rawGraphQLSearchPage(
   };
 }
 
-const cachedGraphQLSearchPage = unstable_cache(
-  rawGraphQLSearchPage,
-  ["gh-search-page"],
-  { revalidate: 3600 }
-);
+async function cachedGraphQLSearchPage(
+  author: string,
+  cursor: string | null
+): Promise<PRPage> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`profile-${author}`);
+  return rawGraphQLSearchPage(author, cursor);
+}
 
 function restItemToProfilePR(
   item: GitHubIssuesResponse["items"][number]
@@ -386,9 +390,15 @@ async function rawDeepRepoNames(
   return [...names];
 }
 
-const cachedDeepRepoNames = unstable_cache(rawDeepRepoNames, ["gh-deep-repos"], {
-  revalidate: 3600,
-});
+async function cachedDeepRepoNames(
+  author: string,
+  pages: number
+): Promise<string[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`profile-${author}`);
+  return rawDeepRepoNames(author, pages);
+}
 
 export const getDeepRepoNames = async (
   author: string,
@@ -561,11 +571,14 @@ async function rawContributionCalendar(
   };
 }
 
-const cachedContributionCalendar = unstable_cache(
-  rawContributionCalendar,
-  ["gh-contribution-calendar"],
-  { revalidate: 3600 }
-);
+async function cachedContributionCalendar(
+  username: string
+): Promise<ContributionCalendar | null> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`profile-${username}`);
+  return rawContributionCalendar(username);
+}
 
 /**
  * First-party contribution calendar via the GraphQL API. Requires

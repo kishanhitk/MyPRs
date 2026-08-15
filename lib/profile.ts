@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { createClient } from "~/lib/supabase/server";
+import { cacheLife, cacheTag } from "next/cache";
+import { createAnonClient } from "~/lib/supabase/anon";
 import {
   getContributionCalendar,
   getDeepRepoNames,
@@ -23,15 +24,28 @@ const MAX_FEATURED_WALK_PAGES = 10;
  * Wrapped in React `cache()` so `generateMetadata` and the page component
  * share a single execution per request.
  */
-export const getProfileData = cache(async (username: string) => {
-  const supabase = await createClient();
-  const { data: rows, error: rowError } = await supabase
+// Curation is public data (it shapes the page every visitor sees) read
+// through the cookie-free client so it can live in the static shell. The
+// curation server actions revalidate this tag, so an owner's edit purges
+// the shell immediately.
+async function getCurationRow(username: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`curation-${username}`);
+  const supabase = createAnonClient();
+  const { data: rows, error } = await supabase
     .from("users")
     .select("id, github_username, excluded_github_repos, featured_github_prs")
     .eq("github_username", username);
-  if (rowError) console.error(rowError);
+  if (error) {
+    console.error(error);
+    throw error; // never cache a failed read
+  }
+  return rows?.[0] ?? null;
+}
 
-  const row = rows?.[0];
+export const getProfileData = cache(async (username: string) => {
+  const row = await getCurationRow(username).catch(() => null);
   const excludedGitHubRepos: string[] = row?.excluded_github_repos ?? [];
   // PR URLs (https://github.com/owner/repo/pull/N) — the one id both the
   // GraphQL and REST engines agree on.
