@@ -28,7 +28,7 @@ const MAX_FEATURED_WALK_PAGES = 10;
 // through the cookie-free client so it can live in the static shell. The
 // curation server actions revalidate this tag, so an owner's edit purges
 // the shell immediately.
-async function getCurationRow(username: string) {
+export async function getCurationRow(username: string) {
   "use cache: remote";
   cacheLife("hours");
   cacheTag(`curation-${username}`);

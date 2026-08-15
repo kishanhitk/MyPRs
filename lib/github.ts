@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type {
   GitHubIssuesResponse,
-  GitHubUser,
+  GithubUser,
   ProfilePR,
 } from "~/types/shared";
 import {
@@ -449,7 +449,7 @@ export const searchMergedPRs = async (
 // (unknown username) and caches like any other result.
 async function rawGitHubUserData(
   username: string
-): Promise<{ data: GitHubUser | null; status: number }> {
+): Promise<{ data: GithubUser | null; status: number }> {
   const response = await fetch(`https://api.github.com/users/${username}`, {
     headers: githubHeaders(),
     cache: "no-store",
@@ -466,7 +466,7 @@ async function rawGitHubUserData(
       response.headers.get("retry-after")
     );
   }
-  return { data: data as GitHubUser, status: response.status };
+  return { data: data as GithubUser, status: response.status };
 }
 
 async function cachedGitHubUserData(username: string) {
