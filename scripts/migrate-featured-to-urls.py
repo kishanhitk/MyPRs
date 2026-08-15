@@ -28,9 +28,8 @@ LOCAL_DB = ["docker", "exec", "supabase_db_my-pr", "psql", "-U", "postgres", "-d
 
 def run_sql(target: str, query: str):
     if target == "local":
-        env = {**os.environ, "PGPASSWORD": "postgres"}
         out = subprocess.run(
-            LOCAL_DB + ["-c", query], capture_output=True, text=True, env=env
+            LOCAL_DB + ["-c", query], capture_output=True, text=True
         )
         if out.returncode != 0:
             raise RuntimeError(out.stderr)
