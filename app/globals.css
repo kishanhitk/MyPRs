@@ -284,3 +284,90 @@
   animation-duration: 280ms;
   animation-timing-function: ease;
 }
+
+/* Cold-load "crunching" state: nodes land on the trunk like commits while
+   status lines narrate the pipeline. Rare-tier frequency (first visitor per
+   profile per hour), so the loop earns its place; reduced-motion swaps to a
+   static line via motion-reduce classes in the markup. */
+.crunch-status {
+  position: relative;
+}
+.crunch-line {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: crunch-line 10s linear infinite;
+  animation-delay: calc(var(--i) * 2.5s);
+}
+@keyframes crunch-line {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  3%,
+  22% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  25%,
+  100% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+.crunch-node {
+  animation: crunch-node 2.4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+  animation-delay: calc(var(--i) * 0.36s);
+}
+@keyframes crunch-node {
+  0%,
+  55% {
+    border-color: var(--crunch-node-idle, #d4d4d8);
+    background-color: transparent;
+    transform: scale(1);
+  }
+  62% {
+    transform: scale(1.25);
+  }
+  70%,
+  85% {
+    border-color: var(--crunch-node-lit, #18181b);
+    background-color: var(--crunch-node-lit, #18181b);
+    transform: scale(1);
+  }
+  100% {
+    border-color: var(--crunch-node-idle, #d4d4d8);
+    background-color: transparent;
+  }
+}
+.dark .crunch-node {
+  --crunch-node-idle: #3f3f46;
+  --crunch-node-lit: #fafafa;
+}
+.crunch-connector,
+.crunch-row {
+  opacity: 0.55;
+  animation: crunch-row 2.4s ease-out infinite;
+  animation-delay: calc(var(--i) * 0.36s);
+}
+@keyframes crunch-row {
+  0%,
+  55% {
+    opacity: 0.55;
+  }
+  70%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crunch-line,
+  .crunch-node,
+  .crunch-connector,
+  .crunch-row {
+    animation: none;
+  }
+}
