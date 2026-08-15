@@ -7,6 +7,12 @@ import TrackEvent from "~/components/custom/TrackEvent";
 import PRRetry from "./PRRetry";
 import PRSections from "./PRSections";
 
+// Cold shell generation performs the full GitHub fill (search, calendar,
+// repo breakdown, featured walk) — comfortably done in seconds, but past
+// Vercel's 10s default. A timeout mid-fill also discards the cache writes,
+// which turns one slow request into a permanent timeout loop.
+export const maxDuration = 60;
+
 export async function generateMetadata({
   params,
 }: {

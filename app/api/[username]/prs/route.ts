@@ -4,6 +4,8 @@ import { searchMergedPRs } from "~/lib/github";
 // Deeper history pages for the profile's infinite scroll. The underlying
 // GraphQL page is server-cached for an hour; the CDN caches the JSON too,
 // so a hot profile costs GitHub nothing as visitors scroll.
+export const maxDuration = 60;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ username: string }> }
