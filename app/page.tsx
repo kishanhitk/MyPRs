@@ -10,11 +10,12 @@ export const metadata: Metadata = {
   title: "MyPRs - One link to highlight your Open-Source Contributions",
   description:
     "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "MyPRs - One link to highlight your Open-Source Contributions",
     description:
       "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-    url: "https://myprs.dev/",
+    url: "/",
     images: ["/api/og"],
   },
   twitter: {
@@ -28,9 +29,23 @@ export const metadata: Metadata = {
 
 const DEMO_USER = "kishanhitk";
 
+const HOME_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "MyPRs",
+  url: "https://www.myprs.dev",
+  description:
+    "One link to highlight your open-source contributions — the link-in-bio for your merged pull requests.",
+};
+
 export default function Home() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
+      <script
+        type="application/ld+json"
+         
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_JSON_LD) }}
+      />
       <h1
         className="rise text-[clamp(34px,6vw,46px)] font-semibold leading-[1.1] tracking-[-0.02em] text-zinc-900 dark:text-zinc-100"
       >

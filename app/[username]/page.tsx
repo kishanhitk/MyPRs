@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getProfileData } from "~/lib/profile";
+import { SITE_URL } from "~/lib/site";
 import ContributionGraph from "~/components/custom/ContributionGraph";
 import OwnerGate from "~/components/custom/OwnerGate";
 import ShareProfile from "~/components/custom/ShareProfile";
@@ -21,24 +22,38 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const data = await getProfileData(username);
+  // GitHub usernames are case-insensitive; canonicalize to the exact-case
+  // login so /KishanHitk and /kishanhitk don't index as duplicates.
   const login = data.userData?.login ?? username;
   const userAvatar = data.userData?.avatar_url;
+  const description =
+    data.totalCount > 0
+      ? `${login} on MyPRs — ${data.totalCount} merged pull request${
+          data.totalCount === 1 ? "" : "s"
+        }${data.sinceYear ? ` since ${data.sinceYear}` : ""}. One link for their open-source contributions.`
+      : `Merged pull requests by ${login} — one link for their open-source contributions | MyPRs`;
 
   return {
     title: `PRs by ${login} | MyPRs`,
-    description: `Best of the Pull Requests created by ${login} | MyPRs`,
+    description,
+    alternates: { canonical: `/${login}` },
+    // Thin content stays out of the index: transient failures AND unknown
+    // usernames (a streamed response can't 404, so noindex is the signal —
+    // Google drops noindexed pages, which closes the soft-404 hole).
+    robots:
+      data.loadError || data.prsDegraded || data.notFound || !data.userData
+        ? { index: false }
+        : undefined,
     openGraph: {
       title: `PRs by ${login}`,
-      description:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
-      url: "https://myprs.dev/",
+      description,
+      url: `${SITE_URL}/${login}`,
       images: [`/api/${username}/og`],
     },
     twitter: {
       card: "summary_large_image",
-      title: "MyPRs - One link to highlight your Open-Source Contributions",
-      description:
-        "Highlight your coolest GitHub PRs and make your developer profile sparkle with MyPRs!",
+      title: `PRs by ${login} | MyPRs`,
+      description,
       images: [`/api/${username}/og?avatar=${userAvatar}`],
     },
   };
@@ -69,9 +84,10 @@ export default async function ProfilePage({
     ownerRowId,
   } = await getProfileData(username);
 
-  // A transient failure must never become the cached shell for an hour —
-  // degrade dynamically; the first healthy render becomes the shell.
-  if (loadError || prsDegraded) await connection();
+  // Transient failures and unknown usernames must never become cached
+  // shells — failures would stick for an hour, and the junk-URL space is
+  // unbounded. Render them dynamically; only healthy profiles cache.
+  if (loadError || prsDegraded || notFound || !userData) await connection();
 
   if (loadError && !userData) {
     return (
@@ -102,13 +118,47 @@ export default async function ProfilePage({
         <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
           No GitHub user named &ldquo;{username}&rdquo;.
         </p>
+        <p className="font-mono mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          Yours is waiting at myprs.dev/&lt;your-github-username&gt;.
+        </p>
       </div>
     );
   }
 
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: userData.name ?? userData.login,
+      alternateName: `@${userData.login}`,
+      image: userData.avatar_url,
+      url: `${SITE_URL}/${userData.login}`,
+      sameAs: [
+        `https://github.com/${userData.login}`,
+        ...(userData.twitter_username
+          ? [`https://x.com/${userData.twitter_username}`]
+          : []),
+        ...(userData.blog
+          ? [
+              userData.blog.startsWith("http")
+                ? userData.blog
+                : `https://${userData.blog}`,
+            ]
+          : []),
+      ],
+      description: `${totalCount} merged pull requests${sinceYear ? ` since ${sinceYear}` : ""} on GitHub.`,
+    },
+  };
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-14">
+      <script
+        type="application/ld+json"
+         
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className="rise flex items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
