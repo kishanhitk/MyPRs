@@ -1,5 +1,9 @@
 import { ImageResponse } from "next/og";
-import { getGitHubUserData, searchMergedPRs } from "~/lib/github";
+import {
+  getDeepRepoNames,
+  getGitHubUserData,
+  searchMergedPRs,
+} from "~/lib/github";
 import type { GithubUser } from "~/types/shared";
 
 const INK = "#18181B";
@@ -36,9 +40,16 @@ export async function GET(
   ]);
 
   const total = prs.totalCount;
-  const repoCount = new Set(prs.items.map((i) => i.repo)).size;
-  // Page 1 sees at most 100 PRs; deeper history can only add repos.
-  const repos = prs.hasNext && repoCount ? `${repoCount}+` : String(repoCount);
+  const page1Repos = [...new Set(prs.items.map((i) => i.repo))];
+  const deep = prs.hasNext ? await getDeepRepoNames(username, total) : [];
+  const repoCount = deep
+    ? new Set([...page1Repos, ...deep]).size
+    : page1Repos.length;
+  // Exact unless the breakdown failed or the 1000-result cap hides history.
+  const repos =
+    (deep === null || total > 1000) && repoCount
+      ? `${repoCount}+`
+      : String(repoCount);
   const since = prs.sinceYear;
   const name = (user.data as GithubUser | null)?.name ?? username;
 

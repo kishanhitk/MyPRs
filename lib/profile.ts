@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createClient } from "~/lib/supabase/server";
 import {
   getContributionCalendar,
+  getDeepRepoNames,
   getGitHubUserData,
   searchMergedPRs,
   type PRPageResult,
@@ -43,6 +44,19 @@ export const getProfileData = cache(async (username: string) => {
   ]);
 
   const userData = userResponse.data as GithubUser | null;
+
+  // Exact repo list without loading full PR pages (one skinny aliased
+  // request, ~1 point). Null = unknown; the client falls back to a floor.
+  let repoNames: string[] | null = null;
+  if (!firstPage.error) {
+    const page1Repos = firstPage.items.map((i) => i.repo);
+    if (firstPage.hasNext) {
+      const deep = await getDeepRepoNames(username, firstPage.totalCount);
+      repoNames = deep ? [...new Set([...page1Repos, ...deep])] : null;
+    } else {
+      repoNames = [...new Set(page1Repos)];
+    }
+  }
 
   let page: PRPageResult = firstPage;
   let loaded: ProfilePR[] = firstPage.items;
@@ -105,6 +119,7 @@ export const getProfileData = cache(async (username: string) => {
     // Where the client resumes loading deeper pages.
     endCursor: page.endCursor,
     hasNext: page.hasNext,
+    repoNames,
     excludedGitHubRepos,
     featuredPRUrls,
   };

@@ -74,6 +74,7 @@ export default async function ProfilePage({
     excludedGitHubRepos,
     endCursor,
     hasNext,
+    repoNames,
     ownerRowId,
   } = await getProfileData(username);
 
@@ -208,6 +209,7 @@ export default async function ProfilePage({
           excludedRepoNames={excludedGitHubRepos}
           endCursor={endCursor}
           hasNext={hasNext}
+          repoNames={repoNames}
         />
       ) : (
         <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">

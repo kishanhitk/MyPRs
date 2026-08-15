@@ -338,6 +338,81 @@ async function restSearchPage(
   };
 }
 
+/**
+ * Exact repo list beyond page 1 without paying for full PR pages: search
+ * cursors are deterministic (base64 "cursor:<offset>"), so pages 2..N fetch
+ * as aliases in ONE skinny request that selects only repository names.
+ * Returns null when unavailable (no token, or the request failed) — callers
+ * fall back to floor-with-"+" display.
+ */
+async function rawDeepRepoNames(
+  author: string,
+  pages: number
+): Promise<string[]> {
+  const q = `author:${author} type:pr is:public is:merged sort:created-desc`;
+  const aliases = Array.from({ length: pages - 1 }, (_, i) => {
+    const cursor = btoa(`cursor:${(i + 1) * 100}`);
+    return `p${i + 2}: search(query: $q, type: ISSUE, first: 100, after: "${cursor}") {
+      nodes { ... on PullRequest { repository { nameWithOwner } } }
+    }`;
+  }).join("\n");
+
+  const response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: githubHeaders(),
+    body: JSON.stringify({
+      query: `query($q: String!) { ${aliases} }`,
+      variables: { q },
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  const json = await response.json();
+  if (!response.ok || json.errors || !json.data) {
+    throw new GithubApiError(
+      json?.errors?.[0]?.message ?? json?.message ?? `GitHub HTTP ${response.status}`,
+      response.status,
+      response.headers.get("x-ratelimit-remaining"),
+      response.headers.get("x-ratelimit-reset"),
+      response.headers.get("retry-after")
+    );
+  }
+  const names = new Set<string>();
+  for (const key of Object.keys(json.data)) {
+    for (const node of json.data[key]?.nodes ?? []) {
+      if (node?.repository?.nameWithOwner) names.add(node.repository.nameWithOwner);
+    }
+  }
+  return [...names];
+}
+
+const cachedDeepRepoNames = unstable_cache(rawDeepRepoNames, ["gh-deep-repos"], {
+  revalidate: 3600,
+});
+
+export const getDeepRepoNames = async (
+  author: string,
+  totalCount: number
+): Promise<string[] | null> => {
+  if (!process.env.GITHUB_TOKEN) return null;
+  const pages = Math.min(Math.ceil(totalCount / 100), 10);
+  if (pages <= 1) return [];
+  try {
+    return await cachedDeepRepoNames(author, pages);
+  } catch (error) {
+    const apiError = error instanceof GithubApiError ? error : null;
+    reportGithubFailure({
+      source: "graphql-repo-breakdown",
+      status: apiError?.status ?? 0,
+      message: error instanceof Error ? error.message : String(error),
+      rateLimitRemaining: apiError?.rateLimitRemaining,
+      rateLimitReset: apiError?.rateLimitReset,
+      retryAfter: apiError?.retryAfter,
+    });
+    return null;
+  }
+};
+
 export const searchMergedPRs = async (
   author: string,
   cursor: string | null = null

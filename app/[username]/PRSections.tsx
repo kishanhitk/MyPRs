@@ -27,6 +27,8 @@ interface PRSectionsProps {
   /** Cursor to resume loading deeper history pages; null when complete. */
   endCursor: string | null;
   hasNext: boolean;
+  /** Exact full repo list (incl. excluded); null = unknown, show a floor. */
+  repoNames: string[] | null;
 }
 
 export default function PRSections({
@@ -39,6 +41,7 @@ export default function PRSections({
   excludedRepoNames,
   endCursor,
   hasNext,
+  repoNames,
 }: PRSectionsProps) {
   // The server sends page 1 (100 PRs); the window limits DOM size and the
   // sentinel pulls deeper data pages through /api/[username]/prs on scroll.
@@ -221,15 +224,18 @@ export default function PRSections({
   }, [hasMore, visible, displayRest.length, loadDeeperPage]);
 
   const shownRest = displayRest.slice(0, visible);
-  const knownRepos = [
-    ...new Set(
-      [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper].map((p) => p.repo)
-    ),
-  ];
+  // Exact when the repo breakdown resolved; loaded-derived floor otherwise.
+  const knownRepos = repoNames
+    ? repoNames.filter((r) => !excludedRepoNames.includes(r))
+    : [
+        ...new Set(
+          [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper].map((p) => p.repo)
+        ),
+      ];
   const allLoaded = [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper];
-  // Floors, not exact: search caps at 1000 results, and repo variety can
-  // only grow while deeper pages remain unloaded.
-  const capped = totalCount > 1000 || paging.hasNext;
+  // Search caps at 1000 results; without the breakdown the repo list is
+  // also a floor while deeper pages remain unloaded.
+  const capped = totalCount > 1000 || (!repoNames && paging.hasNext);
 
   return (
     <>
