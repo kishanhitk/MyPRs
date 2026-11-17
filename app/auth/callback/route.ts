@@ -1,5 +1,6 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse, after } from "next/server";
+import { captureServerEvent } from "~/lib/observability";
 import { createClient } from "~/lib/supabase/server";
 
 // Prevents an open redirect via the `redirectTo` param. Resolve the value
@@ -37,6 +38,8 @@ export async function GET(request: Request) {
       console.error("exchangeCodeForSession failed:", error.message);
       return NextResponse.redirect(new URL("/?error=auth", url.origin));
     }
+    // The browser cannot tell a login from a reload; a code exchanges once.
+    captureServerEvent(data.user.id, "login_completed");
     const githubUsername = data.user?.user_metadata?.user_name;
 
     if (githubUsername) {

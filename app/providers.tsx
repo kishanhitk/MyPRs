@@ -96,9 +96,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
             name: nextSession.user.user_metadata?.full_name,
             avatar_url: nextSession.user.user_metadata?.avatar_url,
           });
-          if (event === "SIGNED_IN" && !hadSessionRef.current) {
-            posthog.capture("login_completed");
-          }
         } catch {}
       }
       const had = hadSessionRef.current;
