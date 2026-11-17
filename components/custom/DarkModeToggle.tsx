@@ -3,6 +3,7 @@
 import * as React from "react";
 import clsx from "clsx";
 import { MoonIcon, SunIcon, LaptopIcon } from "lucide-react";
+import posthog from "posthog-js";
 export type ThemeMode = "system" | "light" | "dark";
 
 const THEME_COOKIE = "en_theme";
@@ -59,6 +60,7 @@ export default function DarkModeToggle({
     mode === "system" ? "light" : mode === "light" ? "dark" : "system";
 
   const handleClick = () => {
+    posthog.capture("theme_changed", { theme: nextMode });
     setOverride(nextMode);
     // Ease the brightness jump: cross-fade the whole page via the View
     // Transitions API where available; hard cut under reduced motion.

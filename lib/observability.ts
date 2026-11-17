@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { after } from "next/server";
 import { PostHog } from "posthog-node";
 
@@ -43,6 +44,25 @@ export function captureServerEvent(
       console.error("posthog server capture failed:", error);
     }
   });
+}
+
+const UUID = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+
+// posthog-js keeps its distinct id in this cookie. A server event sent with
+// it joins the same person as the visitor's browser events. The id is a UUID
+// (anonymous id or Supabase user id); a visitor can edit the cookie, so any
+// other text is refused.
+export async function getBrowserDistinctId(): Promise<string | null> {
+  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  if (!key) return null;
+  const raw = (await cookies()).get(`ph_${key}_posthog`)?.value;
+  if (!raw) return null;
+  try {
+    const id: unknown = JSON.parse(raw).distinct_id;
+    return typeof id === "string" && UUID.test(id) ? id : null;
+  } catch {
+    return null;
+  }
 }
 
 export function classifyGithubFailure(

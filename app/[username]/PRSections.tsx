@@ -74,12 +74,30 @@ export default function PRSections({
   >({}, (state, move) => ({ ...state, [move.id]: move.featured }));
   const [errors, setErrors] = React.useState<Record<number, string>>({});
   const [curating, setCurating] = React.useState(false);
+  const curateStatsRef = React.useRef({
+    featured_added: 0,
+    featured_removed: 0,
+    reorders: 0,
+  });
 
   const toggleCurating = () => {
-    setCurating((c) => {
-      if (!c) posthog.capture("curate_opened", { profile: username });
-      return !c;
-    });
+    if (curating) {
+      const stats = curateStatsRef.current;
+      posthog.capture("curate_closed", {
+        profile: username,
+        had_changes:
+          stats.featured_added + stats.featured_removed + stats.reorders > 0,
+        ...stats,
+      });
+    } else {
+      curateStatsRef.current = {
+        featured_added: 0,
+        featured_removed: 0,
+        reorders: 0,
+      };
+      posthog.capture("curate_opened", { profile: username });
+    }
+    setCurating(!curating);
   };
 
   const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
@@ -93,6 +111,11 @@ export default function PRSections({
         prUrl: pr.html_url,
         username,
       });
+      if (!result?.error) {
+        curateStatsRef.current[
+          makeFeatured ? "featured_added" : "featured_removed"
+        ] += 1;
+      }
       setErrors((prev) => {
         const next = { ...prev };
         if (result?.error) next[pr.id] = result.error;
@@ -147,6 +170,8 @@ export default function PRSections({
       if (result?.error) {
         setOrderOverride(null);
         orderRef.current = null;
+      } else {
+        curateStatsRef.current.reorders += 1;
       }
     });
   };
@@ -198,22 +223,6 @@ export default function PRSections({
       loadingRef.current = false;
     }
   }, [username, paging.cursor, paging.hasNext]);
-
-  // One product event per profile view, with the numbers that matter.
-  // Held until the session resolves (undefined -> null | Session) so
-  // is_owner is the truth, not a race; the ref keeps it to one capture.
-  const viewCapturedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (session === undefined || viewCapturedRef.current) return;
-    viewCapturedRef.current = true;
-    posthog.capture("profile_viewed", {
-      profile: username,
-      is_owner: isActualOwner,
-      total_prs: totalCount,
-      featured_count: featuredPRs.length,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, session]);
 
   React.useEffect(() => {
     const el = sentinelRef.current;
