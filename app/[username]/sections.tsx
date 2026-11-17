@@ -77,55 +77,56 @@ export async function IdentitySection({ params }: { params: ParamsPromise }) {
   const ownerRowId = curationRow?.id as string | undefined;
 
   return (
-    <header className="rise flex items-center gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={userData.avatar_url}
-        alt={userData.login}
-        className="h-16 w-16 rounded-full border border-zinc-200 dark:border-zinc-800"
-      />
-      <div>
-        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-zinc-900 dark:text-zinc-100">
-          {userData.name ?? userData.login}
-        </h1>
-        <p className="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">
-          @{userData.login}
-          {userData.twitter_username ? (
-            <>
-              {" · "}
-              <a
-                href={`https://x.com/${userData.twitter_username}`}
-                className="underline-offset-4 hover:underline"
-              >
-                x/{userData.twitter_username}
-              </a>
-            </>
-          ) : null}
-          {userData.blog ? (
-            <>
-              {" · "}
-              <a
-                href={
-                  userData.blog.startsWith("http")
-                    ? userData.blog
-                    : `https://${userData.blog}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline-offset-4 hover:underline"
-              >
-                {userData.blog.replace(/^https?:\/\//, "").replace(/\/$/, "")}{" "}
-                ↗
-              </a>
-            </>
-          ) : null}
-          <OwnerGate ownerRowId={ownerRowId}>
-            {" · "}
-            <ShareProfile username={username} />
-          </OwnerGate>
-        </p>
-      </div>
-    </header>
+    <>
+      <header className="rise flex items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={userData.avatar_url}
+          alt={userData.login}
+          className="h-16 w-16 rounded-full border border-zinc-200 dark:border-zinc-800"
+        />
+        <div>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-zinc-900 dark:text-zinc-100">
+            {userData.name ?? userData.login}
+          </h1>
+          <p className="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">
+            @{userData.login}
+            {userData.twitter_username ? (
+              <>
+                {" · "}
+                <a
+                  href={`https://x.com/${userData.twitter_username}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  x/{userData.twitter_username}
+                </a>
+              </>
+            ) : null}
+            {userData.blog ? (
+              <>
+                {" · "}
+                <a
+                  href={
+                    userData.blog.startsWith("http")
+                      ? userData.blog
+                      : `https://${userData.blog}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-4 hover:underline"
+                >
+                  {userData.blog.replace(/^https?:\/\//, "").replace(/\/$/, "")}{" "}
+                  ↗
+                </a>
+              </>
+            ) : null}
+          </p>
+        </div>
+      </header>
+      <OwnerGate ownerRowId={ownerRowId}>
+        <ShareProfile username={username} />
+      </OwnerGate>
+    </>
   );
 }
 
