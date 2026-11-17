@@ -221,14 +221,21 @@ export default function PRSections({
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
-        // capture outside the updater — React may invoke updaters twice
+        // The window must not outgrow the loaded PRs: a step that renders
+        // nothing leaves the sentinel in view, and the re-created observer
+        // fires again at once. The page fetch re-creates the observer.
+        if (visible >= displayRest.length) {
+          void loadDeeperPage();
+          return;
+        }
+        const next = Math.min(visible + WINDOW_STEP, displayRest.length);
         posthog.capture("list_extended", {
           profile: username,
-          shown_after: visible + WINDOW_STEP,
+          shown_after: next,
         });
-        setVisible((v) => v + WINDOW_STEP);
+        setVisible(next);
         // Keep the data ahead of the window.
-        if (visible + WINDOW_STEP >= displayRest.length) void loadDeeperPage();
+        if (next >= displayRest.length) void loadDeeperPage();
       },
       { rootMargin: "600px" }
     );
