@@ -1,9 +1,10 @@
 import { after } from "next/server";
 import { PostHog } from "posthog-node";
 
-// Server-side failure reporting for GitHub API calls. Every non-ok response
-// lands in the Vercel function logs AND as a durable `github_request_failed`
-// PostHog event (chartable, alertable) — the client beacon alone misses
+// Server-side PostHog events. captureServerEvent sends events that only the
+// server can see, such as login_completed from the auth callback.
+// reportGithubFailure logs each non-ok GitHub response to the Vercel function
+// logs and sends a `github_request_failed` event. The client alone misses
 // failures on pages the browser never renders (OG images, crawlers).
 
 export type GithubFailureReason =
@@ -25,6 +26,23 @@ function getClient(): PostHog | null {
       : null;
   }
   return client;
+}
+
+// after(): send once the response is done, never on the render path.
+export function captureServerEvent(
+  distinctId: string,
+  event: string,
+  properties?: Record<string, unknown>
+) {
+  const posthog = getClient();
+  if (!posthog) return;
+  after(async () => {
+    try {
+      await posthog.captureImmediate({ distinctId, event, properties });
+    } catch (error) {
+      console.error("posthog server capture failed:", error);
+    }
+  });
 }
 
 export function classifyGithubFailure(
@@ -75,28 +93,14 @@ export function reportGithubFailure(input: {
     }
   );
 
-  const posthog = getClient();
-  if (!posthog) return reason;
-
-  // after(): report once the response is done, never on the render path.
-  after(async () => {
-    try {
-      await posthog.captureImmediate({
-        distinctId: "server",
-        event: "github_request_failed",
-        properties: {
-          source: input.source,
-          status: input.status,
-          reason,
-          message: input.message,
-          rate_limit_remaining: remaining,
-          rate_limit_reset: reset,
-          retry_after: retryAfter,
-        },
-      });
-    } catch (error) {
-      console.error("posthog server capture failed:", error);
-    }
+  captureServerEvent("server", "github_request_failed", {
+    source: input.source,
+    status: input.status,
+    reason,
+    message: input.message,
+    rate_limit_remaining: remaining,
+    rate_limit_reset: reset,
+    retry_after: retryAfter,
   });
   return reason;
 }
