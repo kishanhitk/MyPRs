@@ -1,11 +1,28 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
+import {
+  captureServerEvent,
+  getBrowserDistinctId,
+} from "~/lib/observability";
 import { createClient } from "~/lib/supabase/server";
 
 // featured_github_prs stores canonical PR URLs — the only identifier the
 // REST and GraphQL search engines agree on (their numeric ids differ).
 const PR_URL = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+$/;
+
+async function reportSaveFailure(
+  action: "toggle_featured" | "save_excluded_repos" | "reorder_featured",
+  reason: "not_signed_in" | "read_failed" | "update_failed" | "stale_order",
+  userId: string | undefined,
+  errorCode?: string
+) {
+  captureServerEvent(
+    userId ?? (await getBrowserDistinctId()) ?? "server",
+    "curation_save_failed",
+    { action, reason, error_code: errorCode ?? null }
+  );
+}
 
 export async function toggleFeaturedAction(input: {
   prUrl: string;
@@ -16,7 +33,10 @@ export async function toggleFeaturedAction(input: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You must be logged in to do that" };
+  if (!user) {
+    await reportSaveFailure("toggle_featured", "not_signed_in", undefined);
+    return { error: "You must be logged in to do that" };
+  }
 
   // Read the current list from the DB (not a client-supplied snapshot) so
   // concurrent toggles from multiple tabs don't clobber each other.
@@ -27,6 +47,12 @@ export async function toggleFeaturedAction(input: {
     .single();
   if (readError) {
     console.error(readError);
+    await reportSaveFailure(
+      "toggle_featured",
+      "read_failed",
+      user.id,
+      readError.code
+    );
     return { error: readError.message };
   }
 
@@ -39,7 +65,15 @@ export async function toggleFeaturedAction(input: {
     .from("users")
     .update({ featured_github_prs: updated })
     .eq("id", user.id);
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    await reportSaveFailure(
+      "toggle_featured",
+      "update_failed",
+      user.id,
+      error.code
+    );
+  }
 
   // updateTag (not revalidateTag): the owner just edited — they must see
   // the change on the next render, not a stale-while-revalidate shell.
@@ -59,13 +93,24 @@ export async function saveExcludedReposAction(input: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You must be logged in to do that" };
+  if (!user) {
+    await reportSaveFailure("save_excluded_repos", "not_signed_in", undefined);
+    return { error: "You must be logged in to do that" };
+  }
 
   const { error } = await supabase
     .from("users")
     .update({ excluded_github_repos: input.reposToExclude })
     .eq("id", user.id);
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    await reportSaveFailure(
+      "save_excluded_repos",
+      "update_failed",
+      user.id,
+      error.code
+    );
+  }
 
   // updateTag (not revalidateTag): the owner just edited — they must see
   // the change on the next render, not a stale-while-revalidate shell.
@@ -90,14 +135,25 @@ export async function reorderFeaturedAction(input: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You must be logged in to do that" };
+  if (!user) {
+    await reportSaveFailure("reorder_featured", "not_signed_in", undefined);
+    return { error: "You must be logged in to do that" };
+  }
 
   const { data: row, error: readError } = await supabase
     .from("users")
     .select("featured_github_prs")
     .eq("id", user.id)
     .single();
-  if (readError) return { error: readError.message };
+  if (readError) {
+    await reportSaveFailure(
+      "reorder_featured",
+      "read_failed",
+      user.id,
+      readError.code
+    );
+    return { error: readError.message };
+  }
 
   // The client reorders only the featured PRs it can render; ids orphaned
   // by repo filters or dropped GitHub results never reach it. Validate the
@@ -110,6 +166,7 @@ export async function reorderFeaturedAction(input: {
     orderedSet.size === input.orderedUrls.length &&
     input.orderedUrls.every((url) => currentSet.has(url));
   if (!valid) {
+    await reportSaveFailure("reorder_featured", "stale_order", user.id);
     return { error: "Order is out of date — refresh and try again" };
   }
 
@@ -121,6 +178,14 @@ export async function reorderFeaturedAction(input: {
     .from("users")
     .update({ featured_github_prs: next })
     .eq("id", user.id);
+  if (error) {
+    await reportSaveFailure(
+      "reorder_featured",
+      "update_failed",
+      user.id,
+      error.code
+    );
+  }
 
   // updateTag (not revalidateTag): the owner just edited — they must see
   // the change on the next render, not a stale-while-revalidate shell.

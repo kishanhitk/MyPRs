@@ -8,6 +8,7 @@ import { getCurationRow, getProfileData } from "~/lib/profile";
 import { SITE_URL } from "~/lib/site";
 import ContributionGraph from "~/components/custom/ContributionGraph";
 import OwnerGate from "~/components/custom/OwnerGate";
+import ProfileViewTracker from "~/components/custom/ProfileViewTracker";
 import ShareProfile from "~/components/custom/ShareProfile";
 import TrackEvent from "~/components/custom/TrackEvent";
 import PRRetry from "./PRRetry";
@@ -217,6 +218,14 @@ export async function PRRailSection({ params }: { params: ParamsPromise }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {prsDegraded ? null : (
+        <ProfileViewTracker
+          username={username}
+          ownerRowId={ownerRowId}
+          totalCount={totalCount}
+          featuredCount={featuredPRs.length}
+        />
+      )}
       {prsDegraded ? (
         <PRRetry username={username} reason={errorReason ?? "error"} />
       ) : items.length || hasNext ? (

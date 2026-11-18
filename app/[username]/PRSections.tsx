@@ -17,6 +17,11 @@ const SWAP = { type: "spring" as const, bounce: 0, duration: 0.3 };
 const INITIAL_WINDOW = 30;
 const WINDOW_STEP = 90;
 
+type CurateChange = "featured_added" | "featured_removed" | "reorders";
+type CurateSession = Record<CurateChange, number> & {
+  saves: Promise<void>[];
+};
+
 interface PRSectionsProps {
   featuredPRs: ProfilePR[];
   nonFeaturedPRs: ProfilePR[];
@@ -74,12 +79,50 @@ export default function PRSections({
   >({}, (state, move) => ({ ...state, [move.id]: move.featured }));
   const [errors, setErrors] = React.useState<Record<number, string>>({});
   const [curating, setCurating] = React.useState(false);
+  const curateSessionRef = React.useRef<CurateSession | null>(null);
 
   const toggleCurating = () => {
-    setCurating((c) => {
-      if (!c) posthog.capture("curate_opened", { profile: username });
-      return !c;
-    });
+    if (curating) {
+      const session = curateSessionRef.current;
+      curateSessionRef.current = null;
+      if (session) {
+        void Promise.all(session.saves).then(() => {
+          const { featured_added, featured_removed, reorders } = session;
+          posthog.capture("curate_closed", {
+            profile: username,
+            had_changes: featured_added + featured_removed + reorders > 0,
+            featured_added,
+            featured_removed,
+            reorders,
+          });
+        });
+      }
+    } else {
+      curateSessionRef.current = {
+        featured_added: 0,
+        featured_removed: 0,
+        reorders: 0,
+        saves: [],
+      };
+      posthog.capture("curate_opened", { profile: username });
+    }
+    setCurating(!curating);
+  };
+
+  const countWhenSaved = (
+    change: CurateChange,
+    save: Promise<{ error: string | null }>
+  ) => {
+    const session = curateSessionRef.current;
+    if (!session) return;
+    session.saves.push(
+      save.then(
+        (result) => {
+          if (!result?.error) session[change] += 1;
+        },
+        () => {}
+      )
+    );
   };
 
   const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
@@ -89,10 +132,9 @@ export default function PRSections({
     });
     startTransition(async () => {
       addMove({ id: pr.id, featured: makeFeatured });
-      const result = await toggleFeaturedAction({
-        prUrl: pr.html_url,
-        username,
-      });
+      const save = toggleFeaturedAction({ prUrl: pr.html_url, username });
+      countWhenSaved(makeFeatured ? "featured_added" : "featured_removed", save);
+      const result = await save;
       setErrors((prev) => {
         const next = { ...prev };
         if (result?.error) next[pr.id] = result.error;
@@ -113,6 +155,7 @@ export default function PRSections({
     null
   );
   const orderRef = React.useRef<number[] | null>(null);
+  const dragStartOrderRef = React.useRef<number[] | null>(null);
   const displayFeatured = React.useMemo(() => {
     if (!orderOverride) return serverFeatured;
     const byId = new Map(serverFeatured.map((p) => [p.id, p]));
@@ -128,22 +171,28 @@ export default function PRSections({
 
   const handleReorder = (next: ProfilePR[]) => {
     const ids = next.map((p) => p.id);
+    dragStartOrderRef.current ??= displayFeatured.map((p) => p.id);
     orderRef.current = ids;
     setOrderOverride(ids);
   };
 
   const commitReorder = () => {
     const ids = orderRef.current;
-    if (!ids) return;
+    const startIds = dragStartOrderRef.current;
+    dragStartOrderRef.current = null;
+    if (!ids || !startIds) return;
+    if (ids.join() === startIds.join()) return;
     posthog.capture("featured_reordered", { profile: username });
     const byId = new Map(displayFeatured.map((p) => [p.id, p.html_url]));
     startTransition(async () => {
-      const result = await reorderFeaturedAction({
+      const save = reorderFeaturedAction({
         username,
         orderedUrls: ids
           .map((id) => byId.get(id))
           .filter((url): url is string => Boolean(url)),
       });
+      countWhenSaved("reorders", save);
+      const result = await save;
       if (result?.error) {
         setOrderOverride(null);
         orderRef.current = null;
@@ -198,22 +247,6 @@ export default function PRSections({
       loadingRef.current = false;
     }
   }, [username, paging.cursor, paging.hasNext]);
-
-  // One product event per profile view, with the numbers that matter.
-  // Held until the session resolves (undefined -> null | Session) so
-  // is_owner is the truth, not a race; the ref keeps it to one capture.
-  const viewCapturedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (session === undefined || viewCapturedRef.current) return;
-    viewCapturedRef.current = true;
-    posthog.capture("profile_viewed", {
-      profile: username,
-      is_owner: isActualOwner,
-      total_prs: totalCount,
-      featured_count: featuredPRs.length,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, session]);
 
   React.useEffect(() => {
     const el = sentinelRef.current;
