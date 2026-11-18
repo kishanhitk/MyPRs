@@ -17,6 +17,11 @@ const SWAP = { type: "spring" as const, bounce: 0, duration: 0.3 };
 const INITIAL_WINDOW = 30;
 const WINDOW_STEP = 90;
 
+type CurateChange = "featured_added" | "featured_removed" | "reorders";
+type CurateSession = Record<CurateChange, number> & {
+  saves: Promise<void>[];
+};
+
 interface PRSectionsProps {
   featuredPRs: ProfilePR[];
   nonFeaturedPRs: ProfilePR[];
@@ -74,30 +79,50 @@ export default function PRSections({
   >({}, (state, move) => ({ ...state, [move.id]: move.featured }));
   const [errors, setErrors] = React.useState<Record<number, string>>({});
   const [curating, setCurating] = React.useState(false);
-  const curateStatsRef = React.useRef({
-    featured_added: 0,
-    featured_removed: 0,
-    reorders: 0,
-  });
+  const curateSessionRef = React.useRef<CurateSession | null>(null);
 
   const toggleCurating = () => {
     if (curating) {
-      const stats = curateStatsRef.current;
-      posthog.capture("curate_closed", {
-        profile: username,
-        had_changes:
-          stats.featured_added + stats.featured_removed + stats.reorders > 0,
-        ...stats,
-      });
+      const session = curateSessionRef.current;
+      curateSessionRef.current = null;
+      if (session) {
+        void Promise.all(session.saves).then(() => {
+          const { featured_added, featured_removed, reorders } = session;
+          posthog.capture("curate_closed", {
+            profile: username,
+            had_changes: featured_added + featured_removed + reorders > 0,
+            featured_added,
+            featured_removed,
+            reorders,
+          });
+        });
+      }
     } else {
-      curateStatsRef.current = {
+      curateSessionRef.current = {
         featured_added: 0,
         featured_removed: 0,
         reorders: 0,
+        saves: [],
       };
       posthog.capture("curate_opened", { profile: username });
     }
     setCurating(!curating);
+  };
+
+  const countWhenSaved = (
+    change: CurateChange,
+    save: Promise<{ error: string | null }>
+  ) => {
+    const session = curateSessionRef.current;
+    if (!session) return;
+    session.saves.push(
+      save.then(
+        (result) => {
+          if (!result?.error) session[change] += 1;
+        },
+        () => {}
+      )
+    );
   };
 
   const toggle = (pr: ProfilePR, makeFeatured: boolean) => {
@@ -107,15 +132,9 @@ export default function PRSections({
     });
     startTransition(async () => {
       addMove({ id: pr.id, featured: makeFeatured });
-      const result = await toggleFeaturedAction({
-        prUrl: pr.html_url,
-        username,
-      });
-      if (!result?.error) {
-        curateStatsRef.current[
-          makeFeatured ? "featured_added" : "featured_removed"
-        ] += 1;
-      }
+      const save = toggleFeaturedAction({ prUrl: pr.html_url, username });
+      countWhenSaved(makeFeatured ? "featured_added" : "featured_removed", save);
+      const result = await save;
       setErrors((prev) => {
         const next = { ...prev };
         if (result?.error) next[pr.id] = result.error;
@@ -136,6 +155,7 @@ export default function PRSections({
     null
   );
   const orderRef = React.useRef<number[] | null>(null);
+  const dragStartOrderRef = React.useRef<number[] | null>(null);
   const displayFeatured = React.useMemo(() => {
     if (!orderOverride) return serverFeatured;
     const byId = new Map(serverFeatured.map((p) => [p.id, p]));
@@ -151,27 +171,31 @@ export default function PRSections({
 
   const handleReorder = (next: ProfilePR[]) => {
     const ids = next.map((p) => p.id);
+    dragStartOrderRef.current ??= displayFeatured.map((p) => p.id);
     orderRef.current = ids;
     setOrderOverride(ids);
   };
 
   const commitReorder = () => {
     const ids = orderRef.current;
-    if (!ids) return;
+    const startIds = dragStartOrderRef.current;
+    dragStartOrderRef.current = null;
+    if (!ids || !startIds) return;
+    if (ids.join() === startIds.join()) return;
     posthog.capture("featured_reordered", { profile: username });
     const byId = new Map(displayFeatured.map((p) => [p.id, p.html_url]));
     startTransition(async () => {
-      const result = await reorderFeaturedAction({
+      const save = reorderFeaturedAction({
         username,
         orderedUrls: ids
           .map((id) => byId.get(id))
           .filter((url): url is string => Boolean(url)),
       });
+      countWhenSaved("reorders", save);
+      const result = await save;
       if (result?.error) {
         setOrderOverride(null);
         orderRef.current = null;
-      } else {
-        curateStatsRef.current.reorders += 1;
       }
     });
   };
