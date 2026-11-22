@@ -65,34 +65,44 @@ export async function getBrowserDistinctId(): Promise<string | null> {
   }
 }
 
-export function classifyGithubFailure(
-  status: number,
-  message: string | undefined,
-  rateLimitRemaining: string | null | undefined
-): GithubFailureReason {
-  if (status === 0) return "timeout";
+export function classifyGithubFailure(failure: {
+  status: number;
+  message?: string;
+  timedOut?: boolean;
+  graphqlErrorType?: string | null;
+  rateLimitRemaining?: string | null;
+}): GithubFailureReason {
+  if (failure.timedOut) return "timeout";
   if (
-    status === 429 ||
-    rateLimitRemaining === "0" ||
-    /rate limit/i.test(message ?? "")
+    failure.status === 429 ||
+    failure.rateLimitRemaining === "0" ||
+    failure.graphqlErrorType === "RATE_LIMITED" ||
+    /rate limit/i.test(failure.message ?? "")
   ) {
     return "rate_limited";
   }
-  if (status >= 500) return "github_down";
+  if (failure.status >= 500) return "github_down";
   return "error";
 }
 
-export function reportGithubFailure(input: {
-  /** Call site: "search:history:p2", "search:since-year", "user", "graphql". */
+export interface GithubFailureReport {
+  /** Call site: "search:history:p2", "graphql-repo-breakdown:p3", "user". */
   source: string;
+  /** HTTP status; 0 when no response arrived. */
   status: number;
   message?: string;
+  /** Our time limit or a network timeout ended the request. */
+  timedOut?: boolean;
+  /** `type` of the first GraphQL error, e.g. "RATE_LIMITED". */
+  graphqlErrorType?: string | null;
   headers?: Headers;
   /** Direct rate fields for callers that can't pass Headers (cached scopes). */
   rateLimitRemaining?: string | null;
   rateLimitReset?: string | null;
   retryAfter?: string | null;
-}) {
+}
+
+export function reportGithubFailure(input: GithubFailureReport) {
   const remaining =
     input.headers?.get("x-ratelimit-remaining") ??
     input.rateLimitRemaining ??
@@ -101,12 +111,20 @@ export function reportGithubFailure(input: {
     input.headers?.get("x-ratelimit-reset") ?? input.rateLimitReset ?? null;
   const retryAfter =
     input.headers?.get("retry-after") ?? input.retryAfter ?? null;
-  const reason = classifyGithubFailure(input.status, input.message, remaining);
+  const reason = classifyGithubFailure({
+    status: input.status,
+    message: input.message,
+    timedOut: input.timedOut,
+    graphqlErrorType: input.graphqlErrorType,
+    rateLimitRemaining: remaining,
+  });
 
   console.error(
     `github request failed [${input.source}] ${input.status} ${reason}`,
     {
       message: input.message,
+      timedOut: input.timedOut ?? false,
+      graphqlErrorType: input.graphqlErrorType ?? null,
       rateLimitRemaining: remaining,
       rateLimitReset: reset,
       retryAfter,
@@ -118,6 +136,8 @@ export function reportGithubFailure(input: {
     status: input.status,
     reason,
     message: input.message,
+    timed_out: input.timedOut ?? false,
+    graphql_error_type: input.graphqlErrorType ?? null,
     rate_limit_remaining: remaining,
     rate_limit_reset: reset,
     retry_after: retryAfter,

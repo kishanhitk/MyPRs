@@ -133,3 +133,10 @@ export interface ProfilePR {
   reactions_count: number;
   comments: number;
 }
+
+/** Repos of an author's merged PRs, as far as search reaches (1,000 PRs). */
+export interface RepoBreakdown {
+  names: string[];
+  /** False when a search page failed or the pages disagree: `names` is then a floor. */
+  complete: boolean;
+}

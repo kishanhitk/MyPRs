@@ -3,9 +3,11 @@ import type {
   GitHubIssuesResponse,
   GithubUser,
   ProfilePR,
+  RepoBreakdown,
 } from "~/types/shared";
 import {
   type GithubFailureReason,
+  type GithubFailureReport,
   reportGithubFailure,
 } from "~/lib/observability";
 
@@ -20,6 +22,35 @@ function githubHeaders(): Record<string, string> {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
   return headers;
+}
+
+const NETWORK_TIMEOUT_CODES = new Set([
+  "ETIMEDOUT",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+]);
+
+function errorCauseCode(error: Error): string | null {
+  const code = (error.cause as { code?: unknown } | undefined)?.code;
+  return typeof code === "string" ? code : null;
+}
+
+// AbortSignal.timeout rejects with a TimeoutError. Undici reports its own
+// socket timeouts as a "fetch failed" TypeError with the code on its cause.
+function isTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = errorCauseCode(error);
+  return (
+    error.name === "TimeoutError" ||
+    (code !== null && NETWORK_TIMEOUT_CODES.has(code))
+  );
+}
+
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const code = errorCauseCode(error);
+  return `${error.name}: ${error.message}${code ? ` (${code})` : ""}`;
 }
 
 export interface PRFilter {
@@ -126,7 +157,8 @@ export const getPRsFromGithubAPI = async (filter: PRFilter) => {
     const reason = reportGithubFailure({
       source,
       status: 0,
-      message: error instanceof Error ? error.message : String(error),
+      message: describeError(error),
+      timedOut: isTimeoutError(error),
     });
     return { data: null, error, status: 0, reason };
   }
@@ -342,86 +374,172 @@ async function restSearchPage(
   };
 }
 
-/**
- * Exact repo list beyond page 1 without paying for full PR pages: search
- * cursors are deterministic (base64 "cursor:<offset>"), so pages 2..N fetch
- * as aliases in ONE skinny request that selects only repository names.
- * Returns null when unavailable (no token, or the request failed) — callers
- * fall back to floor-with-"+" display.
- */
-async function rawDeepRepoNames(
-  author: string,
-  pages: number
-): Promise<string[]> {
-  const q = `author:${author} type:pr is:public is:merged sort:created-desc`;
-  const aliases = Array.from({ length: pages - 1 }, (_, i) => {
-    const cursor = btoa(`cursor:${(i + 1) * 100}`);
-    return `p${i + 2}: search(query: $q, type: ISSUE, first: 100, after: "${cursor}") {
-      nodes { ... on PullRequest { repository { nameWithOwner } } }
-    }`;
-  }).join("\n");
+// Search returns at most 1,000 results: 10 pages of 100.
+const MAX_SEARCH_PAGES = 10;
+// GitHub ends every request after 10 s; stop waiting for a page before that.
+const REPO_PAGE_TIME_LIMIT_MS = 8000;
 
+const REPO_PAGE_QUERY = `query($q: String!, $after: String!) {
+  search(query: $q, type: ISSUE, first: 100, after: $after) {
+    issueCount
+    nodes { ... on PullRequest { repository { nameWithOwner } } }
+  }
+}`;
+
+interface RepoPageResponse {
+  data?: {
+    search?: {
+      issueCount: number;
+      nodes?: ({ repository?: { nameWithOwner: string } } | null)[] | null;
+    } | null;
+  } | null;
+  errors?: { type?: string; message: string }[];
+  message?: string;
+}
+
+interface RepoPage {
+  names: string[];
+  /** Search total when the page was fetched. */
+  totalCount: number;
+}
+
+// Only the digest of an error thrown inside "use cache" reaches the caller:
+// production drops the class and the message. A page therefore reports its
+// own failure, then throws an error whose digest says it was reported.
+const REPORTED_DIGEST_PREFIX = "GITHUB_FAILURE_REPORTED:";
+
+class ReportedGithubFailure extends Error {
+  readonly digest: string;
+
+  constructor(report: GithubFailureReport) {
+    super(report.message);
+    this.name = "ReportedGithubFailure";
+    this.digest = REPORTED_DIGEST_PREFIX + report.source;
+  }
+}
+
+function reportAndMark(report: GithubFailureReport): ReportedGithubFailure {
+  reportGithubFailure(report);
+  return new ReportedGithubFailure(report);
+}
+
+function isReported(error: unknown): boolean {
+  const digest = (error as { digest?: unknown } | null)?.digest;
+  return typeof digest === "string" && digest.startsWith(REPORTED_DIGEST_PREFIX);
+}
+
+function repoPageSource(offset: number): string {
+  return `graphql-repo-breakdown:p${offset / 100 + 1}`;
+}
+
+async function fetchRepoPage(author: string, offset: number): Promise<RepoPage> {
+  const source = repoPageSource(offset);
   const response = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: githubHeaders(),
     body: JSON.stringify({
-      query: `query($q: String!) { ${aliases} }`,
-      variables: { q },
+      query: REPO_PAGE_QUERY,
+      variables: {
+        q: `author:${author} type:pr is:public is:merged sort:created-desc`,
+        after: btoa(`cursor:${offset}`),
+      },
     }),
     cache: "no-store",
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(REPO_PAGE_TIME_LIMIT_MS),
+  }).catch((error: unknown) => {
+    throw reportAndMark({
+      source,
+      status: 0,
+      message: describeError(error),
+      timedOut: isTimeoutError(error),
+    });
   });
-  const json = await response.json();
-  if (!response.ok || json.errors || !json.data) {
-    throw new GithubApiError(
-      json?.errors?.[0]?.message ?? json?.message ?? `GitHub HTTP ${response.status}`,
-      response.status,
-      response.headers.get("x-ratelimit-remaining"),
-      response.headers.get("x-ratelimit-reset"),
-      response.headers.get("retry-after")
-    );
+  const json: RepoPageResponse | null = await response
+    .json()
+    .catch((error: unknown) => {
+      throw reportAndMark({
+        source,
+        status: response.status,
+        message: describeError(error),
+        timedOut: isTimeoutError(error),
+        headers: response.headers,
+      });
+    });
+
+  const search = json?.data?.search;
+  const nodes = search?.nodes;
+  const graphqlError = json?.errors?.[0];
+  if (!response.ok || graphqlError || !search || !Array.isArray(nodes)) {
+    throw reportAndMark({
+      source,
+      status: response.status,
+      message:
+        graphqlError?.message ?? json?.message ?? `GitHub HTTP ${response.status}`,
+      graphqlErrorType: graphqlError?.type ?? null,
+      headers: response.headers,
+    });
   }
-  const names = new Set<string>();
-  for (const key of Object.keys(json.data)) {
-    for (const node of json.data[key]?.nodes ?? []) {
-      if (node?.repository?.nameWithOwner) names.add(node.repository.nameWithOwner);
-    }
-  }
-  return [...names];
+  return {
+    names: nodes.flatMap((node) =>
+      node?.repository ? [node.repository.nameWithOwner] : []
+    ),
+    totalCount: search.issueCount,
+  };
 }
 
-async function cachedDeepRepoNames(
-  author: string,
-  pages: number
-): Promise<string[]> {
+async function cachedRepoPage(author: string, offset: number): Promise<RepoPage> {
   "use cache: remote";
   cacheLife("hours");
   cacheTag(`profile-${author}`);
-  return rawDeepRepoNames(author, pages);
+  return fetchRepoPage(author, offset);
 }
 
-export const getDeepRepoNames = async (
+/**
+ * Every repo the author merged into, as far as search reaches. Page 1 comes
+ * from the PR list. Search cursors are deterministic (base64
+ * "cursor:<offset>"), so pages 2..10 load in parallel as one skinny search
+ * each. Each page is its own cache entry: a failed page is not cached, the
+ * other pages still count, and the result is marked incomplete.
+ */
+export async function getRepoBreakdown(
   author: string,
-  totalCount: number
-): Promise<string[] | null> => {
-  if (!process.env.GITHUB_TOKEN) return null;
-  const pages = Math.min(Math.ceil(totalCount / 100), 10);
-  if (pages <= 1) return [];
-  try {
-    return await cachedDeepRepoNames(author, pages);
-  } catch (error) {
-    const apiError = error instanceof GithubApiError ? error : null;
-    reportGithubFailure({
-      source: "graphql-repo-breakdown",
-      status: apiError?.status ?? 0,
-      message: error instanceof Error ? error.message : String(error),
-      rateLimitRemaining: apiError?.rateLimitRemaining,
-      rateLimitReset: apiError?.rateLimitReset,
-      retryAfter: apiError?.retryAfter,
-    });
-    return null;
-  }
-};
+  firstPage: PRPageResult
+): Promise<RepoBreakdown> {
+  if (firstPage.error) return { names: [], complete: false };
+  const names = new Set(firstPage.items.map((item) => item.repo));
+  if (!firstPage.hasNext) return { names: [...names], complete: true };
+  // Without a token there is no GraphQL; deeper repos arrive as pages load.
+  if (!process.env.GITHUB_TOKEN) return { names: [...names], complete: false };
+
+  const pages = Math.min(
+    Math.ceil(firstPage.totalCount / 100),
+    MAX_SEARCH_PAGES
+  );
+  const offsets = Array.from({ length: pages - 1 }, (_, i) => (i + 1) * 100);
+  const results = await Promise.allSettled(
+    offsets.map((offset) => cachedRepoPage(author, offset))
+  );
+  let complete = true;
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      result.value.names.forEach((name) => names.add(name));
+      // Pages cached at different times can come from different result sets:
+      // a PR merged in between moves every offset by one, so a PR at a page
+      // border can be in no page. A changed search total shows this.
+      if (result.value.totalCount !== firstPage.totalCount) complete = false;
+      return;
+    }
+    complete = false;
+    if (!isReported(result.reason)) {
+      reportGithubFailure({
+        source: repoPageSource(offsets[i]),
+        status: 0,
+        message: describeError(result.reason),
+      });
+    }
+  });
+  return { names: [...names], complete };
+}
 
 export const searchMergedPRs = async (
   author: string,

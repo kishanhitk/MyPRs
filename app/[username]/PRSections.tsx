@@ -11,7 +11,7 @@ import {
   reorderFeaturedAction,
   toggleFeaturedAction,
 } from "~/utils/pr-actions";
-import type { ProfilePR } from "~/types/shared";
+import type { ProfilePR, RepoBreakdown } from "~/types/shared";
 
 const SWAP = { type: "spring" as const, bounce: 0, duration: 0.3 };
 const INITIAL_WINDOW = 30;
@@ -33,8 +33,8 @@ interface PRSectionsProps {
   /** Cursor to resume loading deeper history pages; null when complete. */
   endCursor: string | null;
   hasNext: boolean;
-  /** Exact full repo list (incl. excluded); null = unknown, show a floor. */
-  repoNames: string[] | null;
+  /** Full repo list (incl. excluded); resolves after the rail renders. */
+  repoBreakdown: Promise<RepoBreakdown>;
 }
 
 export default function PRSections({
@@ -47,7 +47,7 @@ export default function PRSections({
   excludedRepoNames,
   endCursor,
   hasNext,
-  repoNames,
+  repoBreakdown,
 }: PRSectionsProps) {
   // The server sends page 1 (100 PRs); the window limits DOM size and the
   // sentinel pulls deeper data pages through /api/[username]/prs on scroll.
@@ -278,18 +278,7 @@ export default function PRSections({
   }, [hasMore, visible, displayRest.length, loadDeeperPage]);
 
   const shownRest = displayRest.slice(0, visible);
-  // Exact when the repo breakdown resolved; loaded-derived floor otherwise.
-  const knownRepos = repoNames
-    ? repoNames.filter((r) => !excludedRepoNames.includes(r))
-    : [
-        ...new Set(
-          [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper].map((p) => p.repo)
-        ),
-      ];
   const allLoaded = [...featuredPRs, ...nonFeaturedPRs, ...freshDeeper];
-  // Search caps at 1000 results; without the breakdown the repo list is
-  // also a floor while deeper pages remain unloaded.
-  const capped = totalCount > 1000 || (!repoNames && paging.hasNext);
 
   return (
     <>
@@ -307,9 +296,15 @@ export default function PRSections({
         style={{ "--d": "60ms" } as React.CSSProperties}
       >
         {totalCount || allLoaded.length} merged pull requests ·{" "}
-        {knownRepos.length}
-        {capped ? "+" : ""}{" "}
-        {knownRepos.length === 1 && !capped ? "repository" : "repositories"}
+        <React.Suspense fallback={<RepoCountPending />}>
+          <RepoCount
+            breakdown={repoBreakdown}
+            loaded={allLoaded}
+            excludedRepoNames={excludedRepoNames}
+            totalCount={totalCount}
+            hasNext={paging.hasNext}
+          />
+        </React.Suspense>
         {since ? ` · since ${since}` : ""}
       </p>
       {isOwner ? (
@@ -317,11 +312,20 @@ export default function PRSections({
           className="rise relative z-10 mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2"
           style={{ "--d": "120ms" } as React.CSSProperties}
         >
-          <PRFilter
-            repoNames={knownRepos}
-            excludedRepoNames={excludedRepoNames}
-            username={username}
-          />
+          <React.Suspense
+            fallback={
+              <span className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
+                loading repositories…
+              </span>
+            }
+          >
+            <RepoFilter
+              breakdown={repoBreakdown}
+              loaded={allLoaded}
+              excludedRepoNames={excludedRepoNames}
+              username={username}
+            />
+          </React.Suspense>
           <div className="flex shrink-0 items-baseline gap-2">
             <button
               type="button"
@@ -468,5 +472,62 @@ export default function PRSections({
         ) : null}
       </div>
     </>
+  );
+}
+
+interface RepoListProps {
+  breakdown: Promise<RepoBreakdown>;
+  loaded: ProfilePR[];
+  excludedRepoNames: string[];
+}
+
+// Loaded pages add repos merged after the breakdown was cached and the repos
+// of a breakdown page that failed.
+function useShownRepos({ breakdown, loaded, excludedRepoNames }: RepoListProps) {
+  const { names, complete } = React.use(breakdown);
+  const repos = [...new Set([...names, ...loaded.map((p) => p.repo)])].filter(
+    (repo) => !excludedRepoNames.includes(repo)
+  );
+  return { repos, complete };
+}
+
+function RepoCount({
+  totalCount,
+  hasNext,
+  ...list
+}: RepoListProps & { totalCount: number; hasNext: boolean }) {
+  const { repos, complete } = useShownRepos(list);
+  // Search stops at 1,000 PRs. An incomplete breakdown keeps the count a
+  // floor until scrolling has loaded every page.
+  const floor = totalCount > 1000 || (!complete && hasNext);
+  return (
+    <>
+      {repos.length}
+      {floor ? "+" : ""}{" "}
+      {repos.length === 1 && !floor ? "repository" : "repositories"}
+    </>
+  );
+}
+
+function RepoCountPending() {
+  return (
+    <>
+      <span
+        aria-hidden
+        className="inline-block h-[10px] w-[3ch] animate-pulse rounded-sm bg-zinc-100 dark:bg-zinc-800/60 motion-reduce:animate-none"
+      />{" "}
+      repositories
+    </>
+  );
+}
+
+function RepoFilter({ username, ...list }: RepoListProps & { username: string }) {
+  const { repos } = useShownRepos(list);
+  return (
+    <PRFilter
+      repoNames={repos}
+      excludedRepoNames={list.excludedRepoNames}
+      username={username}
+    />
   );
 }
