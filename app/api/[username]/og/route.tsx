@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import {
-  getDeepRepoNames,
   getGitHubUserData,
+  getRepoBreakdown,
   searchMergedPRs,
 } from "~/lib/github";
 import type { GithubUser } from "~/types/shared";
@@ -41,17 +41,15 @@ export async function GET(
     getGitHubUserData(username),
   ]);
 
-  // Never bake a transient failure into a cached social card.
   const searchFailed = Boolean(prs.error);
   const total = prs.totalCount;
-  const page1Repos = [...new Set(prs.items.map((i) => i.repo))];
-  const deep = prs.hasNext ? await getDeepRepoNames(username, total) : [];
-  const repoCount = deep
-    ? new Set([...page1Repos, ...deep]).size
-    : page1Repos.length;
-  // Exact unless the breakdown failed or the 1000-result cap hides history.
+  const breakdown = await getRepoBreakdown(username, prs);
+  // Never bake a transient failure into a cached social card.
+  const transientFailure = searchFailed || !breakdown.complete;
+  const repoCount = breakdown.names.length;
+  // Exact unless a breakdown page failed or the 1000-result cap hides history.
   const repos =
-    (deep === null || total > 1000) && repoCount
+    (!breakdown.complete || total > 1000) && repoCount
       ? `${repoCount}+`
       : String(repoCount);
   const since = prs.sinceYear;
@@ -208,7 +206,7 @@ export async function GET(
         { name: "Geist Mono", data: geistMono, weight: 400 },
       ],
       headers: {
-        "Cache-Control": searchFailed
+        "Cache-Control": transientFailure
           ? "no-store"
           : "public, s-maxage=3600, stale-while-revalidate=86400",
       },

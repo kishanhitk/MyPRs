@@ -155,8 +155,8 @@ export async function GraphSection({ params }: { params: ParamsPromise }) {
 }
 
 /**
- * Stats line + PR rail — the slow path: search page 1, the repo breakdown,
- * and the featured walk. Streams last, once the full profile fill resolves.
+ * Stats line + PR rail — the slow path: search page 1 and the featured walk.
+ * Streams last; the repo count inside it streams after the rail.
  */
 export async function PRRailSection({ params }: { params: ParamsPromise }) {
   const { username } = await params;
@@ -174,7 +174,7 @@ export async function PRRailSection({ params }: { params: ParamsPromise }) {
     excludedGitHubRepos,
     endCursor,
     hasNext,
-    repoNames,
+    repoBreakdown,
     ownerRowId,
   } = await getProfileData(username);
 
@@ -239,7 +239,7 @@ export async function PRRailSection({ params }: { params: ParamsPromise }) {
           excludedRepoNames={excludedGitHubRepos}
           endCursor={endCursor}
           hasNext={hasNext}
-          repoNames={repoNames}
+          repoBreakdown={repoBreakdown}
         />
       ) : (
         <p className="font-mono mt-10 text-sm text-zinc-500 dark:text-zinc-400">
